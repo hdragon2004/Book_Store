@@ -1,0 +1,82 @@
+import multer from 'multer'
+import path from 'path'
+import { config } from '~/config/environment'
+import { AppError } from '~/utils/AppError'
+
+/**
+ * Upload Middleware - Xử lý upload file với multer
+ * Hỗ trợ upload ảnh với validation và storage
+ */
+
+// Cấu hình storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/')
+  },
+  filename: (req, file, cb) => {
+    // Tạo tên file unique
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname))
+  }
+})
+
+// Filter function để kiểm tra loại file
+const fileFilter = (req, file, cb) => {
+  // Kiểm tra MIME type
+  if (config.upload.allowedMimeTypes.includes(file.mimetype)) {
+    cb(null, true)
+  } else {
+    cb(new AppError('Invalid file type. Only images are allowed.', 400), false)
+  }
+}
+
+// Cấu hình multer
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: parseInt(config.upload.maxFileSize) || 5 * 1024 * 1024, // 5MB default
+    files: 5 // Tối đa 5 files
+  }
+})
+
+// Middleware upload single file
+export const uploadMiddleware = {
+  single: (fieldName) => upload.single(fieldName),
+  array: (fieldName, maxCount) => upload.array(fieldName, maxCount),
+  fields: (fields) => upload.fields(fields),
+  any: () => upload.any()
+}
+
+// Middleware xử lý lỗi upload
+export const handleUploadError = (error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        success: false,
+        message: 'File too large. Maximum size is 5MB.',
+        statusCode: 400
+      })
+    }
+    
+    if (error.code === 'LIMIT_FILE_COUNT') {
+      return res.status(400).json({
+        success: false,
+        message: 'Too many files. Maximum is 5 files.',
+        statusCode: 400
+      })
+    }
+    
+    if (error.code === 'LIMIT_UNEXPECTED_FILE') {
+      return res.status(400).json({
+        success: false,
+        message: 'Unexpected field name.',
+        statusCode: 400
+      })
+    }
+  }
+  
+  next(error)
+}
+
+export default uploadMiddleware

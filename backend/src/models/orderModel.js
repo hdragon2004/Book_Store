@@ -1,0 +1,124 @@
+import mongoose from 'mongoose'
+
+const orderSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: [true, 'User is required']
+  },
+  // Items will be in separate OrderItems collection
+  totalPrice: {
+    type: Number,
+    required: [true, 'Total price is required'],
+    min: [0, 'Total price cannot be negative']
+  },
+  paymentMethod: {
+    type: String,
+    enum: ['cod', 'bank_transfer', 'credit_card', 'paypal'],
+    default: 'cod'
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled', 'digital_delivered'],
+    default: 'pending'
+  },
+  shippingAddress: {
+    name: {
+      type: String,
+      required: [true, 'Shipping name is required']
+    },
+    phone: {
+      type: String,
+      required: [true, 'Phone number is required']
+    },
+    address: {
+      type: String,
+      required: [true, 'Address is required']
+    },
+    city: {
+      type: String,
+      required: [true, 'City is required']
+    },
+    district: {
+      type: String,
+      required: [true, 'District is required']
+    },
+    ward: {
+      type: String,
+      required: [true, 'Ward is required']
+    }
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false
+  }
+})
+
+// Auto update updatedAt
+orderSchema.pre('save', function(next) {
+  this.updatedAt = new Date()
+  next()
+})
+
+// Indexes for better performance
+orderSchema.index({ userId: 1 })
+orderSchema.index({ status: 1 })
+orderSchema.index({ isDeleted: 1 })
+orderSchema.index({ createdAt: -1 })
+orderSchema.index({ paymentMethod: 1 })
+
+// Soft delete method
+orderSchema.methods.softDelete = function() {
+  this.isDeleted = true
+  return this.save()
+}
+
+// Restore method
+orderSchema.methods.restore = function() {
+  this.isDeleted = false
+  return this.save()
+}
+
+// Static method to find active orders
+orderSchema.statics.findActive = function() {
+  return this.find({ isDeleted: false })
+}
+
+// Static method to find deleted orders
+orderSchema.statics.findDeleted = function() {
+  return this.find({ isDeleted: true })
+}
+
+// Static method to get orders by user
+orderSchema.statics.findByUser = function(userId) {
+  return this.find({ userId, isDeleted: false })
+}
+
+// Static method to get orders by status
+orderSchema.statics.findByStatus = function(status) {
+  return this.find({ status, isDeleted: false })
+}
+
+// Static method to get order statistics
+orderSchema.statics.getOrderStats = function() {
+  return this.aggregate([
+    { $match: { isDeleted: false } },
+    {
+      $group: {
+        _id: '$status',
+        count: { $sum: 1 },
+        totalValue: { $sum: '$totalPrice' }
+      }
+    }
+  ])
+}
+
+export default mongoose.model('Order', orderSchema)

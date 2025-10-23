@@ -1,0 +1,116 @@
+import express from 'express'
+import cors from 'cors'
+import cookieParser from 'cookie-parser'
+import rateLimit from 'express-rate-limit'
+import { createServer } from 'http'
+import { Server } from 'socket.io'
+import { config, getAllowedOrigins } from '~/config/environment'
+import { errorHandler } from '~/middlewares/errorHandler'
+import { uploadMiddleware } from '~/middlewares/uploadMiddleware'
+import SocketHandler from '~/sockets/socketHandler'
+
+// Import routes
+import authRoutes from './authRoutes'
+import userRoutes from './userRoutes'
+import bookRoutes from './bookRoutes'
+import categoryRoutes from './categoryRoutes'
+import orderRoutes from './orderRoutes'
+import favoriteRoutes from './favoriteRoutes'
+import cartRoutes from './cartRoutes'
+import messageRoutes from './messageRoutes'
+
+/**
+ * Express App Configuration
+ * Thiết lập middleware, routes và error handling
+ */
+
+const app = express()
+
+// Create HTTP server
+const server = createServer(app)
+
+// Initialize Socket.io
+const io = new Server(server, {
+  cors: {
+    origin: getAllowedOrigins(),
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+})
+
+// Initialize Socket Handler
+const socketHandler = new SocketHandler(io)
+
+// CORS configuration
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, etc.)
+    if (!origin) return callback(null, true)
+    
+    const allowedOrigins = getAllowedOrigins()
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
+}
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: config.rateLimit.windowMs,
+  max: config.rateLimit.max,
+  message: {
+    success: false,
+    message: 'Too many requests from this IP, please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+})
+
+// Middleware
+app.use(cors(corsOptions))
+app.use(express.json({ limit: '10mb' }))
+app.use(express.urlencoded({ extended: true, limit: '10mb' }))
+app.use(cookieParser())
+app.use(limiter)
+
+// Static files
+app.use('/uploads', express.static('uploads'))
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Server is running',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    connectedUsers: socketHandler.getConnectedUsersCount()
+  })
+})
+
+// API Routes
+app.use('/api/auth', authRoutes)
+app.use('/api/users', userRoutes)
+app.use('/api/books', bookRoutes)
+app.use('/api/categories', categoryRoutes)
+app.use('/api/orders', orderRoutes)
+app.use('/api/favorites', favoriteRoutes)
+app.use('/api/cart', cartRoutes)
+app.use('/api/messages', messageRoutes)
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.originalUrl} not found`
+  })
+})
+
+// Error handling middleware (must be last)
+app.use(errorHandler)
+
+export { app, server, socketHandler }
