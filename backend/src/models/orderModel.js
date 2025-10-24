@@ -12,6 +12,19 @@ const orderSchema = new mongoose.Schema({
     required: [true, 'Total price is required'],
     min: [0, 'Total price cannot be negative']
   },
+  originalAmount: {
+    type: Number,
+    min: [0, 'Original amount cannot be negative']
+  },
+  discountAmount: {
+    type: Number,
+    default: 0,
+    min: [0, 'Discount amount cannot be negative']
+  },
+  voucherId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Voucher'
+  },
   paymentMethod: {
     type: String,
     enum: ['cod', 'bank_transfer', 'credit_card', 'paypal'],

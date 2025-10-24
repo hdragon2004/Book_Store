@@ -18,6 +18,10 @@ import orderRoutes from './orderRoutes'
 import favoriteRoutes from './favoriteRoutes'
 import cartRoutes from './cartRoutes'
 import messageRoutes from './messageRoutes'
+import paymentRoutes from './paymentRoutes'
+import voucherRoutes from './voucherRoutes'
+import reportRoutes from './reportRoutes'
+import ticketRoutes from './ticketRoutes'
 
 /**
  * Express App Configuration
@@ -101,6 +105,10 @@ app.use('/api/orders', orderRoutes)
 app.use('/api/favorites', favoriteRoutes)
 app.use('/api/cart', cartRoutes)
 app.use('/api/messages', messageRoutes)
+app.use('/api/payments', paymentRoutes)
+app.use('/api/vouchers', voucherRoutes)
+app.use('/api/reports', reportRoutes)
+app.use('/api/tickets', ticketRoutes)
 
 // 404 handler
 app.use('*', (req, res) => {

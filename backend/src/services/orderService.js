@@ -4,6 +4,7 @@ import Book from '~/models/bookModel'
 import User from '~/models/userModel'
 import { AppError } from '~/utils/AppError'
 import { addOrderConfirmationJob, addOrderStatusUpdateJob } from '~/queue/emailQueue'
+import voucherService from './voucherService'
 
 /**
  * Order Service - Xử lý business logic liên quan đến đơn hàng
@@ -15,7 +16,7 @@ class OrderService {
    * Tạo đơn hàng mới
    */
   async createOrder(orderData) {
-    const { userId, items, shippingAddress, paymentMethod, note } = orderData
+    const { userId, items, shippingAddress, paymentMethod, note, voucherCode } = orderData
 
     // Kiểm tra items không rỗng
     if (!items || items.length === 0) {
@@ -25,9 +26,11 @@ class OrderService {
     // Tính tổng tiền và kiểm tra tồn kho
     let totalAmount = 0
     const orderItems = []
+    const categoryIds = []
+    const bookIds = []
 
     for (const item of items) {
-      const book = await Book.findById(item.bookId)
+      const book = await Book.findById(item.bookId).populate('categoryId')
       if (!book) {
         throw new AppError(`Book with ID ${item.bookId} not found`, 404)
       }
@@ -45,18 +48,69 @@ class OrderService {
         price: book.price,
         total: itemTotal
       })
+
+      // Collect category and book IDs for voucher validation
+      if (book.categoryId) {
+        categoryIds.push(book.categoryId._id)
+      }
+      bookIds.push(item.bookId)
     }
+
+    // Xử lý voucher nếu có
+    let discountAmount = 0
+    let voucherId = null
+    let voucherUsageId = null
+
+    if (voucherCode) {
+      try {
+        const voucherResult = await voucherService.applyVoucher(voucherCode, {
+          orderAmount: totalAmount,
+          userId,
+          categoryIds,
+          bookIds
+        })
+
+        discountAmount = voucherResult.discountAmount
+        voucherId = voucherResult.voucher._id
+      } catch (error) {
+        throw new AppError(`Voucher error: ${error.message}`, 400)
+      }
+    }
+
+    // Tính final amount sau khi áp dụng voucher
+    const finalAmount = totalAmount - discountAmount
 
     // Tạo đơn hàng
     const order = await Order.create({
       userId,
       items: orderItems,
-      totalAmount,
+      totalAmount: finalAmount,
+      originalAmount: totalAmount,
+      discountAmount,
+      voucherId,
       shippingAddress,
       paymentMethod,
       note,
       status: 'pending'
     })
+
+    // Sử dụng voucher nếu có
+    if (voucherId) {
+      try {
+        const voucherUsage = await voucherService.useVoucher(
+          voucherId,
+          userId,
+          order._id,
+          totalAmount,
+          discountAmount
+        )
+        voucherUsageId = voucherUsage._id
+      } catch (error) {
+        // Nếu sử dụng voucher thất bại, xóa đơn hàng
+        await Order.findByIdAndDelete(order._id)
+        throw new AppError(`Failed to use voucher: ${error.message}`, 500)
+      }
+    }
 
     // Tạo OrderItem records
     for (const item of orderItems) {

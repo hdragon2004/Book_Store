@@ -50,7 +50,31 @@ export const config = {
       'image/gif',
       'image/webp'
     ]
-  }
+  },
+
+  // Payment configuration
+  payment: {
+    // VNPay configuration
+    vnpay: {
+      tmnCode: process.env.VNPAY_TMN_CODE || 'YOUR_TMN_CODE',
+      secretKey: process.env.VNPAY_SECRET_KEY || 'YOUR_SECRET_KEY',
+      url: process.env.VNPAY_URL || 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
+      returnUrl: process.env.VNPAY_RETURN_URL || 'http://localhost:5000/api/v1/payments/vnpay/callback',
+      ipnUrl: process.env.VNPAY_IPN_URL || 'http://localhost:5000/api/v1/payments/vnpay/ipn'
+    },
+    // Momo configuration
+    momo: {
+      partnerCode: process.env.MOMO_PARTNER_CODE || 'YOUR_PARTNER_CODE',
+      accessKey: process.env.MOMO_ACCESS_KEY || 'YOUR_ACCESS_KEY',
+      secretKey: process.env.MOMO_SECRET_KEY || 'YOUR_SECRET_KEY',
+      endpoint: process.env.MOMO_ENDPOINT || 'https://test-payment.momo.vn/v2/gateway/api/create',
+      returnUrl: process.env.MOMO_RETURN_URL || 'http://localhost:5000/api/v1/payments/momo/callback',
+      ipnUrl: process.env.MOMO_IPN_URL || 'http://localhost:5000/api/v1/payments/momo/ipn'
+    }
+  },
+
+  // Frontend URL for redirects
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000'
 }
 
 // Helper function to get allowed origins based on environment
