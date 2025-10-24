@@ -280,8 +280,8 @@ const seedDatabase = async () => {
     const favorites = []
     for (let i = 0; i < Math.min(3, books.length); i++) {
       const favorite = await Favorite.create({
-        userID: regularUser._id,
-        bookID: books[i]._id,
+        userId: regularUser._id,
+        bookId: books[i]._id,
         isFavourite: true
       })
       favorites.push(favorite)

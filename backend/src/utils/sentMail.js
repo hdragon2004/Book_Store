@@ -9,15 +9,11 @@ const createTransporter = () => {
   // Check if SMTP credentials are configured
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.warn('⚠️ SMTP credentials not configured. Email sending will be disabled.')
-    console.log('SMTP_USER:', process.env.SMTP_USER ? 'Set' : 'Not set')
-    console.log('SMTP_PASS:', process.env.SMTP_PASS ? 'Set' : 'Not set')
+    // SMTP credentials not configured
     return null
   }
 
-  console.log('✅ SMTP credentials configured')
-  console.log('SMTP_HOST:', process.env.SMTP_HOST || 'smtp.gmail.com')
-  console.log('SMTP_PORT:', process.env.SMTP_PORT || 587)
-  console.log('SMTP_USER:', process.env.SMTP_USER)
+  // SMTP credentials configured
 
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
@@ -35,9 +31,14 @@ const createTransporter = () => {
 
 // Load email template
 const loadTemplate = (templateName) => {
-  const templatePath = path.join(process.cwd(), 'src', 'templates', `${templateName}.html`)
-  const templateSource = fs.readFileSync(templatePath, 'utf-8')
-  return handlebars.compile(templateSource)
+  try {
+    const templatePath = path.join(process.cwd(), 'src', 'templates', `${templateName}.html`)
+    const templateSource = fs.readFileSync(templatePath, 'utf-8')
+    return handlebars.compile(templateSource)
+  } catch (error) {
+    // Template not found, using simple text email
+    return null
+  }
 }
 
 // Send email functions
@@ -104,10 +105,7 @@ export const emailService = {
   // Send OTP verification code
   sendOTPVerification: async (email, userName, otpCode) => {
     try {
-      console.log('📧 Attempting to send OTP email...')
-      console.log('Email:', email)
-      console.log('UserName:', userName)
-      console.log('OTP Code:', otpCode)
+      // Sending OTP email
       
       const transporter = createTransporter()
       
@@ -116,16 +114,30 @@ export const emailService = {
         throw new Error('SMTP credentials not configured')
       }
 
-      console.log('📧 Loading OTP template...')
       const template = loadTemplate('otpVerification')
       
-      const html = template({
-        userName: userName,
-        otpCode: otpCode,
-        expiryMinutes: 5 // OTP expires in 5 minutes
-      })
+      let html
+      if (template) {
+        html = template({
+          userName: userName,
+          otpCode: otpCode,
+          expiryMinutes: 5 // OTP expires in 5 minutes
+        })
+      } else {
+        // Simple HTML email if template not found
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2563eb;">Xác thực OTP - BookStore</h2>
+            <p>Xin chào <strong>${userName}</strong>,</p>
+            <p>Mã OTP của bạn là: <strong style="font-size: 24px; color: #dc2626;">${otpCode}</strong></p>
+            <p>Mã này có hiệu lực trong 5 phút.</p>
+            <p>Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email này.</p>
+            <hr>
+            <p style="color: #6b7280; font-size: 12px;">BookStore Team</p>
+          </div>
+        `
+      }
 
-      console.log('📧 Sending email...')
       const result = await transporter.sendMail({
         from: `"BookStore Team" <${process.env.SMTP_USER}>`,
         to: email,
@@ -133,12 +145,10 @@ export const emailService = {
         html
       })
 
-      console.log('✅ OTP email sent successfully:', result.messageId)
-      console.log('Response:', result.response)
+      // OTP email sent successfully
       return { success: true, messageId: result.messageId }
     } catch (error) {
       console.error('❌ OTP email sending failed:', error.message)
-      console.error('Error details:', error)
       throw new Error(`Failed to send OTP email: ${error.message}`)
     }
   },
@@ -175,7 +185,7 @@ export const emailService = {
         html
       })
 
-      console.log('✅ Order confirmation email sent:', result.messageId)
+      // Order confirmation email sent
       return { success: true, messageId: result.messageId }
     } catch (error) {
       console.error('❌ Order confirmation email failed:', error.message)
@@ -224,7 +234,7 @@ export const emailService = {
         html
       })
 
-      console.log('✅ Order status update email sent:', result.messageId)
+      // Order status update email sent
       return { success: true, messageId: result.messageId }
     } catch (error) {
       console.error('❌ Order status update email failed:', error.message)
@@ -238,7 +248,7 @@ export const emailService = {
   async sendDigitalBooks(to, userName, orderId, books) {
     try {
       if (!transporter) {
-        console.log('📧 Email service not configured, skipping digital book delivery')
+        // Email service not configured, skipping digital book delivery
         return
       }
 
@@ -285,7 +295,7 @@ export const emailService = {
       }
 
       await transporter.sendMail(mailOptions)
-      console.log(`📧 Digital books sent to ${to}`)
+      // Digital books sent
       
     } catch (error) {
       console.error('❌ Digital book email sending failed:', error.message)

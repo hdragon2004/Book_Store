@@ -35,10 +35,15 @@ class CategoryController {
   getCategories = asyncHandler(async (req, res) => {
     const { page, limit, sortBy, sortOrder } = req.query
 
+    // Nếu không có page/limit thì lấy hết (không phân trang)
+    const pagination = page && limit ? {
+      page: parseInt(page),
+      limit: parseInt(limit)
+    } : null
+
     // Gọi service để lấy danh sách danh mục
     const result = await categoryService.getCategories({
-      page: parseInt(page) || 1,
-      limit: parseInt(limit) || 10,
+      pagination,
       sortBy,
       sortOrder
     })

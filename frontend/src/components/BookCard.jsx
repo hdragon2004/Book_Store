@@ -1,41 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useBookStatus } from '../contexts/BookStatusContext';
 import { favoriteAPI, cartAPI } from '../services/apiService';
 
 const BookCard = ({ book }) => {
   const { user } = useAuth();
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [isInCart, setIsInCart] = useState(false);
-  const [cartQuantity, setCartQuantity] = useState(0);
+  const { isFavorite, isInCart, getCartQuantity, updateFavorite, updateCartItem } = useBookStatus();
   const [loading, setLoading] = useState(false);
 
-  // Check if book is favorite and in cart
-  useEffect(() => {
-    if (user && book._id) {
-      checkFavoriteStatus();
-      checkCartStatus();
-    }
-  }, [user, book._id]);
-
-  const checkFavoriteStatus = async () => {
-    try {
-      const response = await favoriteAPI.checkFavorite(book._id);
-      setIsFavorite(response.data.data.isFavorite);
-    } catch (error) {
-      console.error('Error checking favorite status:', error);
-    }
-  };
-
-  const checkCartStatus = async () => {
-    try {
-      const response = await cartAPI.checkCartItem(book._id);
-      setIsInCart(response.data.data.inCart);
-      setCartQuantity(response.data.data.quantity);
-    } catch (error) {
-      console.error('Error checking cart status:', error);
-    }
-  };
+  // Sử dụng cached data thay vì gọi API
+  const bookIsFavorite = isFavorite(book._id);
+  const bookIsInCart = isInCart(book._id);
+  const bookCartQuantity = getCartQuantity(book._id);
 
   const handleToggleFavorite = async () => {
     if (!user) {
@@ -45,12 +22,12 @@ const BookCard = ({ book }) => {
 
     setLoading(true);
     try {
-      if (isFavorite) {
+      if (bookIsFavorite) {
         await favoriteAPI.removeFromFavorites(book._id);
-        setIsFavorite(false);
+        updateFavorite(book._id, false);
       } else {
         await favoriteAPI.addToFavorites(book._id);
-        setIsFavorite(true);
+        updateFavorite(book._id, true);
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
@@ -73,15 +50,14 @@ const BookCard = ({ book }) => {
 
     setLoading(true);
     try {
-      if (isInCart) {
+      if (bookIsInCart) {
         // Update quantity
-        await cartAPI.updateCartItem(book._id, cartQuantity + 1);
-        setCartQuantity(cartQuantity + 1);
+        await cartAPI.updateCartItem(book._id, bookCartQuantity + 1);
+        updateCartItem(book._id, bookCartQuantity + 1, true);
       } else {
         // Add to cart
         await cartAPI.addToCart(book._id, 1);
-        setIsInCart(true);
-        setCartQuantity(1);
+        updateCartItem(book._id, 1, true);
       }
       alert('Đã thêm vào giỏ hàng');
     } catch (error) {
@@ -177,28 +153,28 @@ const BookCard = ({ book }) => {
             className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
               book.stock <= 0 
                 ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
-                : isInCart
+                : bookIsInCart
                 ? 'bg-green-600 text-white hover:bg-green-700'
                 : 'bg-blue-600 text-white hover:bg-blue-700'
             }`}
           >
             {loading ? 'Đang xử lý...' : 
              book.stock <= 0 ? 'Hết hàng' :
-             isInCart ? `Trong giỏ (${cartQuantity})` : 
+             bookIsInCart ? `Trong giỏ (${bookCartQuantity})` : 
              'Thêm vào giỏ hàng'}
           </button>
           <button 
             onClick={handleToggleFavorite}
             disabled={loading}
             className={`p-2 transition-colors ${
-              isFavorite 
+              bookIsFavorite 
                 ? 'text-red-500 hover:text-red-600' 
                 : 'text-gray-400 hover:text-red-500'
             }`}
           >
             <svg 
               className="w-5 h-5" 
-              fill={isFavorite ? "currentColor" : "none"} 
+              fill={bookIsFavorite ? "currentColor" : "none"} 
               stroke="currentColor" 
               viewBox="0 0 24 24"
             >

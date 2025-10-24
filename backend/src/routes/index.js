@@ -7,6 +7,8 @@ import { Server } from 'socket.io'
 import { config, getAllowedOrigins } from '~/config/environment'
 import { errorHandler } from '~/middlewares/errorHandler'
 import { uploadMiddleware } from '~/middlewares/uploadMiddleware'
+import { requestLogger } from '~/middlewares/requestLogger'
+import { errorLogger, requestTimer } from '~/middlewares/errorLogger'
 import SocketHandler from '~/sockets/socketHandler'
 
 // Import routes
@@ -81,6 +83,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 app.use(cookieParser())
 app.use(limiter)
 
+// Logging middleware (phải đặt trước routes)
+app.use(requestTimer) // Đo thời gian request
+app.use(requestLogger) // Log request với Morgan
+
 // Static files
 app.use('/uploads', express.static('uploads'))
 
@@ -119,6 +125,7 @@ app.use('*', (req, res) => {
 })
 
 // Error handling middleware (must be last)
+app.use(errorLogger) // Log chi tiết lỗi với màu sắc
 app.use(errorHandler)
 
 export { app, server, socketHandler }

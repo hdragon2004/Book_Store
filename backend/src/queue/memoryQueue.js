@@ -31,7 +31,6 @@ class MemoryQueue {
     }
 
     this.jobs.push(job)
-    console.log(`📝 Job added to queue: ${jobName}`)
     
     // Tự động xử lý nếu chưa có interval
     if (!this.interval) {
@@ -99,26 +98,26 @@ class MemoryQueue {
    */
   async executeJob(job) {
     try {
-      console.log(`⚡ Processing job: ${job.name}`)
+      // Processing job
       
       // Import và gọi handler tương ứng
       const handler = await this.getJobHandler(job.name)
       if (handler) {
         await handler(job.data)
-        console.log(`✅ Job completed: ${job.name}`)
+        // Job completed
       } else {
         console.log(`⚠️ No handler found for job: ${job.name}`)
       }
     } catch (error) {
-      console.error(`❌ Job failed: ${job.name}`, error)
+      console.error(`❌ Job failed: ${job.name}`, error.message)
       
       // Retry logic
       job.attempts++
       if (job.attempts < job.options.attempts) {
-        console.log(`🔄 Retrying job: ${job.name} (attempt ${job.attempts})`)
+        // Retrying job
         this.jobs.push(job) // Thêm lại vào queue
       } else {
-        console.log(`💀 Job permanently failed: ${job.name}`)
+        // Job permanently failed
       }
     }
   }

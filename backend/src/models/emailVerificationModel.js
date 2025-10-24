@@ -59,7 +59,7 @@ emailVerificationSchema.statics.generateCode = function() {
 
 // Static method to verify code
 emailVerificationSchema.statics.verifyCode = async function(email, code) {
-  console.log('🔍 Verifying code:', { email: email.toLowerCase(), code })
+  // Verifying code
   
   const verification = await this.findOne({
     email: email.toLowerCase(),
@@ -68,15 +68,9 @@ emailVerificationSchema.statics.verifyCode = async function(email, code) {
     expiresAt: { $gt: new Date() }
   })
 
-  console.log('🔍 Found verification:', verification ? 'YES' : 'NO')
+  // Found verification
   if (verification) {
-    console.log('🔍 Verification details:', {
-      email: verification.email,
-      code: verification.code,
-      isUsed: verification.isUsed,
-      expiresAt: verification.expiresAt,
-      attempts: verification.attempts
-    })
+    // Verification details
   }
 
   if (!verification) {
@@ -86,11 +80,7 @@ emailVerificationSchema.statics.verifyCode = async function(email, code) {
       code
     })
     if (expiredVerification) {
-      console.log('🔍 Found expired verification:', {
-        isUsed: expiredVerification.isUsed,
-        expiresAt: expiredVerification.expiresAt,
-        now: new Date()
-      })
+      // Found expired verification
     }
     return { success: false, message: 'Invalid or expired verification code' }
   }

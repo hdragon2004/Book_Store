@@ -40,33 +40,53 @@ const HomePage = () => {
       try {
         setLoading(true);
         
-        // Fetch all books first
-        const allBooksResponse = await bookAPI.getBooks({ limit: 20 });
-        setAllBooks(allBooksResponse.data.data?.books || []);
-        
-        // Fetch categories
-        const categoriesResponse = await categoryAPI.getCategories();
+        // Tạm thời tắt cache để test
+        // const cachedData = localStorage.getItem('homepage_data');
+        // const cacheTime = localStorage.getItem('homepage_cache_time');
+        // const now = Date.now();
+        // const CACHE_DURATION = 5 * 60 * 1000; // 5 phút
+
+        // if (cachedData && cacheTime && (now - parseInt(cacheTime)) < CACHE_DURATION) {
+        //   // Sử dụng cache
+        //   const { allBooks, categories, booksByCategory } = JSON.parse(cachedData);
+        //   setAllBooks(allBooks);
+        //   setCategories(categories);
+        //   setBooksByCategory(booksByCategory);
+        //   setLoading(false);
+        //   return;
+        // }
+
+        // Gọi API 1 lần để lấy tất cả books và categories
+        const [allBooksResponse, categoriesResponse] = await Promise.all([
+          bookAPI.getBooks(), // Bỏ limit, lấy hết
+          categoryAPI.getCategories()
+        ]);
+
+        const allBooks = allBooksResponse.data.data?.books || [];
         const categoriesData = categoriesResponse.data.data?.categories || [];
+        
+        setAllBooks(allBooks);
         setCategories(categoriesData);
 
-        // Fetch books for each category
+        // Phân loại books theo category từ data đã có
         const booksByCategoryData = {};
-        for (const category of categoriesData) {
-          try {
-            const booksResponse = await bookAPI.getBooks({ 
-              category: category._id, 
-              limit: 8,
-              sortBy: 'createdAt',
-              sortOrder: 'desc'
-            });
-            booksByCategoryData[category._id] = booksResponse.data.data?.books || [];
-          } catch (err) {
-            console.error(`Error fetching books for category ${category.name}:`, err);
-            booksByCategoryData[category._id] = [];
-          }
-        }
+        categoriesData.forEach(category => {
+          booksByCategoryData[category._id] = allBooks
+            .filter(book => book.categoryId?._id === category._id)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+            .slice(0, 8); // Chỉ lấy 8 cuốn mới nhất cho display
+        });
         
         setBooksByCategory(booksByCategoryData);
+
+        // Cache data
+        const dataToCache = {
+          allBooks,
+          categories: categoriesData,
+          booksByCategory: booksByCategoryData
+        };
+        localStorage.setItem('homepage_data', JSON.stringify(dataToCache));
+        localStorage.setItem('homepage_cache_time', Date.now().toString());
       } catch (err) {
         console.error('Error fetching data:', err);
         setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');

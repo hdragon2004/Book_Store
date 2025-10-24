@@ -5,8 +5,7 @@ export const errorHandler = (err, req, res, next) => {
   let error = { ...err }
   error.message = err.message
 
-  // Log error
-  console.error(err)
+  // Log error sẽ được xử lý bởi errorLogger middleware
 
   // Mongoose bad ObjectId
   if (err.name === 'CastError') {

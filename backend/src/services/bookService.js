@@ -35,8 +35,7 @@ class BookService {
    */
   async getBooks(filters) {
     const {
-      page,
-      limit,
+      pagination,
       search,
       category,
       author,
@@ -98,28 +97,36 @@ class BookService {
     const sort = {}
     sort[sortBy] = sortOrder === 'desc' ? -1 : 1
 
-    // Tính toán pagination
-    const skip = (page - 1) * limit
-
     // Lấy danh sách sách
-    const books = await Book.find(query)
+    let booksQuery = Book.find(query)
       .populate('categoryId', 'name')
       .sort(sort)
-      .skip(skip)
-      .limit(limit)
 
-    // Đếm tổng số sách
-    const total = await Book.countDocuments(query)
+    // Nếu có pagination thì áp dụng skip/limit
+    if (pagination) {
+      const { page, limit } = pagination
+      const skip = (page - 1) * limit
+      booksQuery = booksQuery.skip(skip).limit(limit)
+    }
 
-    return {
-      books,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
+    const books = await booksQuery
+
+    // Nếu có pagination thì trả về thông tin pagination
+    if (pagination) {
+      const total = await Book.countDocuments(query)
+      return {
+        books,
+        pagination: {
+          page: pagination.page,
+          limit: pagination.limit,
+          total,
+          pages: Math.ceil(total / pagination.limit)
+        }
       }
     }
+
+    // Nếu không có pagination thì chỉ trả về books
+    return { books }
   }
 
   /**

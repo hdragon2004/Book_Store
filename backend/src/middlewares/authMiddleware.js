@@ -29,7 +29,7 @@ export const authenticate = async (req, res, next) => {
     const decoded = jwt.verify(token, config.jwtSecret)
     
     // Get user from token
-    const user = await User.findById(decoded.id).select('-password')
+    const user = await User.findById(decoded.userId).select('-password')
     
     if (!user || user.isDeleted) {
       return res.status(StatusCodes.UNAUTHORIZED).json({
@@ -60,7 +60,7 @@ export const authorize = (...roles) => {
       }
 
       // Get user with role details (if role is populated)
-      const user = await User.findById(req.user.id).populate('roleId')
+      const user = await User.findById(req.user._id).populate('roleId')
       
       if (!user) {
         return res.status(StatusCodes.UNAUTHORIZED).json({

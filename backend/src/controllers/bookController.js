@@ -31,8 +31,8 @@ class BookController {
    */
   getBooks = asyncHandler(async (req, res) => {
     const {
-      page = 1,
-      limit = 10,
+      page,
+      limit,
       search,
       category,
       author,
@@ -42,10 +42,15 @@ class BookController {
       sortOrder = 'desc'
     } = req.query
 
+    // Nếu không có page/limit thì lấy hết (không phân trang)
+    const pagination = page && limit ? {
+      page: parseInt(page),
+      limit: parseInt(limit)
+    } : null
+
     // Gọi service để lấy danh sách sách
     const result = await bookService.getBooks({
-      page: parseInt(page),
-      limit: parseInt(limit),
+      pagination,
       search,
       category,
       author,

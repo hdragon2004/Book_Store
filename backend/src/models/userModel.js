@@ -86,7 +86,7 @@ userSchema.pre('save', async function(next) {
   
   // Check if password is already hashed (starts with $2b$)
   if (this.password.startsWith('$2b$')) {
-    console.log('🔐 Password already hashed, skipping...')
+    // Password already hashed, skipping
     return next()
   }
   

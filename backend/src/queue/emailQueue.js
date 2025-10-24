@@ -212,7 +212,7 @@ export const emailWorker = {
       }
 
     } catch (error) {
-      console.error(`❌ Email job failed: ${type}`, error)
+      console.error(`❌ Email job failed: ${type}`, error.message)
       throw error
     }
   }

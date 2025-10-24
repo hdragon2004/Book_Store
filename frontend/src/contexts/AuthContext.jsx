@@ -23,31 +23,24 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        console.log('🔍 AuthContext: Initializing auth...');
         const storedToken = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
-        console.log('🔍 AuthContext: Stored token:', storedToken ? 'exists' : 'null');
-        console.log('🔍 AuthContext: Stored user:', storedUser ? 'exists' : 'null');
 
         if (storedToken && storedUser) {
           const parsedUser = JSON.parse(storedUser);
-          console.log('🔍 AuthContext: Parsed user:', parsedUser);
           
           // Validate token by calling backend
           try {
-            console.log('🔍 AuthContext: Validating token...');
             const response = await authAPI.getCurrentUser();
-            console.log('🔍 AuthContext: Token validation response:', response);
             if (response.data && response.data.data) {
               const userData = response.data.data;
-              console.log('🔍 AuthContext: Token valid, setting user:', userData);
               setToken(storedToken);
               setUser(userData);
             } else {
               throw new Error('Invalid token response');
             }
           } catch (tokenError) {
-            console.log('🔍 AuthContext: Token validation failed:', tokenError.message);
+            console.warn('Token validation failed:', tokenError.message);
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             setToken(null);
@@ -66,7 +59,7 @@ export const AuthProvider = ({ children }) => {
         setToken(null);
         setUser(null);
       } finally {
-        console.log('🔍 AuthContext: Auth initialization complete');
+        // Auth initialization complete
         setLoading(false);
       }
     };

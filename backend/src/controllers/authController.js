@@ -180,7 +180,7 @@ export const changePassword = asyncHandler(async (req, res) => {
 export const sendVerificationCode = asyncHandler(async (req, res) => {
   const { email, name } = req.body
 
-  console.log('📧 Send verification code request:', { email, name })
+  // Send verification code request
 
   // Check if user already exists
   const existingUser = await User.findOne({ email })
@@ -191,29 +191,23 @@ export const sendVerificationCode = asyncHandler(async (req, res) => {
     }
     // User exists but not verified, delete old codes and send new code
     await EmailVerification.deleteMany({ email })
-    console.log('🗑️ Deleted old verification codes for existing user')
+    // Deleted old verification codes for existing user
   } else {
-    console.log('👤 User does not exist, this is for registration')
     // User doesn't exist, this is for registration
     // Delete any existing verification codes for this email to allow resending
     await EmailVerification.deleteMany({ email })
-    console.log('🗑️ Deleted old verification codes for new user')
   }
 
   // Generate new verification code
   const verificationCode = EmailVerification.generateCode()
-  console.log('🔢 Generated new verification code:', verificationCode)
-  
   // Save verification code to database
   await EmailVerification.create({
     email: email.toLowerCase(),
     code: verificationCode
   })
-  console.log('💾 Saved verification code to database')
 
   // Send verification email
   await addOTPVerificationJob(email, name || 'User', verificationCode)
-  console.log('📧 Added OTP verification job to queue')
 
   res.status(200).json(
     new ApiResponse(200, {
@@ -258,11 +252,7 @@ export const verifyEmailCode = asyncHandler(async (req, res) => {
 export const registerWithVerification = asyncHandler(async (req, res) => {
   const { name, email, password, phone, address, verificationCode } = req.body
 
-  console.log('🔐 Register with verification request:', { 
-    email: email.toLowerCase(), 
-    verificationCode,
-    name 
-  })
+  // Register with verification request
 
   // Check if user already exists
   const existingUser = await User.findOne({ email })
@@ -272,7 +262,7 @@ export const registerWithVerification = asyncHandler(async (req, res) => {
 
   // Verify code first
   const result = await EmailVerification.verifyCode(email.toLowerCase(), verificationCode)
-  console.log('🔍 Verification result:', result)
+  // Verification result
   if (!result.success) {
     throw new AppError(result.message, 400)
   }
@@ -358,7 +348,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
 export const verifyResetOTP = asyncHandler(async (req, res) => {
   const { email, code } = req.body
 
-  console.log('🔍 Verifying reset OTP:', { email, code })
+  // Verifying reset OTP
 
   // Find verification without marking as used
   const verification = await EmailVerification.findOne({
@@ -368,7 +358,7 @@ export const verifyResetOTP = asyncHandler(async (req, res) => {
     expiresAt: { $gt: new Date() }
   })
 
-  console.log('🔍 Found verification:', verification ? 'YES' : 'NO')
+  // Found verification
 
   if (!verification) {
     // Check if code exists but expired
@@ -377,11 +367,7 @@ export const verifyResetOTP = asyncHandler(async (req, res) => {
       code
     })
     if (expiredVerification) {
-      console.log('🔍 Found expired verification:', {
-        isUsed: expiredVerification.isUsed,
-        expiresAt: expiredVerification.expiresAt,
-        now: new Date()
-      })
+      // Found expired verification
     }
     throw new AppError('Invalid or expired verification code', 400)
   }
@@ -405,7 +391,7 @@ export const verifyResetOTP = asyncHandler(async (req, res) => {
 export const resetPassword = asyncHandler(async (req, res) => {
   const { email, code, password } = req.body
 
-  console.log('🔍 Reset password request:', { email, code: code ? '***' : 'empty' })
+  // Reset password request
 
   // Find and verify OTP code
   const verification = await EmailVerification.findOne({
@@ -415,7 +401,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
     expiresAt: { $gt: new Date() }
   })
 
-  console.log('🔍 Found verification for reset:', verification ? 'YES' : 'NO')
+  // Found verification for reset
 
   if (!verification) {
     // Check if code exists but expired
@@ -424,11 +410,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
       code
     })
     if (expiredVerification) {
-      console.log('🔍 Found expired verification for reset:', {
-        isUsed: expiredVerification.isUsed,
-        expiresAt: expiredVerification.expiresAt,
-        now: new Date()
-      })
+      // Found expired verification for reset
     }
     throw new AppError('Invalid or expired verification code', 400)
   }
@@ -450,7 +432,6 @@ export const resetPassword = asyncHandler(async (req, res) => {
   verification.isUsed = true
   await verification.save()
 
-  console.log('✅ Password reset successful, OTP marked as used')
 
   res.status(200).json(
     new ApiResponse(200, {

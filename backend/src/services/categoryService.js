@@ -33,7 +33,7 @@ class CategoryService {
    * Lấy danh sách danh mục
    */
   async getCategories(filters = {}) {
-    const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = filters
+    const { pagination, sortBy = 'createdAt', sortOrder = 'desc' } = filters
 
     // Xây dựng query
     const query = {}
@@ -42,27 +42,34 @@ class CategoryService {
     const sort = {}
     sort[sortBy] = sortOrder === 'desc' ? -1 : 1
 
-    // Tính toán pagination
-    const skip = (page - 1) * limit
-
     // Lấy danh mục
-    const categories = await Category.find(query)
-      .sort(sort)
-      .skip(skip)
-      .limit(limit)
+    let categoriesQuery = Category.find(query).sort(sort)
 
-    // Đếm tổng số danh mục
-    const total = await Category.countDocuments(query)
+    // Nếu có pagination thì áp dụng skip/limit
+    if (pagination) {
+      const { page, limit } = pagination
+      const skip = (page - 1) * limit
+      categoriesQuery = categoriesQuery.skip(skip).limit(limit)
+    }
 
-    return {
-      categories,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
+    const categories = await categoriesQuery
+
+    // Nếu có pagination thì trả về thông tin pagination
+    if (pagination) {
+      const total = await Category.countDocuments(query)
+      return {
+        categories,
+        pagination: {
+          page: pagination.page,
+          limit: pagination.limit,
+          total,
+          pages: Math.ceil(total / pagination.limit)
+        }
       }
     }
+
+    // Nếu không có pagination thì chỉ trả về categories
+    return { categories }
   }
 
   /**
