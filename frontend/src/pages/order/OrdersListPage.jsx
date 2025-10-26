@@ -1,0 +1,261 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { orderAPI } from '../../services/apiService';
+import PageLayout from '../../layouts/PageLayout';
+
+const OrdersListPage = () => {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [filterStatus, setFilterStatus] = useState('all');
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        const response = await orderAPI.getOrders({
+          status: filterStatus !== 'all' ? filterStatus : undefined,
+          sortBy: 'createdAt',
+          sortOrder: 'desc'
+        });
+        console.log('📦 Orders response:', response);
+        setOrders(response?.data?.data?.orders || response?.data?.orders || response?.data || []);
+        setLoading(false);
+      } catch (error) {
+        console.error('❌ Error fetching orders:', error);
+        setError('Không thể tải danh sách đơn hàng');
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, [filterStatus]);
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(amount);
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'confirmed': return 'bg-blue-100 text-blue-800';
+      case 'shipped': return 'bg-purple-100 text-purple-800';
+      case 'delivered': return 'bg-green-100 text-green-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'pending': return 'Chờ xử lý';
+      case 'confirmed': return 'Đã xác nhận';
+      case 'shipped': return 'Đã giao';
+      case 'delivered': return 'Đã nhận';
+      case 'cancelled': return 'Đã hủy';
+      default: return status;
+    }
+  };
+
+  const getPaymentMethodText = (method) => {
+    switch (method) {
+      case 'cod': return 'Thanh toán khi nhận hàng';
+      case 'credit_card': return 'Thẻ tín dụng';
+      case 'bank_transfer': return 'Chuyển khoản ngân hàng';
+      case 'paypal': return 'PayPal';
+      default: return method;
+    }
+  };
+
+  if (loading) {
+    return (
+      <PageLayout>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Đang tải danh sách đơn hàng...</p>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <PageLayout>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-red-500 mb-4">
+              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Lỗi tải dữ liệu</h2>
+            <p className="text-gray-600 mb-8">{error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              Thử lại
+            </button>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  return (
+    <PageLayout>
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Đơn hàng của tôi</h1>
+          <p className="text-gray-600">
+            {orders.length > 0 
+              ? `Bạn có ${orders.length} đơn hàng`
+              : 'Bạn chưa có đơn hàng nào'
+            }
+          </p>
+        </div>
+
+        {/* Filter */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <div className="flex items-center space-x-4">
+            <label className="text-sm font-medium text-gray-700">Lọc theo trạng thái:</label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">Tất cả</option>
+              <option value="pending">Chờ xử lý</option>
+              <option value="confirmed">Đã xác nhận</option>
+              <option value="shipped">Đã giao</option>
+              <option value="delivered">Đã nhận</option>
+              <option value="cancelled">Đã hủy</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Orders List */}
+        {orders.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="text-gray-400 mb-6">
+              <svg className="w-24 h-24 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Chưa có đơn hàng</h2>
+            <p className="text-gray-600 mb-8">Hãy mua sắm và tạo đơn hàng đầu tiên của bạn!</p>
+            <Link 
+              to="/books" 
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              Khám phá sách
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {orders.map((order) => (
+              <div key={order._id || order.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
+                {/* Order Header */}
+                <div className="p-6 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Đơn hàng #{order.orderCode || order._id}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Đặt ngày: {order.createdAt ? new Date(order.createdAt).toLocaleDateString('vi-VN') : 'N/A'}
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(order.status)}`}>
+                        {getStatusText(order.status)}
+                      </span>
+                      <Link 
+                        to={`/orders/${order._id || order.id}`}
+                        className="text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        Xem chi tiết
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Order Items Preview */}
+                <div className="p-6">
+                  {order.orderItems && order.orderItems.length > 0 ? (
+                    <div className="space-y-3">
+                      {order.orderItems.slice(0, 3).map((item, index) => (
+                        <div key={index} className="flex items-center space-x-4">
+                          <div className="flex-shrink-0">
+                            {item.bookId?.imageUrl ? (
+                              <img 
+                                src={item.bookId.imageUrl.startsWith('http') ? item.bookId.imageUrl : `http://localhost:5000${item.bookId.imageUrl}`}
+                                alt={item.bookId?.title || 'Book'}
+                                className="w-12 h-16 object-cover rounded"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  if (e.target.nextSibling) {
+                                    e.target.nextSibling.style.display = 'block';
+                                  }
+                                }}
+                              />
+                            ) : null}
+                            <div className="w-12 h-16 bg-gray-200 rounded flex items-center justify-center" style={{display: item.bookId?.imageUrl ? 'none' : 'flex'}}>
+                              <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                              </svg>
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-medium text-gray-900 truncate">
+                              {item.bookId?.title || 'Sách không xác định'}
+                            </h4>
+                            <p className="text-xs text-gray-600">Số lượng: {item.quantity}</p>
+                          </div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {formatCurrency(item.priceAtPurchase * item.quantity)}
+                          </div>
+                        </div>
+                      ))}
+                      {order.orderItems.length > 3 && (
+                        <p className="text-sm text-gray-500 text-center">
+                          và {order.orderItems.length - 3} sản phẩm khác...
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-center">Không có sản phẩm nào</p>
+                  )}
+                </div>
+
+                {/* Order Summary */}
+                <div className="px-6 py-4 bg-gray-50 rounded-b-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-gray-600">
+                      <span>Phương thức thanh toán: </span>
+                      <span className="font-medium">{getPaymentMethodText(order.paymentMethod)}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm text-gray-600">Tổng cộng: </span>
+                      <span className="text-lg font-semibold text-blue-600">
+                        {formatCurrency(order.totalPrice - (order.discountAmount || 0))}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </PageLayout>
+  );
+};
+
+export default OrdersListPage;

@@ -1,6 +1,6 @@
 import express from 'express'
 import { body } from 'express-validator'
-import { authenticate } from '~/middlewares/authMiddleware'
+import { authenticate, authorize } from '~/middlewares/authMiddleware'
 import { validationMiddleware } from '~/middlewares/validationMiddleware'
 import paymentController from '~/controllers/paymentController'
 
@@ -42,6 +42,14 @@ router.post(
 router.get(
   '/methods',
   paymentController.getPaymentMethods
+)
+
+// Lấy danh sách payments (Admin only)
+router.get(
+  '/',
+  authenticate,
+  authorize('admin'),
+  paymentController.getPayments
 )
 
 /**

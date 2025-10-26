@@ -85,6 +85,11 @@ const bookSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  status: {
+    type: String,
+    enum: ['available', 'out_of_stock', 'discontinued', 'coming_soon'],
+    default: 'available'
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -110,6 +115,7 @@ bookSchema.index({ title: 'text', author: 'text', description: 'text' })
 bookSchema.index({ categoryId: 1 })
 bookSchema.index({ isDeleted: 1 })
 bookSchema.index({ isActive: 1 })
+bookSchema.index({ status: 1 })
 bookSchema.index({ createdAt: -1 })
 
 // Method to check if book is digital
@@ -120,6 +126,16 @@ bookSchema.methods.isDigital = function() {
 // Method to check if book is physical
 bookSchema.methods.isPhysical = function() {
   return ['hardcover', 'paperback'].includes(this.format)
+}
+
+// Method to check if book is available
+bookSchema.methods.isAvailable = function() {
+  return this.status === 'available' && this.stock > 0
+}
+
+// Method to check if book is out of stock
+bookSchema.methods.isOutOfStock = function() {
+  return this.status === 'out_of_stock' || this.stock === 0
 }
 
 // Soft delete method
@@ -156,6 +172,24 @@ bookSchema.statics.searchBooks = function(query) {
     isDeleted: false,
     isActive: true
   })
+}
+
+// Static method to find books by status
+bookSchema.statics.findByStatus = function(status) {
+  return this.find({ 
+    status, 
+    isDeleted: false, 
+    isActive: true 
+  })
+}
+
+// Static method to update book status
+bookSchema.statics.updateStatus = function(bookId, status) {
+  return this.findByIdAndUpdate(
+    bookId, 
+    { status, updatedAt: new Date() }, 
+    { new: true }
+  )
 }
 
 export default mongoose.model('Book', bookSchema)

@@ -16,6 +16,7 @@ class BookController {
    */
   createBook = asyncHandler(async (req, res) => {
     const bookData = req.body
+    console.log('📥 Received book data:', bookData)
 
     // Gọi service để tạo sách
     const book = await bookService.createBook(bookData)

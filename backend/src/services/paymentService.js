@@ -272,6 +272,42 @@ class PaymentService {
     }
     return messages[responseCode] || 'Lỗi không xác định'
   }
+
+  /**
+   * Lấy danh sách payments (Admin only)
+   */
+  async getPayments(params) {
+    // Mock data for now - replace with actual database query
+    const mockPayments = [
+      {
+        id: 1,
+        orderId: 'ORD-001',
+        amount: 850000,
+        method: 'vnpay',
+        status: 'completed',
+        transactionId: 'TXN-001',
+        createdAt: '2024-01-15T10:30:00Z',
+        updatedAt: '2024-01-15T10:35:00Z'
+      },
+      {
+        id: 2,
+        orderId: 'ORD-002',
+        amount: 150000,
+        method: 'momo',
+        status: 'pending',
+        transactionId: 'TXN-002',
+        createdAt: '2024-01-16T14:20:00Z',
+        updatedAt: '2024-01-16T14:20:00Z'
+      }
+    ]
+
+    return {
+      payments: mockPayments,
+      totalPayments: mockPayments.length,
+      totalPages: 1,
+      currentPage: params.page || 1
+    }
+  }
 }
 
 export default new PaymentService()

@@ -9,6 +9,17 @@ const BookCard = ({ book }) => {
   const { isFavorite, isInCart, getCartQuantity, updateFavorite, updateCartItem } = useBookStatus();
   const [loading, setLoading] = useState(false);
 
+  // Safety check for book object
+  if (!book || !book._id) {
+    return (
+      <div className="bg-white rounded-lg overflow-hidden p-4">
+        <div className="text-center text-gray-500">
+          <p>Không thể tải thông tin sách</p>
+        </div>
+      </div>
+    );
+  }
+
   // Sử dụng cached data thay vì gọi API
   const bookIsFavorite = isFavorite(book._id);
   const bookIsInCart = isInCart(book._id);
@@ -92,9 +103,15 @@ const BookCard = ({ book }) => {
         <div className="h-48 bg-gray-200 flex items-center justify-center">
           {book.imageUrl ? (
             <img 
-              src={book.imageUrl} 
+              src={book.imageUrl.startsWith('http') ? book.imageUrl : `http://localhost:5000${book.imageUrl}`} 
               alt={book.title}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                if (e.target.nextSibling) {
+                  e.target.nextSibling.style.display = 'block';
+                }
+              }}
             />
           ) : (
             <div className="text-gray-500 text-center">

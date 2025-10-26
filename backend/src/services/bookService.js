@@ -99,7 +99,7 @@ class BookService {
 
     // Lấy danh sách sách
     let booksQuery = Book.find(query)
-      .populate('categoryId', 'name')
+      .populate('categoryId')
       .sort(sort)
 
     // Nếu có pagination thì áp dụng skip/limit
@@ -134,7 +134,7 @@ class BookService {
    */
   async getBookById(bookId) {
     const book = await Book.findById(bookId)
-      .populate('categoryId', 'name')
+      .populate('categoryId')
 
     if (!book) {
       throw new AppError('Book not found', 404)

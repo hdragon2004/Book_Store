@@ -109,12 +109,16 @@ export const login = asyncHandler(async (req, res) => {
     console.log('✅ Assigned default role to user')
   }
 
+  // Tạo object user với tất cả thông tin
+  const userData = user.toObject()
+  delete userData.password
+  delete userData.resetPasswordToken
+  delete userData.resetPasswordExpire
+  delete userData.__v
+  
   const responseData = {
     user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      role: userRole
+      ...userData,
     },
     token
   }
@@ -133,12 +137,18 @@ export const login = asyncHandler(async (req, res) => {
 export const getMe = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id).populate('roleId', 'name')
   
+  // Tạo object user với tất cả thông tin
+  const userData = user.toObject()
+  delete userData.password
+  delete userData.resetPasswordToken
+  delete userData.resetPasswordExpire
+  delete userData.__v
+  
   res.status(200).json(
     new ApiResponse(200, {
       user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
+        ...userData,
+        id: userData._id,
         role: user.roleId?.name || 'user'
       }
     }, 'User profile retrieved successfully')

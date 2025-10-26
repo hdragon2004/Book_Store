@@ -1,6 +1,6 @@
 import express from 'express'
 import { body, query } from 'express-validator'
-import { authenticate } from '~/middlewares/authMiddleware'
+import { authenticate, authorize } from '~/middlewares/authMiddleware'
 import { validationMiddleware } from '~/middlewares/validationMiddleware'
 import { uploadMiddleware } from '~/middlewares/uploadMiddleware'
 import bookController from '~/controllers/bookController'
@@ -115,14 +115,15 @@ router.post(
  * Admin routes (cần admin role)
  */
 
-// Tạo sách mới
+// Tạo sách mới (Admin only)
 router.post(
   '/',
   authenticate,
+  authorize('admin'),
   [
     body('title').trim().isLength({ min: 1, max: 200 }).withMessage('Title must be between 1 and 200 characters'),
     body('author').trim().isLength({ min: 1, max: 100 }).withMessage('Author must be between 1 and 100 characters'),
-    body('description').trim().isLength({ min: 10, max: 2000 }).withMessage('Description must be between 10 and 2000 characters'),
+    body('description').trim().isLength({ min: 1, max: 2000 }).withMessage('Description must be between 1 and 2000 characters'),
     body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
     body('stock').isInt({ min: 0 }).withMessage('Stock must be a non-negative integer'),
     body('categoryId').isMongoId().withMessage('Category must be a valid MongoDB ObjectId'),
@@ -130,7 +131,7 @@ router.post(
     body('publisher').optional().trim().isLength({ max: 100 }).withMessage('Publisher must not exceed 100 characters'),
     body('publicationDate').optional().isISO8601().withMessage('Publication date must be a valid date'),
     body('language').optional().trim().isLength({ max: 50 }).withMessage('Language must not exceed 50 characters'),
-    body('pages').optional().isInt({ min: 1 }).withMessage('Pages must be a positive integer'),
+    body('pages').optional().isInt({ min: 0 }).withMessage('Pages must be a non-negative integer'),
     body('format').optional().trim().isLength({ max: 50 }).withMessage('Format must not exceed 50 characters'),
     body('dimensions').optional().trim().isLength({ max: 100 }).withMessage('Dimensions must not exceed 100 characters'),
     body('weight').optional().isFloat({ min: 0 }).withMessage('Weight must be a positive number'),
@@ -140,14 +141,15 @@ router.post(
   bookController.createBook
 )
 
-// Cập nhật sách
+// Cập nhật sách (Admin only)
 router.put(
   '/:id',
   authenticate,
+  authorize('admin'),
   [
     body('title').optional().trim().isLength({ min: 1, max: 200 }).withMessage('Title must be between 1 and 200 characters'),
     body('author').optional().trim().isLength({ min: 1, max: 100 }).withMessage('Author must be between 1 and 100 characters'),
-    body('description').optional().trim().isLength({ min: 10, max: 2000 }).withMessage('Description must be between 10 and 2000 characters'),
+    body('description').optional().trim().isLength({ min: 1, max: 2000 }).withMessage('Description must be between 1 and 2000 characters'),
     body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
     body('stock').optional().isInt({ min: 0 }).withMessage('Stock must be a non-negative integer'),
     body('categoryId').optional().isMongoId().withMessage('Category must be a valid MongoDB ObjectId'),
@@ -155,7 +157,7 @@ router.put(
     body('publisher').optional().trim().isLength({ max: 100 }).withMessage('Publisher must not exceed 100 characters'),
     body('publicationDate').optional().isISO8601().withMessage('Publication date must be a valid date'),
     body('language').optional().trim().isLength({ max: 50 }).withMessage('Language must not exceed 50 characters'),
-    body('pages').optional().isInt({ min: 1 }).withMessage('Pages must be a positive integer'),
+    body('pages').optional().isInt({ min: 0 }).withMessage('Pages must be a non-negative integer'),
     body('format').optional().trim().isLength({ max: 50 }).withMessage('Format must not exceed 50 characters'),
     body('dimensions').optional().trim().isLength({ max: 100 }).withMessage('Dimensions must not exceed 100 characters'),
     body('weight').optional().isFloat({ min: 0 }).withMessage('Weight must be a positive number'),
@@ -165,13 +167,14 @@ router.put(
   bookController.updateBook
 )
 
-// Xóa sách
-router.delete('/:id', authenticate, bookController.deleteBook)
+// Xóa sách (Admin only)
+router.delete('/:id', authenticate, authorize('admin'), bookController.deleteBook)
 
-// Cập nhật tồn kho
+// Cập nhật tồn kho (Admin only)
 router.put(
   '/:id/stock',
   authenticate,
+  authorize('admin'),
   [
     body('quantity').isInt({ min: 0 }).withMessage('Quantity must be a non-negative integer'),
     body('operation').isIn(['set', 'add', 'subtract']).withMessage('Operation must be set, add, or subtract')
@@ -180,10 +183,11 @@ router.put(
   bookController.updateStock
 )
 
-// Lấy thống kê sách
+// Lấy thống kê sách (Admin only)
 router.get(
   '/statistics',
   authenticate,
+  authorize('admin'),
   bookController.getBookStatistics
 )
 

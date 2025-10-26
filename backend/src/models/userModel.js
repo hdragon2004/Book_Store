@@ -47,6 +47,11 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  status: {
+    type: String,
+    enum: ['active', 'inactive', 'suspended', 'pending'],
+    default: 'active'
+  },
   isEmailVerified: {
     type: Boolean,
     default: false
@@ -116,6 +121,31 @@ userSchema.methods.restore = function() {
   return this.save()
 }
 
+// Status management methods
+userSchema.methods.activate = function() {
+  this.status = 'active'
+  this.isActive = true
+  return this.save()
+}
+
+userSchema.methods.deactivate = function() {
+  this.status = 'inactive'
+  this.isActive = false
+  return this.save()
+}
+
+userSchema.methods.suspend = function() {
+  this.status = 'suspended'
+  this.isActive = false
+  return this.save()
+}
+
+userSchema.methods.setPending = function() {
+  this.status = 'pending'
+  this.isActive = false
+  return this.save()
+}
+
 // Static method to find active users
 userSchema.statics.findActive = function() {
   return this.find({ isDeleted: false })
@@ -126,9 +156,32 @@ userSchema.statics.findDeleted = function() {
   return this.find({ isDeleted: true })
 }
 
+// Static methods to find users by status
+userSchema.statics.findByStatus = function(status) {
+  return this.find({ status: status, isDeleted: false })
+}
+
+userSchema.statics.findActiveUsers = function() {
+  return this.find({ status: 'active', isDeleted: false })
+}
+
+userSchema.statics.findInactiveUsers = function() {
+  return this.find({ status: 'inactive', isDeleted: false })
+}
+
+userSchema.statics.findSuspendedUsers = function() {
+  return this.find({ status: 'suspended', isDeleted: false })
+}
+
+userSchema.statics.findPendingUsers = function() {
+  return this.find({ status: 'pending', isDeleted: false })
+}
+
 // Indexes for better performance
 userSchema.index({ roleId: 1 })
 userSchema.index({ isDeleted: 1 })
+userSchema.index({ status: 1 })
 userSchema.index({ createdAt: -1 })
+userSchema.index({ status: 1, isDeleted: 1 })
 
 export default mongoose.model('User', userSchema)

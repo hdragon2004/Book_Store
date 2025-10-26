@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Bookstore API",
-    "description": "Complete API collection for Bookstore Backend",
+    "name": "Bookstore API - Complete Collection",
+    "description": "Complete API collection for Bookstore Backend with all endpoints",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -19,6 +19,26 @@
       "key": "adminToken",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "bookId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "categoryId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "orderId",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -31,19 +51,6 @@
           "raw": "{{baseUrl}}/api/health",
           "host": ["{{baseUrl}}"],
           "path": ["api", "health"]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Get Categories (for IDs)",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/categories",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "categories"]
         }
       },
       "response": []
@@ -84,6 +91,7 @@
                   "    const response = pm.response.json();",
                   "    if (response.data && response.data.token) {",
                   "        pm.collectionVariables.set('token', response.data.token);",
+                  "        pm.collectionVariables.set('userId', response.data.user._id);",
                   "    }",
                   "}"
                 ]
@@ -106,6 +114,61 @@
               "raw": "{{baseUrl}}/api/auth/login",
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.token) {",
+                  "        pm.collectionVariables.set('adminToken', response.data.token);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@bookstore.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
             }
           },
           "response": []
@@ -199,68 +262,13 @@
           "response": []
         },
         {
-          "name": "Get Current User",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/me",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "me"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Login Admin",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const response = pm.response.json();",
-                  "    if (response.data && response.data.token) {",
-                  "        pm.collectionVariables.set('adminToken', response.data.token);",
-                  "    }",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@bookstore.com\",\n  \"password\": \"admin123\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "login"]
-            }
-          },
-          "response": []
-        },
-        {
           "name": "Logout",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
+                "value": "Bearer {{token}}"
               }
             ],
             "url": {
@@ -282,7 +290,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/books?page=1&limit=10&search=javascript&categoryId=64f8b1234567890abcdef456&sort=title&order=asc",
+              "raw": "{{baseUrl}}/api/books?page=1&limit=10&search=javascript&categoryId={{categoryId}}&sort=title&order=asc",
               "host": ["{{baseUrl}}"],
               "path": ["api", "books"],
               "query": [
@@ -300,7 +308,7 @@
                 },
                 {
                   "key": "categoryId",
-                  "value": "64f8b1234567890abcdef456"
+                  "value": "{{categoryId}}"
                 },
                 {
                   "key": "sort",
@@ -321,9 +329,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/books/64f8b1234567890abcdef123",
+              "raw": "{{baseUrl}}/api/books/{{bookId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "books", "64f8b1234567890abcdef123"]
+              "path": ["api", "books", "{{bookId}}"]
             }
           },
           "response": []
@@ -344,7 +352,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"JavaScript: The Good Parts\",\n  \"author\": \"Douglas Crockford\",\n  \"price\": 50000,\n  \"stock\": 100,\n  \"description\": \"A comprehensive guide to JavaScript programming, covering the good parts of the language and best practices.\",\n  \"imageUrl\": \"https://via.placeholder.com/300x400?text=JavaScript+Book\",\n  \"categoryId\": \"64f8b1234567890abcdef456\"\n}"
+              "raw": "{\n  \"title\": \"JavaScript: The Good Parts\",\n  \"author\": \"Douglas Crockford\",\n  \"price\": 50000,\n  \"stock\": 100,\n  \"description\": \"A comprehensive guide to JavaScript programming, covering the good parts of the language and best practices.\",\n  \"imageUrl\": \"https://via.placeholder.com/300x400?text=JavaScript+Book\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"isbn\": \"978-0596517748\",\n  \"publisher\": \"O'Reilly Media\",\n  \"publicationDate\": \"2008-05-15\",\n  \"language\": \"English\",\n  \"pages\": 176,\n  \"format\": \"Paperback\",\n  \"dimensions\": \"23.4 x 15.6 x 1.2 cm\",\n  \"weight\": 0.3,\n  \"isActive\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/books",
@@ -370,12 +378,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"JavaScript: The Good Parts (Updated)\",\n  \"price\": 55000,\n  \"stock\": 150\n}"
+              "raw": "{\n  \"title\": \"JavaScript: The Good Parts (Updated)\",\n  \"price\": 55000,\n  \"stock\": 150,\n  \"description\": \"Updated description\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/books/64f8b1234567890abcdef123",
+              "raw": "{{baseUrl}}/api/books/{{bookId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "books", "64f8b1234567890abcdef123"]
+              "path": ["api", "books", "{{bookId}}"]
             }
           },
           "response": []
@@ -391,9 +399,81 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/books/64f8b1234567890abcdef123",
+              "raw": "{{baseUrl}}/api/books/{{bookId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "books", "64f8b1234567890abcdef123"]
+              "path": ["api", "books", "{{bookId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Book Image (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/books/{{bookId}}/upload-image",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books", "{{bookId}}", "upload-image"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Book Stock (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stock\": 200\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/books/{{bookId}}/stock",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books", "{{bookId}}", "stock"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Book Statistics (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/books/statistics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "books", "statistics"]
             }
           },
           "response": []
@@ -460,9 +540,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/categories/64f8b1234567890abcdef456",
+              "raw": "{{baseUrl}}/api/categories/{{categoryId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "categories", "64f8b1234567890abcdef456"]
+              "path": ["api", "categories", "{{categoryId}}"]
             }
           },
           "response": []
@@ -512,9 +592,9 @@
               "raw": "{\n  \"name\": \"Technology & Development\",\n  \"description\": \"Updated description\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/categories/64f8b1234567890abcdef456",
+              "raw": "{{baseUrl}}/api/categories/{{categoryId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "categories", "64f8b1234567890abcdef456"]
+              "path": ["api", "categories", "{{categoryId}}"]
             }
           },
           "response": []
@@ -530,9 +610,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/categories/64f8b1234567890abcdef456",
+              "raw": "{{baseUrl}}/api/categories/{{categoryId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "categories", "64f8b1234567890abcdef456"]
+              "path": ["api", "categories", "{{categoryId}}"]
             }
           },
           "response": []
@@ -598,9 +678,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/orders/64f8b1234567890abcdef789",
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "orders", "64f8b1234567890abcdef789"]
+              "path": ["api", "orders", "{{orderId}}"]
             }
           },
           "response": []
@@ -621,7 +701,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"items\": [\n    {\n      \"bookId\": \"64f8b1234567890abcdef123\",\n      \"quantity\": 2,\n      \"price\": 50000\n    },\n    {\n      \"bookId\": \"64f8b1234567890abcdef124\",\n      \"quantity\": 1,\n      \"price\": 75000\n    }\n  ],\n  \"shippingAddress\": {\n    \"name\": \"Nguyễn Văn A\",\n    \"phone\": \"0123456789\",\n    \"address\": \"123 Đường ABC\",\n    \"city\": \"TP. Hồ Chí Minh\",\n    \"district\": \"Quận 1\",\n    \"ward\": \"Phường Bến Nghé\"\n  },\n  \"paymentMethod\": \"cod\",\n  \"notes\": [\n    {\n      \"message\": \"Giao hàng vào buổi chiều\",\n      \"type\": \"note\"\n    }\n  ]\n}"
+              "raw": "{\n  \"items\": [\n    {\n      \"bookId\": \"{{bookId}}\",\n      \"quantity\": 2,\n      \"price\": 50000\n    }\n  ],\n  \"shippingAddress\": {\n    \"name\": \"Nguyễn Văn A\",\n    \"phone\": \"0123456789\",\n    \"address\": \"123 Đường ABC\",\n    \"city\": \"TP. Hồ Chí Minh\",\n    \"district\": \"Quận 1\",\n    \"ward\": \"Phường Bến Nghé\"\n  },\n  \"paymentMethod\": \"cod\",\n  \"notes\": [\n    {\n      \"message\": \"Giao hàng vào buổi chiều\",\n      \"type\": \"note\"\n    }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/orders",
@@ -632,9 +712,45 @@
           "response": []
         },
         {
+          "name": "Get All Orders (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/admin/all?page=1&limit=10&status=pending&search=test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "admin", "all"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "pending"
+                },
+                {
+                  "key": "search",
+                  "value": "test"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Update Order Status (Admin)",
           "request": {
-            "method": "PUT",
+            "method": "PATCH",
             "header": [
               {
                 "key": "Content-Type",
@@ -650,9 +766,9 @@
               "raw": "{\n  \"status\": \"shipped\",\n  \"notes\": [\n    {\n      \"message\": \"Order has been shipped\",\n      \"type\": \"status_update\"\n    }\n  ]\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/orders/64f8b1234567890abcdef789/status",
+              "raw": "{{baseUrl}}/api/orders/admin/{{orderId}}/status",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "orders", "64f8b1234567890abcdef789", "status"]
+              "path": ["api", "orders", "admin", "{{orderId}}", "status"]
             }
           },
           "response": []
@@ -676,158 +792,9 @@
               "raw": "{\n  \"reason\": \"Changed my mind\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/orders/64f8b1234567890abcdef789/cancel",
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/cancel",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "orders", "64f8b1234567890abcdef789", "cancel"]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Reviews",
-      "item": [
-        {
-          "name": "Get Book Reviews",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/reviews/book/64f8b1234567890abcdef123?page=1&limit=10&rating=5",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "reviews", "book", "64f8b1234567890abcdef123"],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                },
-                {
-                  "key": "rating",
-                  "value": "5"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get User Reviews",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/reviews/user?page=1&limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "reviews", "user"],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Create Review",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"bookId\": \"64f8b1234567890abcdef123\",\n  \"rating\": 5,\n  \"title\": \"Review for JavaScript: The Good Parts\",\n  \"comment\": \"Excellent book! Very well written and easy to understand. Highly recommended for beginners.\",\n  \"isAnonymous\": false\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/reviews",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "reviews"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update Review",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"rating\": 4,\n  \"title\": \"Good book\",\n  \"comment\": \"Updated review - still good but not perfect\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/reviews/64f8b1234567890abcdef999",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "reviews", "64f8b1234567890abcdef999"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Delete Review",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/reviews/64f8b1234567890abcdef999",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "reviews", "64f8b1234567890abcdef999"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Top Reviews",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/reviews/top?limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "reviews", "top"],
-              "query": [
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
+              "path": ["api", "orders", "{{orderId}}", "cancel"]
             }
           },
           "response": []
@@ -918,7 +885,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/users?page=1&limit=10&role=user&search=john",
+              "raw": "{{baseUrl}}/api/users?page=1&limit=10&role=user&search=test",
               "host": ["{{baseUrl}}"],
               "path": ["api", "users"],
               "query": [
@@ -944,7 +911,25 @@
           "response": []
         },
         {
-          "name": "Update User Status (Admin)",
+          "name": "Get User by ID (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User (Admin)",
           "request": {
             "method": "PUT",
             "header": [
@@ -959,12 +944,1111 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"isActive\": false,\n  \"reason\": \"Account suspended for violation\"\n}"
+              "raw": "{\n  \"name\": \"Updated User Name\",\n  \"email\": \"updated@example.com\",\n  \"phone\": \"0987654321\",\n  \"address\": \"Updated Address\",\n  \"isActive\": true\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/users/64f8b1234567890abcdef111/status",
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "users", "64f8b1234567890abcdef111", "status"]
+              "path": ["api", "users", "{{userId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cart",
+      "item": [
+        {
+          "name": "Get Cart",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cart",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cart"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add to Cart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookId\": \"{{bookId}}\",\n  \"quantity\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cart",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cart"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Cart Item",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookId\": \"{{bookId}}\",\n  \"quantity\": 3\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cart",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cart"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove from Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cart/{{bookId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cart", "{{bookId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Clear Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cart",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cart"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Favorites",
+      "item": [
+        {
+          "name": "Get Favorites",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/favorites",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "favorites"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add to Favorites",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookId\": \"{{bookId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/favorites",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "favorites"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove from Favorites",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/favorites/{{bookId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "favorites", "{{bookId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Get All Payments (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments?page=1&limit=10&status=completed&search=test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "completed"
+                },
+                {
+                  "key": "search",
+                  "value": "test"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payment by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/64f8b1234567890abcdef999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "64f8b1234567890abcdef999"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"amount\": 100000,\n  \"method\": \"vnpay\",\n  \"description\": \"Payment for order\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Payment Status (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\",\n  \"transactionId\": \"TXN123456789\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/64f8b1234567890abcdef999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "64f8b1234567890abcdef999"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payment Statistics (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "stats"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tickets",
+      "item": [
+        {
+          "name": "Get All Tickets (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets?page=1&limit=10&status=open&priority=high&category=order_issue",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "open"
+                },
+                {
+                  "key": "priority",
+                  "value": "high"
+                },
+                {
+                  "key": "category",
+                  "value": "order_issue"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Ticket by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/64f8b1234567890abcdef888",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "64f8b1234567890abcdef888"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Order Issue\",\n  \"description\": \"I have a problem with my order\",\n  \"category\": \"order_issue\",\n  \"priority\": \"medium\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Ticket (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Updated Subject\",\n  \"description\": \"Updated description\",\n  \"status\": \"in_progress\",\n  \"priority\": \"high\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/64f8b1234567890abcdef888",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "64f8b1234567890abcdef888"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Ticket Status (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"resolved\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/64f8b1234567890abcdef888/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "64f8b1234567890abcdef888", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Ticket (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignedTo\": \"{{userId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/64f8b1234567890abcdef888/assign",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "64f8b1234567890abcdef888", "assign"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Ticket Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/64f8b1234567890abcdef888/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "64f8b1234567890abcdef888", "messages"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Message to Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Thank you for your message. We will look into this issue.\",\n  \"type\": \"admin_reply\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/64f8b1234567890abcdef888/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "64f8b1234567890abcdef888", "messages"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Tickets (User)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/my-tickets?page=1&limit=10&status=open",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "my-tickets"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "open"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Assigned Tickets (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets/assigned?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets", "assigned"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Vouchers",
+      "item": [
+        {
+          "name": "Get All Vouchers (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vouchers?page=1&limit=10&type=percentage&isActive=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vouchers"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "type",
+                  "value": "percentage"
+                },
+                {
+                  "key": "isActive",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Voucher by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vouchers/64f8b1234567890abcdef777",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vouchers", "64f8b1234567890abcdef777"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Voucher by Code",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/vouchers/code/WELCOME10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vouchers", "code", "WELCOME10"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Voucher (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"WELCOME10\",\n  \"name\": \"Chào mừng khách hàng mới\",\n  \"type\": \"percentage\",\n  \"value\": 10,\n  \"validFrom\": \"2024-01-01T00:00:00Z\",\n  \"validTo\": \"2024-12-31T23:59:59Z\",\n  \"minOrderAmount\": 100000,\n  \"maxDiscountAmount\": 50000,\n  \"usageLimit\": 100,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/vouchers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vouchers"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Voucher (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Welcome Voucher\",\n  \"value\": 15,\n  \"usageLimit\": 150\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/vouchers/64f8b1234567890abcdef777",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vouchers", "64f8b1234567890abcdef777"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Voucher (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vouchers/64f8b1234567890abcdef777",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vouchers", "64f8b1234567890abcdef777"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check Voucher Validity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"WELCOME10\",\n  \"orderAmount\": 150000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/vouchers/check",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vouchers", "check"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Available Vouchers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/vouchers/available?orderAmount=150000",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vouchers", "available"],
+              "query": [
+                {
+                  "key": "orderAmount",
+                  "value": "150000"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Messages",
+      "item": [
+        {
+          "name": "Get All Messages (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/messages?page=1&limit=10&search=test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "messages"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": "test"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Message by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/messages/64f8b1234567890abcdef666",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "messages", "64f8b1234567890abcdef666"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"receiverId\": \"{{userId}}\",\n  \"content\": \"Hello, I need help with my order\",\n  \"type\": \"support\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "messages"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Message",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Updated message content\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/messages/64f8b1234567890abcdef666",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "messages", "64f8b1234567890abcdef666"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Message",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/messages/64f8b1234567890abcdef666",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "messages", "64f8b1234567890abcdef666"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Message as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/messages/64f8b1234567890abcdef666/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "messages", "64f8b1234567890abcdef666", "read"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Conversation",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/messages/conversation/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "messages", "conversation", "{{userId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/dashboard/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "dashboard", "stats"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Recent Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/dashboard/recent-orders?limit=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "dashboard", "recent-orders"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Top Books",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/dashboard/top-books?limit=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "dashboard", "top-books"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Sales Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/reports/sales?startDate=2024-01-01&endDate=2024-12-31&groupBy=month",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "reports", "sales"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31"
+                },
+                {
+                  "key": "groupBy",
+                  "value": "month"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Orders Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/reports/orders?startDate=2024-01-01&endDate=2024-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "reports", "orders"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Users Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/reports/users?startDate=2024-01-01&endDate=2024-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "reports", "users"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31"
+                }
+              ]
             }
           },
           "response": []

@@ -160,6 +160,26 @@ class UserService {
   }
 
   /**
+   * Upload avatar
+   */
+  async uploadAvatar(userId, file) {
+    const user = await User.findById(userId)
+    if (!user) {
+      throw new AppError('User not found', 404)
+    }
+
+    // Cập nhật avatar path
+    const avatarPath = `/uploads/${file.filename}`
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { avatar: avatarPath },
+      { new: true, runValidators: true }
+    )
+
+    return this.sanitizeUser(updatedUser)
+  }
+
+  /**
    * Đổi mật khẩu
    */
   async changePassword(userId, currentPassword, newPassword) {
@@ -380,9 +400,14 @@ class UserService {
    * Làm sạch thông tin user (loại bỏ password và các field nhạy cảm)
    */
   sanitizeUser(user) {
-    const userObj = user.toObject()
+    const userObj = user.toObject ? user.toObject() : user
+    
+    // Xóa các field nhạy cảm
     delete userObj.password
+    delete userObj.resetPasswordToken
+    delete userObj.resetPasswordExpire
     delete userObj.__v
+    
     return userObj
   }
 }

@@ -14,6 +14,7 @@ export const validationMiddleware = (req, res, next) => {
 
   // Nếu có lỗi validation
   if (!errors.isEmpty()) {
+    console.log('❌ Validation errors:', errors.array())
     // Format lỗi thành object dễ đọc
     const formattedErrors = errors.array().map(error => ({
       field: error.path || error.param,

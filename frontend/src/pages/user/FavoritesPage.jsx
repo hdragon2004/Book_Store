@@ -112,9 +112,9 @@ const FavoritesPage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {favorites.map((favorite) => (
                 <div key={favorite._id} className="relative">
-                  <BookCard book={favorite.bookID} />
+                  <BookCard book={favorite.bookId} />
                   <button
-                    onClick={() => handleRemoveFavorite(favorite.bookID._id)}
+                    onClick={() => handleRemoveFavorite(favorite.bookId._id)}
                     className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
                     title="Xóa khỏi yêu thích"
                   >

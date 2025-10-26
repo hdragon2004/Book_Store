@@ -1,6 +1,6 @@
 import express from 'express'
-import { body, query } from 'express-validator'
-import { authenticate } from '~/middlewares/authMiddleware'
+import { body, query, param } from 'express-validator'
+import { authenticate, authorize } from '~/middlewares/authMiddleware'
 import { validationMiddleware } from '~/middlewares/validationMiddleware'
 import categoryController from '~/controllers/categoryController'
 
@@ -32,7 +32,7 @@ router.get(
 router.get(
   '/:id',
   [
-    query('id').isMongoId().withMessage('Category ID must be a valid MongoDB ObjectId')
+    param('id').isMongoId().withMessage('Category ID must be a valid MongoDB ObjectId')
   ],
   validationMiddleware,
   categoryController.getCategoryById
@@ -64,6 +64,7 @@ router.get(
 router.post(
   '/',
   authenticate,
+  authorize('admin'),
   [
     body('name').notEmpty().trim().isLength({ min: 2, max: 100 }).withMessage('Category name must be between 2 and 100 characters'),
     body('description').optional().trim().isLength({ max: 500 }).withMessage('Description cannot exceed 500 characters')
@@ -76,6 +77,7 @@ router.post(
 router.put(
   '/:id',
   authenticate,
+  authorize('admin'),
   [
     body('name').optional().trim().isLength({ min: 2, max: 100 }).withMessage('Category name must be between 2 and 100 characters'),
     body('description').optional().trim().isLength({ max: 500 }).withMessage('Description cannot exceed 500 characters')
@@ -88,6 +90,7 @@ router.put(
 router.delete(
   '/:id',
   authenticate,
+  authorize('admin'),
   categoryController.deleteCategory
 )
 

@@ -136,7 +136,7 @@ const BookDetailPage = () => {
               <div className="h-96 md:h-full bg-gray-200 flex items-center justify-center">
                 {book.imageUrl ? (
                   <img 
-                    src={book.imageUrl} 
+                    src={book.imageUrl.startsWith('http') ? book.imageUrl : `http://localhost:5000${book.imageUrl}`} 
                     alt={book.title}
                     className="w-full h-full object-cover"
                   />

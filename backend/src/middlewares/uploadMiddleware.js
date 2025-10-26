@@ -35,10 +35,13 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: parseInt(config.upload.maxFileSize) || 5 * 1024 * 1024, // 5MB default
+    fileSize: 10 * 1024 * 1024, // 10MB
     files: 5 // Tối đa 5 files
   }
 })
+
+// Export upload instance
+export { upload }
 
 // Middleware upload single file
 export const uploadMiddleware = {

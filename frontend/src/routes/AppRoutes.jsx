@@ -5,12 +5,37 @@ import HomePage from '../pages/HomePage';
 import BookPage from '../pages/book/BookPage';
 import BookDetailPage from '../pages/book/BookDetailPage';
 import OrderPage from '../pages/order/OrderPage';
+import OrderDetailPage from '../pages/order/OrderDetailPage';
+import OrdersListPage from '../pages/order/OrdersListPage';
 import FavoritesPage from '../pages/user/FavoritesPage';
+import ProfilePage from '../pages/user/ProfilePage';
 import CartPage from '../pages/CartPage';
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
 import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
 import MainLayout from '../layouts/MainLayout';
+import AdminLayout from '../layouts/AdminLayout';
+import DashboardPage from '../pages/admin/dashboard/DashboardPage';
+import TestDashboard from '../pages/admin/dashboard/TestDashboard';
+import BooksPage from '../pages/admin/books/BooksPage';
+import CreateBooksPage from '../pages/admin/books/CreateBooksPage';
+import UpdateBooksPage from '../pages/admin/books/UpdateBooksPage';
+import ViewBookPage from '../pages/admin/books/ViewBookPage';
+import CategoriesPage from '../pages/admin/categories/CategoriesPage';
+import CreateCategoryPage from '../pages/admin/categories/CreateCategoryPage';
+import UpdateCategoryPage from '../pages/admin/categories/UpdateCategoryPage';
+import ViewCategoryPage from '../pages/admin/categories/ViewCategoryPage';
+import OrdersPage from '../pages/admin/orders/OrdersPage';
+import AdminOrderDetailPage from '../pages/admin/orders/AdminOrderDetailPage';
+import UsersPage from '../pages/admin/users/UsersPage';
+import ReportsPage from '../pages/admin/reports/ReportsPage';
+import PaymentsPage from '../pages/admin/payments/PaymentsPage';
+import TicketsPage from '../pages/admin/tickets/TicketsPage';
+import VouchersPage from '../pages/admin/vouchers/VouchersPage';
+import CreateVouchersPage from '../pages/admin/vouchers/CreateVouchersPage';
+import UpdateVouchersPage from '../pages/admin/vouchers/UpdateVouchersPage';
+import ViewVouchersPage from '../pages/admin/vouchers/ViewVouchersPage';
+import ChatsPage from '../pages/chat/ChatsPage';
 import { useAuth } from '../contexts/AuthContext';
 
 // Authentication check using AuthContext
@@ -44,7 +69,7 @@ const AdminRoute = ({ children }) => {
     return <Navigate to="/" replace />;
   }
 
-  return <MainLayout>{children}</MainLayout>;
+  return children;
 };
 
 const PublicRoute = ({ children }) => {
@@ -88,6 +113,22 @@ const AppRoutes = () => {
       <Route path="/books" element={<MainLayout><BookPage /></MainLayout>} />
       <Route path="/books/:id" element={<MainLayout><BookDetailPage /></MainLayout>} />
       <Route path="/order" element={<MainLayout><OrderPage /></MainLayout>} />
+      <Route 
+        path="/orders" 
+        element={
+          <PrivateRoute>
+            <MainLayout><OrdersListPage /></MainLayout>
+          </PrivateRoute>
+        } 
+      />
+      <Route 
+        path="/orders/:orderId" 
+        element={
+          <PrivateRoute>
+            <MainLayout><OrderDetailPage /></MainLayout>
+          </PrivateRoute>
+        } 
+      />
       
       {/* Protected Routes */}
       <Route 
@@ -95,6 +136,14 @@ const AppRoutes = () => {
         element={
           <PrivateRoute>
             <MainLayout><FavoritesPage /></MainLayout>
+          </PrivateRoute>
+        } 
+      />
+      <Route 
+        path="/profile" 
+        element={
+          <PrivateRoute>
+            <MainLayout><ProfilePage /></MainLayout>
           </PrivateRoute>
         } 
       />
@@ -128,6 +177,212 @@ const AppRoutes = () => {
           <PublicRoute>
             <ForgotPasswordPage />
           </PublicRoute>
+        }
+      />
+
+      {/* Admin Routes */}
+      <Route
+        path="/admin"
+        element={<Navigate to="/admin/dashboard" replace />}
+      />
+      <Route
+        path="/admin/dashboard"
+        element={
+          <AdminRoute>
+            <AdminLayout>
+              <DashboardPage />
+            </AdminLayout>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/books"
+        element={
+          <AdminRoute>
+            <AdminLayout>
+              <BooksPage />
+            </AdminLayout>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/books/create"
+        element={
+          <AdminRoute>
+            <AdminLayout>
+              <CreateBooksPage />
+            </AdminLayout>
+          </AdminRoute>
+        }
+      />
+        <Route
+          path="/admin/books/update/:id"
+          element={
+            <AdminRoute>
+              <AdminLayout>
+                <UpdateBooksPage />
+              </AdminLayout>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/books/:id"
+          element={
+            <AdminRoute>
+              <AdminLayout>
+                <ViewBookPage />
+              </AdminLayout>
+            </AdminRoute>
+          }
+        />
+      <Route
+        path="/admin/categories"
+        element={
+          <AdminRoute>
+            <AdminLayout>
+              <CategoriesPage />
+            </AdminLayout>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/categories/create"
+        element={
+          <AdminRoute>
+            <AdminLayout>
+              <CreateCategoryPage />
+            </AdminLayout>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/categories/:id"
+        element={
+          <AdminRoute>
+            <AdminLayout>
+              <ViewCategoryPage />
+            </AdminLayout>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/categories/update/:id"
+        element={
+          <AdminRoute>
+            <AdminLayout>
+              <UpdateCategoryPage />
+            </AdminLayout>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/orders"
+        element={
+          <AdminRoute>
+            <AdminLayout>
+              <OrdersPage />
+            </AdminLayout>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/orders/:orderId"
+        element={
+          <AdminRoute>
+            <AdminLayout>
+              <AdminOrderDetailPage />
+            </AdminLayout>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/payments"
+        element={
+          <AdminRoute>
+            <AdminLayout>
+              <PaymentsPage />
+            </AdminLayout>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <AdminRoute>
+            <AdminLayout>
+              <UsersPage />
+            </AdminLayout>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/reports"
+        element={
+          <AdminRoute>
+            <AdminLayout>
+              <ReportsPage />
+            </AdminLayout>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/tickets"
+        element={
+          <AdminRoute>
+            <AdminLayout>
+              <TicketsPage />
+            </AdminLayout>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/vouchers"
+        element={
+          <AdminRoute>
+            <AdminLayout>
+              <VouchersPage />
+            </AdminLayout>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/vouchers/create"
+        element={
+          <AdminRoute>
+            <AdminLayout>
+              <CreateVouchersPage />
+            </AdminLayout>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/vouchers/update/:id"
+        element={
+          <AdminRoute>
+            <AdminLayout>
+              <UpdateVouchersPage />
+            </AdminLayout>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/vouchers/:id"
+        element={
+          <AdminRoute>
+            <AdminLayout>
+              <ViewVouchersPage />
+            </AdminLayout>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/chat"
+        element={
+          <AdminRoute>
+            <AdminLayout>
+              <ChatsPage />
+            </AdminLayout>
+          </AdminRoute>
         }
       />
 

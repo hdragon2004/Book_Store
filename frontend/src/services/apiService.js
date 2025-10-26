@@ -49,6 +49,20 @@ export const userAPI = {
   getUser: (id) => 
     axiosClient.get(`/users/${id}`),
 
+  // Get current user profile
+  getProfile: () => 
+    axiosClient.get('/users/profile'),
+
+  // Update current user profile
+  updateProfile: (userData) => 
+    axiosClient.put('/users/profile', userData),
+
+  // Upload avatar
+  uploadAvatar: (formData) => 
+    axiosClient.post('/users/upload-avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+
   // Update user
   updateUser: (id, userData) => 
     axiosClient.put(`/users/${id}`, userData),
@@ -85,6 +99,15 @@ export const bookAPI = {
     axiosClient.post(`/books/${id}/upload`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     }),
+
+  // Upload image (general)
+  uploadImage: (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return axiosClient.post('/upload/image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
 };
 
 // Category API
@@ -112,8 +135,8 @@ export const categoryAPI = {
 
 // Order API
 export const orderAPI = {
-  // Get all orders
-  getOrders: (params = {}) => 
+  // Get orders (User: chỉ orders của mình, Admin: tất cả orders)
+  getOrders: (params = {}) =>
     axiosClient.get('/orders', { params }),
 
   // Get order by ID
@@ -135,6 +158,10 @@ export const orderAPI = {
   // Get user orders
   getUserOrders: (userId, params = {}) => 
     axiosClient.get(`/orders/user/${userId}`, { params }),
+
+  // Update order status
+  updateOrderStatus: (id, status) => 
+    axiosClient.patch(`/orders/admin/${id}/status`, { status }),
 };
 
 // Order Item API
@@ -220,6 +247,217 @@ export const cartAPI = {
 };
 
 
+// Admin Dashboard API - Using existing endpoints
+export const adminAPI = {
+  // Get dashboard statistics - using existing endpoints
+  getDashboardStats: async () => {
+    try {
+      const [booksResponse, usersResponse, ordersResponse, paymentsResponse] = await Promise.all([
+        bookAPI.getBooks(), // Lấy tất cả sách
+        userAPI.getUsers(), // Lấy tất cả users
+        orderAPI.getOrders(), // Lấy tất cả orders
+        paymentAPI.getPayments() // Lấy tất cả payments
+      ]);
+      
+      console.log('📊 Dashboard API Responses:', {
+        books: booksResponse.data,
+        users: usersResponse.data,
+        orders: ordersResponse.data,
+        payments: paymentsResponse.data
+      });
+      
+      // Tính tổng doanh thu từ orders
+      const orders = ordersResponse.data?.data?.orders || ordersResponse.data?.orders || ordersResponse.data || [];
+      const totalRevenue = orders.reduce((sum, order) => {
+        return sum + (order.totalPrice || order.totalAmount || order.amount || 0);
+      }, 0);
+      
+      return {
+        data: {
+          totalBooks: booksResponse.data?.data?.books?.length || booksResponse.data?.books?.length || booksResponse.data?.total || 0,
+          totalUsers: usersResponse.data?.data?.users?.length || usersResponse.data?.users?.length || usersResponse.data?.total || 0,
+          totalOrders: orders.length,
+          totalRevenue: totalRevenue
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      return {
+        data: {
+          totalBooks: 0,
+          totalUsers: 0,
+          totalOrders: 0,
+          totalRevenue: 0
+        }
+      };
+    }
+  },
+
+  // Get recent orders
+  getRecentOrders: (limit = 5) => {
+    return orderAPI.getOrders({ sortBy: 'createdAt', sortOrder: 'desc' }).then(response => {
+      const orders = response.data?.data?.orders || response.data?.orders || response.data || [];
+      return {
+        data: {
+          orders: orders.slice(0, limit)
+        }
+      };
+    });
+  },
+
+  // Get top books
+  getTopBooks: (limit = 5) => {
+    return bookAPI.getBooks({ sortBy: 'createdAt', sortOrder: 'desc' }).then(response => {
+      const books = response.data?.data?.books || response.data?.books || response.data || [];
+      return {
+        data: {
+          books: books.slice(0, limit)
+        }
+      };
+    });
+  },
+
+  // Get sales report
+  getSalesReport: (params = {}) => 
+    axiosClient.get('/reports/dashboard', { params }),
+
+  // Get orders report
+  getOrdersReport: (params = {}) => 
+    axiosClient.get('/reports/dashboard', { params }),
+
+  // Get users report
+  getUsersReport: (params = {}) => 
+    axiosClient.get('/reports/dashboard', { params }),
+};
+
+// Payment API
+export const paymentAPI = {
+  // Get all payments
+  getPayments: (params = {}) =>
+    axiosClient.get('/payments', { params }),
+
+  // Get payment by ID
+  getPayment: (id) =>
+    axiosClient.get(`/payments/${id}`),
+
+  // Update payment status
+  updatePaymentStatus: (id, status) =>
+    axiosClient.put(`/payments/${id}/status`, { status }),
+
+  // Get payment statistics
+  getPaymentStats: () =>
+    axiosClient.get('/payments/stats'),
+};
+
+// Ticket API
+export const ticketAPI = {
+  // Get all tickets (Admin only)
+  getTickets: (params = {}) =>
+    axiosClient.get('/tickets', { params }),
+
+  // Get ticket by ID
+  getTicketById: (id) =>
+    axiosClient.get(`/tickets/${id}`),
+
+  // Create new ticket
+  createTicket: (data) =>
+    axiosClient.post('/tickets', data),
+
+  // Update ticket
+  updateTicket: (id, data) =>
+    axiosClient.put(`/tickets/${id}`, data),
+
+  // Update ticket status
+  updateTicketStatus: (id, data) =>
+    axiosClient.patch(`/tickets/${id}/status`, data),
+
+  // Assign ticket
+  assignTicket: (id, assignedTo) =>
+    axiosClient.patch(`/tickets/${id}/assign`, { assignedTo }),
+
+  // Get ticket messages
+  getTicketMessages: (id) =>
+    axiosClient.get(`/tickets/${id}/messages`),
+
+  // Add message to ticket
+  addMessage: (id, data) =>
+    axiosClient.post(`/tickets/${id}/messages`, data),
+
+  // Get my tickets (User)
+  getMyTickets: (params = {}) =>
+    axiosClient.get('/tickets/my-tickets', { params }),
+
+  // Get assigned tickets (Admin)
+  getAssignedTickets: (params = {}) =>
+    axiosClient.get('/tickets/assigned', { params }),
+};
+
+// Voucher API
+export const voucherAPI = {
+  // Get all vouchers
+  getVouchers: (params = {}) =>
+    axiosClient.get('/vouchers', { params }),
+
+  // Get voucher by ID
+  getVoucher: (id) =>
+    axiosClient.get(`/vouchers/${id}`),
+
+  // Get voucher by code
+  getVoucherByCode: (code) =>
+    axiosClient.get(`/vouchers/code/${code}`),
+
+  // Create voucher (Admin only)
+  createVoucher: (data) =>
+    axiosClient.post('/vouchers', data),
+
+  // Update voucher (Admin only)
+  updateVoucher: (id, data) =>
+    axiosClient.put(`/vouchers/${id}`, data),
+
+  // Delete voucher (Admin only)
+  deleteVoucher: (id) =>
+    axiosClient.delete(`/vouchers/${id}`),
+
+  // Check voucher validity
+  checkVoucher: (data) =>
+    axiosClient.post('/vouchers/check', data),
+
+  // Get available vouchers
+  getAvailableVouchers: (params = {}) =>
+    axiosClient.get('/vouchers/available', { params }),
+};
+
+// Message API
+export const messageAPI = {
+  // Get all messages
+  getMessages: (params = {}) =>
+    axiosClient.get('/messages', { params }),
+
+  // Get message by ID
+  getMessage: (id) =>
+    axiosClient.get(`/messages/${id}`),
+
+  // Send new message
+  sendMessage: (data) =>
+    axiosClient.post('/messages', data),
+
+  // Update message
+  updateMessage: (id, data) =>
+    axiosClient.put(`/messages/${id}`, data),
+
+  // Delete message
+  deleteMessage: (id) =>
+    axiosClient.delete(`/messages/${id}`),
+
+  // Mark message as read
+  markAsRead: (id) =>
+    axiosClient.patch(`/messages/${id}/read`),
+
+  // Get conversation
+  getConversation: (userId) =>
+    axiosClient.get(`/messages/conversation/${userId}`),
+};
+
 // Export all APIs
 export default {
   auth: authAPI,
@@ -228,5 +466,10 @@ export default {
   category: categoryAPI,
   order: orderAPI,
   favorite: favoriteAPI,
-  cart: cartAPI
+  cart: cartAPI,
+  admin: adminAPI,
+  payment: paymentAPI,
+  ticket: ticketAPI,
+  voucher: voucherAPI,
+  message: messageAPI
 };

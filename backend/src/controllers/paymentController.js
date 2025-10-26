@@ -28,7 +28,7 @@ class PaymentController {
     })
 
     res.status(StatusCodes.OK).json(
-      new ApiResponse(StatusCodes.OK, paymentData, 'VNPay payment URL created successfully')
+      new ApiResponse(StatusCodes.OK, paymentData, 'VNPay payment URL created successfully').toJSON()
     )
   })
 
@@ -50,7 +50,7 @@ class PaymentController {
     })
 
     res.status(StatusCodes.OK).json(
-      new ApiResponse(StatusCodes.OK, paymentData, 'Momo payment URL created successfully')
+      new ApiResponse(StatusCodes.OK, paymentData, 'Momo payment URL created successfully').toJSON()
     )
   })
 
@@ -209,7 +209,28 @@ class PaymentController {
     ]
 
     res.status(StatusCodes.OK).json(
-      new ApiResponse(StatusCodes.OK, paymentMethods, 'Payment methods retrieved successfully')
+      new ApiResponse(StatusCodes.OK, paymentMethods, 'Payment methods retrieved successfully').toJSON()
+    )
+  })
+
+  /**
+   * Lấy danh sách payments (Admin only)
+   * GET /api/payments
+   */
+  getPayments = asyncHandler(async (req, res) => {
+    const { page = 1, limit = 10, status, method, startDate, endDate } = req.query
+
+    const payments = await paymentService.getPayments({
+      page: parseInt(page),
+      limit: parseInt(limit),
+      status,
+      method,
+      startDate,
+      endDate
+    })
+
+    res.status(StatusCodes.OK).json(
+      new ApiResponse(StatusCodes.OK, payments, 'Payments retrieved successfully').toJSON()
     )
   })
 }

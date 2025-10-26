@@ -24,6 +24,7 @@ import paymentRoutes from './paymentRoutes'
 import voucherRoutes from './voucherRoutes'
 import reportRoutes from './reportRoutes'
 import ticketRoutes from './ticketRoutes'
+import uploadRoutes from './uploadRoutes'
 
 /**
  * Express App Configuration
@@ -115,6 +116,7 @@ app.use('/api/payments', paymentRoutes)
 app.use('/api/vouchers', voucherRoutes)
 app.use('/api/reports', reportRoutes)
 app.use('/api/tickets', ticketRoutes)
+app.use('/api/upload', uploadRoutes)
 
 // 404 handler
 app.use('*', (req, res) => {

@@ -1,100 +1,32 @@
 import express from 'express'
 import { body } from 'express-validator'
-import { authenticate } from '~/middlewares/authMiddleware'
+import { authenticate, authorize } from '~/middlewares/authMiddleware'
 import { validationMiddleware } from '~/middlewares/validationMiddleware'
+import { upload } from '~/middlewares/uploadMiddleware'
 import userController from '~/controllers/userController'
 
 /**
- * User Routes - Định nghĩa các endpoint cho user
- * Theo Service-Based Architecture: Routes chỉ định tuyến, validation và middleware
+ * User Routes - Định nghĩa các endpoint cho user management
+ * Authentication endpoints đã được chuyển sang /api/auth
+ * Routes này chỉ dành cho user profile và admin management
  */
 
 const router = express.Router()
 
 /**
  * Public routes (không cần authentication)
+ * Các chức năng authentication đã được chuyển sang /api/auth
  */
-
-// Đăng ký user
-router.post(
-  '/register',
-  [
-    body('name').trim().isLength({ min: 2, max: 50 }).withMessage('Name must be between 2 and 50 characters'),
-    body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
-    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-    body('phone').optional().isMobilePhone().withMessage('Please provide a valid phone number'),
-    body('address').optional().trim().isLength({ max: 200 }).withMessage('Address must not exceed 200 characters')
-  ],
-  validationMiddleware,
-  userController.register
-)
-
-// Đăng nhập user
-router.post(
-  '/login',
-  [
-    body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
-    body('password').notEmpty().withMessage('Password is required')
-  ],
-  validationMiddleware,
-  userController.login
-)
-
-// Quên mật khẩu
-router.post(
-  '/forgot-password',
-  [
-    body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email')
-  ],
-  validationMiddleware,
-  userController.forgotPassword
-)
-
-// Đặt lại mật khẩu
-router.post(
-  '/reset-password',
-  [
-    body('token').notEmpty().withMessage('Reset token is required'),
-    body('newPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
-  ],
-  validationMiddleware,
-  userController.resetPassword
-)
-
-// Xác thực email
-router.post(
-  '/verify-email',
-  [
-    body('token').notEmpty().withMessage('Verification token is required')
-  ],
-  validationMiddleware,
-  userController.verifyEmail
-)
-
-// Gửi lại email xác thực
-router.post(
-  '/resend-verification',
-  [
-    body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email')
-  ],
-  validationMiddleware,
-  userController.resendVerification
-)
-
-// Refresh token
-router.post('/refresh-token', userController.refreshToken)
 
 /**
  * Protected routes (cần authentication)
+ * Các chức năng authentication cơ bản đã chuyển sang /api/auth
  */
 
-// Đăng xuất
-router.post('/logout', authenticate, userController.logout)
-
-// Lấy thông tin profile
+// Lấy thông tin profile chi tiết (khác với /api/auth/me - chỉ lấy thông tin cơ bản)
 router.get('/profile', authenticate, userController.getProfile)
 
-// Cập nhật profile
+// Cập nhật profile user
 router.put(
   '/profile',
   authenticate,
@@ -107,40 +39,39 @@ router.put(
   userController.updateProfile
 )
 
-// Đổi mật khẩu
-router.put(
-  '/change-password',
+// Upload avatar
+router.post(
+  '/upload-avatar',
   authenticate,
-  [
-    body('currentPassword').notEmpty().withMessage('Current password is required'),
-    body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters')
-  ],
-  validationMiddleware,
-  userController.changePassword
+  upload.single('avatar'),
+  userController.uploadAvatar
 )
 
 /**
  * Admin routes (cần admin role)
  */
 
-// Lấy danh sách user
+// Lấy danh sách user (Admin only)
 router.get(
   '/',
   authenticate,
+  authorize('admin'),
   userController.getUsers
 )
 
-// Lấy user theo ID
+// Lấy user theo ID (Admin only)
 router.get(
   '/:id',
   authenticate,
+  authorize('admin'),
   userController.getUserById
 )
 
-// Cập nhật user
+// Cập nhật user (Admin only)
 router.put(
   '/:id',
   authenticate,
+  authorize('admin'),
   [
     body('name').optional().trim().isLength({ min: 2, max: 50 }).withMessage('Name must be between 2 and 50 characters'),
     body('email').optional().isEmail().normalizeEmail().withMessage('Please provide a valid email'),
@@ -153,10 +84,11 @@ router.put(
   userController.updateUser
 )
 
-// Xóa user
+// Xóa user (Admin only)
 router.delete(
   '/:id',
   authenticate,
+  authorize('admin'),
   userController.deleteUser
 )
 

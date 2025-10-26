@@ -116,7 +116,7 @@ class UserController {
     const user = await userService.getUserById(userId)
 
     res.status(StatusCodes.OK).json(
-      new ApiResponse(StatusCodes.OK, user, 'Profile retrieved successfully')
+      new ApiResponse(StatusCodes.OK, { user }, 'Profile retrieved successfully')
     )
   })
 
@@ -134,8 +134,37 @@ class UserController {
     res.status(StatusCodes.OK).json(
       new ApiResponse(
         StatusCodes.OK,
-        updatedUser,
+        { user: updatedUser },
         'Profile updated successfully'
+      )
+    )
+  })
+
+  /**
+   * Upload avatar
+   * POST /api/v1/users/upload-avatar
+   */
+  uploadAvatar = asyncHandler(async (req, res) => {
+    const userId = req.user._id
+    
+    if (!req.file) {
+      return res.status(StatusCodes.BAD_REQUEST).json(
+        new ApiResponse(
+          StatusCodes.BAD_REQUEST,
+          null,
+          'No avatar file provided'
+        )
+      )
+    }
+
+    // Gọi service để upload avatar
+    const updatedUser = await userService.uploadAvatar(userId, req.file)
+
+    res.status(StatusCodes.OK).json(
+      new ApiResponse(
+        StatusCodes.OK,
+        { user: updatedUser },
+        'Avatar uploaded successfully'
       )
     )
   })

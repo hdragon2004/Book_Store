@@ -18,13 +18,22 @@ export const AuthProvider = ({ children }) => {
 
   // Check if user is admin
   const isAdmin = user?.role === 'admin';
+  
+  // Debug user data (reduced logging)
+  React.useEffect(() => {
+    if (user) {
+      console.log('🔍 AuthContext: User authenticated:', user.name, `(${user.role})`);
+    }
+  }, [user]);
 
   // Initialize auth state from localStorage
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        console.log('🔐 AuthContext: Initializing auth...');
         const storedToken = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
+        console.log('🔐 AuthContext: Stored token:', !!storedToken, 'Stored user:', !!storedUser);
 
         if (storedToken && storedUser) {
           const parsedUser = JSON.parse(storedUser);
@@ -34,8 +43,11 @@ export const AuthProvider = ({ children }) => {
             const response = await authAPI.getCurrentUser();
             if (response.data && response.data.data) {
               const userData = response.data.data;
+              
+              // Backend always returns {user: {...}} format
+              const finalUserData = userData.user;
               setToken(storedToken);
-              setUser(userData);
+              setUser(finalUserData);
             } else {
               throw new Error('Invalid token response');
             }
@@ -215,6 +227,18 @@ export const AuthProvider = ({ children }) => {
     resetPassword,
     changePassword,
   };
+
+  // Show loading screen while initializing auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Đang tải dữ liệu...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={value}>

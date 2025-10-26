@@ -28,8 +28,10 @@ export const authenticate = async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, config.jwtSecret)
     
-    // Get user from token
-    const user = await User.findById(decoded.userId).select('-password')
+    // Get user from token with populated role
+    const user = await User.findById(decoded.userId)
+      .select('-password')
+      .populate('roleId', 'name')
     
     if (!user || user.isDeleted) {
       return res.status(StatusCodes.UNAUTHORIZED).json({
@@ -39,6 +41,7 @@ export const authenticate = async (req, res, next) => {
     }
 
     req.user = user
+    req.userRole = user.roleId?.name || 'user' // Set user role for role-based access
     next()
   } catch (error) {
     return res.status(StatusCodes.UNAUTHORIZED).json({

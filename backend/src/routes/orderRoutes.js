@@ -5,7 +5,7 @@ import {
   getOrderById,
   updateOrderStatus,
   cancelOrder,
-  getAllOrders
+  getOrders
 } from '~/controllers/orderController'
 import { authenticate, authorize } from '~/middlewares/authMiddleware'
 
@@ -20,8 +20,10 @@ router.get('/my-orders', getUserOrders) // Lấy đơn hàng của user
 router.get('/:orderId', getOrderById) // Lấy chi tiết đơn hàng
 router.patch('/:orderId/cancel', cancelOrder) // Hủy đơn hàng
 
+// Universal route - User: chỉ orders của mình, Admin: tất cả orders
+router.get('/', getOrders) // Lấy đơn hàng (phân quyền tự động)
+
 // Admin routes
-router.get('/admin/all', authorize('admin'), getAllOrders) // Lấy tất cả đơn hàng (Admin)
 router.patch('/admin/:orderId/status', authorize('admin'), updateOrderStatus) // Cập nhật trạng thái (Admin)
 
 export default router

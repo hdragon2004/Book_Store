@@ -3,11 +3,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const HeaderLayout = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [cartItems, setCartItems] = useState(0); // Số lượng sản phẩm trong giỏ hàng
   const navigate = useNavigate();
+
+  // Debug user data
+  React.useEffect(() => {
+    console.log('🔍 HeaderLayout: User data:', user);
+    console.log('🔍 HeaderLayout: User role:', user?.role);
+    console.log('🔍 HeaderLayout: Is admin:', user?.role === 'admin');
+  }, [user]);
 
   // Cập nhật số lượng sản phẩm trong giỏ hàng
   React.useEffect(() => {
@@ -172,10 +179,22 @@ const HeaderLayout = () => {
                           Yêu thích
                         </Link>
 
+                        {/* Đơn hàng của tôi */}
+                        <Link
+                          to="/orders"
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          onClick={() => setIsUserDropdownOpen(false)}
+                        >
+                          <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                          </svg>
+                          Đơn hàng của tôi
+                        </Link>
+
                         {/* Quản trị (chỉ admin) */}
-                        {user.role === 'admin' && (
+                        {user?.role === 'admin' && (
                           <Link
-                            to="/admin"
+                            to="/admin/dashboard"
                             className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                             onClick={() => setIsUserDropdownOpen(false)}
                           >

@@ -1,6 +1,11 @@
 import mongoose from 'mongoose'
 
 const orderSchema = new mongoose.Schema({
+  orderCode: {
+    type: String,
+    unique: true,
+    required: [true, 'Order code is required']
+  },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -75,6 +80,50 @@ const orderSchema = new mongoose.Schema({
   }
 })
 
+// Auto generate order code before validation
+orderSchema.pre('validate', async function(next) {
+  // Only generate order code if it's a new document and orderCode is not set
+  if (this.isNew && !this.orderCode) {
+    let orderCode
+    let isUnique = false
+    let attempts = 0
+    const maxAttempts = 10
+
+    while (!isUnique && attempts < maxAttempts) {
+      // Generate order code: ORD-YYYYMMDD-RANDOM4
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      const day = String(now.getDate()).padStart(2, '0')
+      const random4 = Math.floor(Math.random() * 9000) + 1000 // 1000-9999
+      
+      orderCode = `ORD-${year}${month}${day}-${random4}`
+      
+      // Check if order code already exists
+      const existingOrder = await this.constructor.findOne({ orderCode })
+      if (!existingOrder) {
+        isUnique = true
+      }
+      
+      attempts++
+    }
+
+    // If still not unique after max attempts, add timestamp milliseconds
+    if (!isUnique) {
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      const day = String(now.getDate()).padStart(2, '0')
+      const timestamp = now.getTime().toString().slice(-4) // Last 4 digits of timestamp
+      orderCode = `ORD-${year}${month}${day}-${timestamp}`
+    }
+
+    this.orderCode = orderCode
+  }
+  
+  next()
+})
+
 // Auto update updatedAt
 orderSchema.pre('save', function(next) {
   this.updatedAt = new Date()
@@ -118,6 +167,11 @@ orderSchema.statics.findByUser = function(userId) {
 // Static method to get orders by status
 orderSchema.statics.findByStatus = function(status) {
   return this.find({ status, isDeleted: false })
+}
+
+// Static method to find order by order code
+orderSchema.statics.findByOrderCode = function(orderCode) {
+  return this.findOne({ orderCode, isDeleted: false })
 }
 
 // Static method to get order statistics

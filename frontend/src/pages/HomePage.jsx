@@ -38,6 +38,7 @@ const HomePage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        console.log('🏠 HomePage: Starting to fetch data...');
         setLoading(true);
         
         // Tạm thời tắt cache để test
@@ -57,10 +58,21 @@ const HomePage = () => {
         // }
 
         // Gọi API 1 lần để lấy tất cả books và categories
+        console.log('🏠 HomePage: Calling APIs...');
+        
+        // Test kết nối trước
+        try {
+          const testResponse = await fetch('http://localhost:5000/api/health');
+          console.log('🏠 HomePage: Health check response:', testResponse.status);
+        } catch (testError) {
+          console.error('🏠 HomePage: Health check failed:', testError);
+        }
+        
         const [allBooksResponse, categoriesResponse] = await Promise.all([
           bookAPI.getBooks(), // Bỏ limit, lấy hết
           categoryAPI.getCategories()
         ]);
+        console.log('🏠 HomePage: API responses received:', { allBooksResponse, categoriesResponse });
 
         const allBooks = allBooksResponse.data.data?.books || [];
         const categoriesData = categoriesResponse.data.data?.categories || [];
@@ -88,8 +100,13 @@ const HomePage = () => {
         localStorage.setItem('homepage_data', JSON.stringify(dataToCache));
         localStorage.setItem('homepage_cache_time', Date.now().toString());
       } catch (err) {
-        console.error('Error fetching data:', err);
+        console.error('🏠 HomePage: Error fetching data:', err);
+        console.error('🏠 HomePage: Error details:', err.response?.data || err.message);
         setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
+        // Set empty data để không bị màn hình trắng
+        setAllBooks([]);
+        setCategories([]);
+        setBooksByCategory({});
       } finally {
         setLoading(false);
       }
