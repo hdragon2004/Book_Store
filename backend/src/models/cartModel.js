@@ -91,7 +91,9 @@ cartSchema.statics.addItem = async function(userId, bookId, quantity = 1) {
   }
 
   await cart.save()
-  return cart
+  
+  // Populate dữ liệu bookId sau khi thêm
+  return await this.getUserCart(userId)
 }
 
 // Static method to update item quantity
@@ -116,7 +118,9 @@ cartSchema.statics.updateItemQuantity = async function(userId, bookId, quantity)
   }
 
   await cart.save()
-  return cart
+  
+  // Populate dữ liệu bookId sau khi cập nhật
+  return await this.getUserCart(userId)
 }
 
 // Static method to remove item from cart
@@ -129,7 +133,9 @@ cartSchema.statics.removeItem = async function(userId, bookId) {
 
   cart.items = cart.items.filter(item => item.bookId.toString() !== bookId.toString())
   await cart.save()
-  return cart
+  
+  // Populate dữ liệu bookId sau khi xóa
+  return await this.getUserCart(userId)
 }
 
 // Static method to clear cart
@@ -142,7 +148,9 @@ cartSchema.statics.clearCart = async function(userId) {
 
   cart.items = []
   await cart.save()
-  return cart
+  
+  // Populate dữ liệu bookId sau khi xóa tất cả
+  return await this.getUserCart(userId)
 }
 
 // Static method to get cart summary

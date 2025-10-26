@@ -6,7 +6,7 @@ import { favoriteAPI, cartAPI } from '../services/apiService';
 
 const BookCard = ({ book }) => {
   const { user } = useAuth();
-  const { isFavorite, isInCart, getCartQuantity, updateFavorite, updateCartItem } = useBookStatus();
+  const { isFavorite, isInCart, getCartQuantity, updateFavorite, updateCartItem, refreshData } = useBookStatus();
   const [loading, setLoading] = useState(false);
 
   // Safety check for book object
@@ -70,6 +70,8 @@ const BookCard = ({ book }) => {
         await cartAPI.addToCart(book._id, 1);
         updateCartItem(book._id, 1, true);
       }
+      // Refresh data để đồng bộ với server
+      await refreshData();
       alert('Đã thêm vào giỏ hàng');
     } catch (error) {
       console.error('Error adding to cart:', error);
@@ -140,7 +142,7 @@ const BookCard = ({ book }) => {
             </span>
           </div>
           <div>
-            <span className="text-blue-600 font-bold text-lg">${book.price}</span>
+            <span className="text-blue-600 font-bold text-lg">{book.price?.toLocaleString('vi-VN')} ₫</span>
           </div>
         </div>
         
@@ -170,14 +172,11 @@ const BookCard = ({ book }) => {
             className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
               book.stock <= 0 
                 ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
-                : bookIsInCart
-                ? 'bg-green-600 text-white hover:bg-green-700'
                 : 'bg-blue-600 text-white hover:bg-blue-700'
             }`}
           >
             {loading ? 'Đang xử lý...' : 
-             book.stock <= 0 ? 'Hết hàng' :
-             bookIsInCart ? `Trong giỏ (${bookCartQuantity})` : 
+             book.stock <= 0 ? 'Hết hàng' : 
              'Thêm vào giỏ hàng'}
           </button>
           <button 

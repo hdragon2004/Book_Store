@@ -145,7 +145,7 @@ const OrderPage = () => {
                             {item.format} • {item.language}
                           </p>
                           <p className="text-lg font-semibold text-blue-600 mt-2">
-                            ${item.price}
+                            {item.price?.toLocaleString('vi-VN')} ₫
                           </p>
                         </div>
                         
@@ -190,16 +190,16 @@ const OrderPage = () => {
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Tạm tính:</span>
-                    <span className="font-medium">${calculateTotal()}</span>
+                    <span className="font-medium">{calculateTotal().toLocaleString('vi-VN')} ₫</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Phí vận chuyển:</span>
-                    <span className="font-medium">$0</span>
+                    <span className="font-medium">0 ₫</span>
                   </div>
                   <div className="border-t pt-3">
                     <div className="flex justify-between">
                       <span className="text-lg font-semibold">Tổng cộng:</span>
-                      <span className="text-lg font-semibold text-blue-600">${calculateTotal()}</span>
+                      <span className="text-lg font-semibold text-blue-600">{calculateTotal().toLocaleString('vi-VN')} ₫</span>
                     </div>
                   </div>
                 </div>

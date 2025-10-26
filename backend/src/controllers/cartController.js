@@ -82,10 +82,25 @@ export const addToCart = asyncHandler(async (req, res) => {
   // Thêm vào giỏ hàng
   const cart = await Cart.addItem(userId, bookId, quantity)
 
+  // Tính tổng giá sau khi thêm
+  let totalPrice = 0
+  const itemsWithPrice = cart.items.map(item => {
+    const itemTotal = item.bookId.price * item.quantity
+    totalPrice += itemTotal
+    return {
+      ...item.toObject(),
+      totalPrice: itemTotal
+    }
+  })
+
   res.status(200).json(
     new ApiResponse(200, {
       message: 'Book added to cart successfully',
-      cart
+      cart: {
+        items: itemsWithPrice,
+        totalItems: cart.totalItems,
+        totalPrice
+      }
     }, 'Book added to cart successfully')
   )
 })
@@ -120,10 +135,25 @@ export const updateCartItem = asyncHandler(async (req, res) => {
   // Cập nhật giỏ hàng
   const cart = await Cart.updateItemQuantity(userId, bookId, quantity)
 
+  // Tính tổng giá sau khi cập nhật
+  let totalPrice = 0
+  const itemsWithPrice = cart.items.map(item => {
+    const itemTotal = item.bookId.price * item.quantity
+    totalPrice += itemTotal
+    return {
+      ...item.toObject(),
+      totalPrice: itemTotal
+    }
+  })
+
   res.status(200).json(
     new ApiResponse(200, {
       message: 'Cart item updated successfully',
-      cart
+      cart: {
+        items: itemsWithPrice,
+        totalItems: cart.totalItems,
+        totalPrice
+      }
     }, 'Cart item updated successfully')
   )
 })
@@ -142,10 +172,25 @@ export const removeFromCart = asyncHandler(async (req, res) => {
   // Xóa khỏi giỏ hàng
   const cart = await Cart.removeItem(userId, bookId)
 
+  // Tính tổng giá sau khi xóa
+  let totalPrice = 0
+  const itemsWithPrice = cart.items.map(item => {
+    const itemTotal = item.bookId.price * item.quantity
+    totalPrice += itemTotal
+    return {
+      ...item.toObject(),
+      totalPrice: itemTotal
+    }
+  })
+
   res.status(200).json(
     new ApiResponse(200, {
       message: 'Book removed from cart successfully',
-      cart
+      cart: {
+        items: itemsWithPrice,
+        totalItems: cart.totalItems,
+        totalPrice
+      }
     }, 'Book removed from cart successfully')
   )
 })
@@ -166,7 +211,11 @@ export const clearCart = asyncHandler(async (req, res) => {
   res.status(200).json(
     new ApiResponse(200, {
       message: 'Cart cleared successfully',
-      cart
+      cart: {
+        items: [],
+        totalItems: 0,
+        totalPrice: 0
+      }
     }, 'Cart cleared successfully')
   )
 })

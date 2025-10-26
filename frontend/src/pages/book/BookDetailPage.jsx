@@ -163,7 +163,7 @@ const BookDetailPage = () => {
                 {/* Price and Rating */}
                 <div className="flex items-center justify-between">
                   <div className="text-3xl font-bold text-blue-600">
-                    ${book.price.toLocaleString()}
+                    {book.price?.toLocaleString('vi-VN')} ₫
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className="text-lg text-gray-600">

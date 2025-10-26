@@ -278,9 +278,9 @@ const BookPage = () => {
                     <p className="text-gray-600 text-sm">{book.author}</p>
                     
                     <div className="flex items-center justify-between">
-                      <span className="text-blue-600 font-bold text-lg">
-                        ${book.price.toLocaleString()}
-                      </span>
+                        <span className="text-blue-600 font-bold text-lg">
+                          {book.price?.toLocaleString('vi-VN')} ₫
+                        </span>
                       <div className="flex items-center">
                         <span className="text-sm text-gray-500">
                           {book.format} • {book.language}

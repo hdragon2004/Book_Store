@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { bookAPI, categoryAPI } from '../services/apiService';
+import { useBookStatus } from '../contexts/BookStatusContext';
 import BookCard from '../components/BookCard';
 
 const HomePage = () => {
+  const { refreshData } = useBookStatus();
+  const location = useLocation();
   const [booksByCategory, setBooksByCategory] = useState({});
   const [allBooks, setAllBooks] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -40,6 +43,9 @@ const HomePage = () => {
       try {
         console.log('🏠 HomePage: Starting to fetch data...');
         setLoading(true);
+        
+        // Refresh user data (favorites, cart) khi vào trang chủ
+        await refreshData();
         
         // Tạm thời tắt cache để test
         // const cachedData = localStorage.getItem('homepage_data');
@@ -114,6 +120,13 @@ const HomePage = () => {
 
     fetchData();
   }, []);
+
+  // Refresh data when returning from cart page
+  useEffect(() => {
+    if (location.pathname === '/' && location.state?.fromCart) {
+      refreshData();
+    }
+  }, [location, refreshData]);
 
   // Handle scroll for each category - move 5 books at a time
   const handleScroll = (containerId, direction) => {

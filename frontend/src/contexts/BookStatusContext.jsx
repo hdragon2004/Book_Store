@@ -103,10 +103,32 @@ export const BookStatusProvider = ({ children }) => {
   };
 
   // Refresh data (sau khi user thực hiện action)
-  const refreshData = () => {
+  const refreshData = async () => {
     if (user) {
-      setInitialized(false);
-      loadUserData();
+      setLoading(true);
+      try {
+        // Load favorites
+        const favoritesResponse = await favoriteAPI.getFavorites();
+        const favoritesData = favoritesResponse.data.data?.favorites || [];
+        const favoritesSet = new Set(favoritesData.map(fav => fav.bookId._id));
+        setFavorites(favoritesSet);
+
+        // Load cart
+        const cartResponse = await cartAPI.getCart();
+        const cartData = cartResponse.data.data?.cart?.items || [];
+        const cartMap = new Map();
+        cartData.forEach(item => {
+          cartMap.set(item.bookId._id, {
+            quantity: item.quantity,
+            inCart: true
+          });
+        });
+        setCartItems(cartMap);
+      } catch (error) {
+        console.error('Error refreshing data:', error);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
