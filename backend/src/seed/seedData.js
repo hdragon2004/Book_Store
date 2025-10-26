@@ -15,8 +15,6 @@ import OrderItem from '~/models/orderItemModel'
 import Favorite from '~/models/favoriteModel'
 import Voucher from '~/models/voucherModel'
 import VoucherUsage from '~/models/voucherUsageModel'
-import Ticket from '~/models/ticketModel'
-import TicketMessage from '~/models/ticketMessageModel'
 import Message from '~/models/messageModel'
 
 // Connect to database
@@ -320,24 +318,6 @@ const sampleVouchers = [
   }
 ]
 
-const sampleTickets = [
-  {
-    ticketNumber: 'TKT-001',
-    subject: 'Vấn đề với đơn hàng #12345',
-    description: 'Tôi không nhận được đơn hàng đã đặt từ 3 ngày trước',
-    priority: 'high',
-    status: 'open',
-    category: 'order_issue'
-  },
-  {
-    ticketNumber: 'TKT-002',
-    subject: 'Yêu cầu hoàn tiền',
-    description: 'Tôi muốn hoàn tiền cho sản phẩm bị lỗi',
-    priority: 'medium',
-    status: 'in_progress',
-    category: 'return_refund'
-  }
-]
 
 
 
@@ -356,8 +336,6 @@ const seedDatabase = async () => {
     await Favorite.deleteMany({})
     await Voucher.deleteMany({})
     await VoucherUsage.deleteMany({})
-    await Ticket.deleteMany({})
-    await TicketMessage.deleteMany({})
     await Message.deleteMany({})
     console.log('🧹 Cleared existing data')
     
@@ -468,16 +446,6 @@ const seedDatabase = async () => {
     }
     console.log('🎫 Created voucher usages:', voucherUsages.length)
 
-    // Create tickets
-    const tickets = []
-    for (let i = 0; i < sampleTickets.length; i++) {
-      const ticket = await Ticket.create({
-        ...sampleTickets[i],
-        userId: users[1]._id // Regular user
-      })
-      tickets.push(ticket)
-    }
-    console.log('🎫 Created tickets:', tickets.length)
 
 
 
@@ -493,7 +461,6 @@ const seedDatabase = async () => {
     console.log(`❤️ Favorites: ${favorites.length}`)
     console.log(`🎫 Vouchers: ${vouchers.length}`)
     console.log(`🎫 Voucher usages: ${voucherUsages.length}`)
-    console.log(`🎫 Tickets: ${tickets.length}`)
     
     console.log('\n🛒 Order Details:')
     orders.forEach((order, index) => {

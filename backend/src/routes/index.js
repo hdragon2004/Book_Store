@@ -23,7 +23,6 @@ import messageRoutes from './messageRoutes'
 import paymentRoutes from './paymentRoutes'
 import voucherRoutes from './voucherRoutes'
 import reportRoutes from './reportRoutes'
-import ticketRoutes from './ticketRoutes'
 import uploadRoutes from './uploadRoutes'
 import downloadRoutes from './downloadRoutes'
 import libraryRoutes from './libraryRoutes'
@@ -136,7 +135,6 @@ app.use('/api/messages', messageRoutes)
 app.use('/api/payments', paymentRoutes)
 app.use('/api/vouchers', voucherRoutes)
 app.use('/api/reports', reportRoutes)
-app.use('/api/tickets', ticketRoutes)
 app.use('/api/upload', uploadRoutes)
 app.use('/api/download', downloadRoutes)
 app.use('/api/library', libraryRoutes)

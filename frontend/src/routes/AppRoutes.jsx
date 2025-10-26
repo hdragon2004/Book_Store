@@ -32,7 +32,6 @@ import AdminOrderDetailPage from '../pages/admin/orders/AdminOrderDetailPage';
 import UsersPage from '../pages/admin/users/UsersPage';
 import ReportsPage from '../pages/admin/reports/ReportsPage';
 import PaymentsPage from '../pages/admin/payments/PaymentsPage';
-import TicketsPage from '../pages/admin/tickets/TicketsPage';
 import VouchersPage from '../pages/admin/vouchers/VouchersPage';
 import CreateVouchersPage from '../pages/admin/vouchers/CreateVouchersPage';
 import UpdateVouchersPage from '../pages/admin/vouchers/UpdateVouchersPage';
@@ -337,16 +336,6 @@ const AppRoutes = () => {
           <AdminRoute>
             <AdminLayout>
               <ReportsPage />
-            </AdminLayout>
-          </AdminRoute>
-        }
-      />
-      <Route
-        path="/admin/tickets"
-        element={
-          <AdminRoute>
-            <AdminLayout>
-              <TicketsPage />
             </AdminLayout>
           </AdminRoute>
         }

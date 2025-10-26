@@ -353,48 +353,6 @@ export const paymentAPI = {
     axiosClient.get('/payments/stats'),
 };
 
-// Ticket API
-export const ticketAPI = {
-  // Get all tickets (Admin only)
-  getTickets: (params = {}) =>
-    axiosClient.get('/tickets', { params }),
-
-  // Get ticket by ID
-  getTicketById: (id) =>
-    axiosClient.get(`/tickets/${id}`),
-
-  // Create new ticket
-  createTicket: (data) =>
-    axiosClient.post('/tickets', data),
-
-  // Update ticket
-  updateTicket: (id, data) =>
-    axiosClient.put(`/tickets/${id}`, data),
-
-  // Update ticket status
-  updateTicketStatus: (id, data) =>
-    axiosClient.patch(`/tickets/${id}/status`, data),
-
-  // Assign ticket
-  assignTicket: (id, assignedTo) =>
-    axiosClient.patch(`/tickets/${id}/assign`, { assignedTo }),
-
-  // Get ticket messages
-  getTicketMessages: (id) =>
-    axiosClient.get(`/tickets/${id}/messages`),
-
-  // Add message to ticket
-  addMessage: (id, data) =>
-    axiosClient.post(`/tickets/${id}/messages`, data),
-
-  // Get my tickets (User)
-  getMyTickets: (params = {}) =>
-    axiosClient.get('/tickets/my-tickets', { params }),
-
-  // Get assigned tickets (Admin)
-  getAssignedTickets: (params = {}) =>
-    axiosClient.get('/tickets/assigned', { params }),
-};
 
 // Voucher API
 export const voucherAPI = {
@@ -515,7 +473,6 @@ export default {
   cart: cartAPI,
   admin: adminAPI,
   payment: paymentAPI,
-  ticket: ticketAPI,
   voucher: voucherAPI,
   message: messageAPI,
   library: libraryAPI,
