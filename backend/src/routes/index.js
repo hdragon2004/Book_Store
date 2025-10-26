@@ -25,6 +25,8 @@ import voucherRoutes from './voucherRoutes'
 import reportRoutes from './reportRoutes'
 import ticketRoutes from './ticketRoutes'
 import uploadRoutes from './uploadRoutes'
+import downloadRoutes from './downloadRoutes'
+import libraryRoutes from './libraryRoutes'
 
 /**
  * Express App Configuration
@@ -91,6 +93,25 @@ app.use(requestLogger) // Log request với Morgan
 // Static files
 app.use('/uploads', express.static('uploads'))
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'BookStore API Server',
+    version: '1.0.0',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      users: '/api/users',
+      books: '/api/books',
+      orders: '/api/orders',
+      cart: '/api/cart',
+      favorites: '/api/favorites'
+    }
+  })
+})
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
@@ -117,6 +138,8 @@ app.use('/api/vouchers', voucherRoutes)
 app.use('/api/reports', reportRoutes)
 app.use('/api/tickets', ticketRoutes)
 app.use('/api/upload', uploadRoutes)
+app.use('/api/download', downloadRoutes)
+app.use('/api/library', libraryRoutes)
 
 // 404 handler
 app.use('*', (req, res) => {

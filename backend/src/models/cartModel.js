@@ -205,6 +205,23 @@ cartSchema.statics.findDeleted = function() {
   return this.find({ isDeleted: true })
 }
 
+// Static method to remove specific items from cart
+cartSchema.statics.removeItems = async function(userId, bookIds) {
+  const cart = await this.findOne({ userId, isDeleted: false })
+  if (!cart) {
+    throw new Error('Cart not found')
+  }
+
+  // Remove items with matching bookIds
+  cart.items = cart.items.filter(item => !bookIds.includes(item.bookId.toString()))
+  
+  // Recalculate totals
+  cart.totalItems = cart.items.reduce((total, item) => total + item.quantity, 0)
+  
+  await cart.save()
+  return cart
+}
+
 // Indexes for better performance
 cartSchema.index({ isDeleted: 1 })
 cartSchema.index({ createdAt: -1 })

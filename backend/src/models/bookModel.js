@@ -50,10 +50,6 @@ const bookSchema = new mongoose.Schema({
   publicationDate: {
     type: Date
   },
-  language: {
-    type: String,
-    default: 'English'
-  },
   pages: {
     type: Number,
     min: [0, 'Pages cannot be negative'],
@@ -76,6 +72,33 @@ const bookSchema = new mongoose.Schema({
   fileUrl: {
     type: String,
     default: ''
+  },
+  // For digital books
+  digitalFile: {
+    filePath: {
+      type: String,
+      required: function() {
+        return this.format === 'ebook' || this.format === 'audiobook'
+      }
+    },
+    fileSize: {
+      type: Number,
+      required: function() {
+        return this.format === 'ebook' || this.format === 'audiobook'
+      }
+    },
+    mimeType: {
+      type: String,
+      required: function() {
+        return this.format === 'ebook' || this.format === 'audiobook'
+      }
+    },
+    duration: {
+      type: Number, // in seconds for audiobooks
+      required: function() {
+        return this.format === 'audiobook'
+      }
+    }
   },
   viewCount: {
     type: Number,

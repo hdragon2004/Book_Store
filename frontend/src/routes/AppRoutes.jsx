@@ -9,7 +9,9 @@ import OrderDetailPage from '../pages/order/OrderDetailPage';
 import OrdersListPage from '../pages/order/OrdersListPage';
 import FavoritesPage from '../pages/user/FavoritesPage';
 import ProfilePage from '../pages/user/ProfilePage';
+import MyLibraryPage from '../pages/user/MyLibraryPage';
 import CartPage from '../pages/CartPage';
+import QRTest from '../components/QRTest';
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
 import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
@@ -137,6 +139,20 @@ const AppRoutes = () => {
           <PrivateRoute>
             <MainLayout><FavoritesPage /></MainLayout>
           </PrivateRoute>
+        } 
+      />
+      <Route 
+        path="/library" 
+        element={
+          <PrivateRoute>
+            <MainLayout><MyLibraryPage /></MainLayout>
+          </PrivateRoute>
+        } 
+      />
+      <Route 
+        path="/qr-test" 
+        element={
+          <MainLayout><QRTest /></MainLayout>
         } 
       />
       <Route 

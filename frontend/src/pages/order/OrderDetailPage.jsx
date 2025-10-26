@@ -9,6 +9,7 @@ const OrderDetailPage = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     const fetchOrderDetail = async () => {
@@ -44,6 +45,7 @@ const OrderDetailPage = () => {
       case 'shipped': return 'bg-purple-100 text-purple-800';
       case 'delivered': return 'bg-green-100 text-green-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
+      case 'digital_delivered': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -55,6 +57,7 @@ const OrderDetailPage = () => {
       case 'shipped': return 'Đã giao';
       case 'delivered': return 'Đã nhận';
       case 'cancelled': return 'Đã hủy';
+      case 'digital_delivered': return 'Đã giao (Sách điện tử)';
       default: return status;
     }
   };
@@ -67,6 +70,32 @@ const OrderDetailPage = () => {
       case 'paypal': return 'PayPal';
       default: return method;
     }
+  };
+
+  const handleCancelOrder = async () => {
+    if (!window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
+      return;
+    }
+
+    try {
+      setCancelling(true);
+      await orderAPI.cancelOrder(orderId);
+      
+      // Refresh order data
+      const response = await orderAPI.getOrder(orderId);
+      setOrder(response?.data?.data || response?.data);
+      
+      alert('Đơn hàng đã được hủy thành công');
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      alert(error.response?.data?.message || 'Có lỗi xảy ra khi hủy đơn hàng');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const canCancelOrder = () => {
+    return order && ['pending', 'confirmed'].includes(order.status);
   };
 
   if (loading) {
@@ -130,6 +159,15 @@ const OrderDetailPage = () => {
               <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(order.status)}`}>
                 {getStatusText(order.status)}
               </span>
+              {canCancelOrder() && (
+                <button
+                  onClick={handleCancelOrder}
+                  disabled={cancelling}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {cancelling ? 'Đang hủy...' : 'Hủy đơn hàng'}
+                </button>
+              )}
               <Link 
                 to="/orders" 
                 className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"

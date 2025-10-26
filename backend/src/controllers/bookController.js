@@ -18,6 +18,52 @@ class BookController {
     const bookData = req.body
     console.log('📥 Received book data:', bookData)
 
+    // Xử lý digitalFile cho sách điện tử/sách nói
+    if (bookData.format === 'ebook' || bookData.format === 'audiobook') {
+      if (bookData.fileUrl && !bookData.digitalFile) {
+        // Tạo digitalFile từ fileUrl
+        const digitalFile = {
+          filePath: bookData.fileUrl,
+          fileSize: 0, // Sẽ được cập nhật khi upload file thực tế
+          mimeType: bookData.format === 'ebook' ? 'application/pdf' : 'audio/mpeg'
+        }
+        
+        // Copy file từ uploads sang storage an toàn
+        try {
+          const fs = require('fs')
+          const path = require('path')
+          
+          const sourcePath = path.join(process.cwd(), 'uploads', bookData.fileUrl)
+          const storageDir = path.join(process.cwd(), 'storage', 'books', 
+            bookData.format === 'audiobook' ? 'audiobooks' : 'ebooks')
+          const destPath = path.join(storageDir, bookData.fileUrl)
+          
+          // Tạo thư mục nếu chưa có
+          if (!fs.existsSync(storageDir)) {
+            fs.mkdirSync(storageDir, { recursive: true })
+          }
+          
+          // Copy file
+          if (fs.existsSync(sourcePath)) {
+            fs.copyFileSync(sourcePath, destPath)
+            console.log(`📁 File copied to secure storage: ${destPath}`)
+          }
+        } catch (error) {
+          console.error('Error copying file to secure storage:', error)
+        }
+        
+        // Chỉ thêm duration cho audiobook
+        if (bookData.format === 'audiobook') {
+          digitalFile.duration = 3600 // 1 giờ mặc định
+        }
+        
+        bookData.digitalFile = digitalFile
+        
+        // Xóa fileUrl vì đã chuyển vào digitalFile
+        delete bookData.fileUrl
+      }
+    }
+
     // Gọi service để tạo sách
     const book = await bookService.createBook(bookData)
 

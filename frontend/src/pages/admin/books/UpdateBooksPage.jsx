@@ -20,7 +20,6 @@ const UpdateBooksPage = () => {
     isbn: '',
     publisher: '',
     publicationDate: '',
-    language: 'vi',
     pages: '',
     format: 'paperback',
     dimensions: '',
@@ -337,21 +336,6 @@ const UpdateBooksPage = () => {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Ngôn ngữ</label>
-                  <select
-                    name="language"
-                    value={formData.language}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="vi">Tiếng Việt</option>
-                    <option value="en">English</option>
-                    <option value="zh">中文</option>
-                    <option value="ja">日本語</option>
-                    <option value="ko">한국어</option>
-                  </select>
                 </div>
               </div>
 

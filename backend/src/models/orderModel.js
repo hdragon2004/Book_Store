@@ -32,7 +32,7 @@ const orderSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['cod', 'bank_transfer', 'credit_card', 'paypal'],
+    enum: ['cod', 'bank_transfer', 'credit_card', 'paypal', 'momo', 'zalopay'],
     default: 'cod'
   },
   status: {
@@ -77,6 +77,49 @@ const orderSchema = new mongoose.Schema({
   isDeleted: {
     type: Boolean,
     default: false
+  },
+  // Shipper information
+  shipper: {
+    name: {
+      type: String
+    },
+    phone: {
+      type: String
+    },
+    company: {
+      type: String
+    },
+    trackingNumber: {
+      type: String
+    }
+  },
+  // Timestamps for different statuses
+  confirmedAt: {
+    type: Date
+  },
+  shippedAt: {
+    type: Date
+  },
+  deliveredAt: {
+    type: Date
+  },
+  cancelledAt: {
+    type: Date
+  },
+  // Payment information (extend existing paymentMethod)
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'completed', 'failed', 'refunded'],
+    default: 'pending'
+  },
+  transactionId: {
+    type: String
+  },
+  qrCode: {
+    type: String
+  },
+  paidAt: {
+    type: Date
   }
 })
 

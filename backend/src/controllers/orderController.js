@@ -3,6 +3,7 @@ import OrderItem from '~/models/orderItemModel'
 import Cart from '~/models/cartModel'
 import Book from '~/models/bookModel'
 import User from '~/models/userModel'
+import UserBook from '~/models/userBookModel'
 import { AppError } from '~/utils/AppError'
 import { ApiResponse } from '~/utils/ApiResponse'
 import { asyncHandler } from '~/utils/asyncHandler'
@@ -14,24 +15,24 @@ import { sendOrderConfirmationEmail, sendShippingNotificationEmail } from '~/ser
 
 // Tạo đơn hàng mới
 export const createOrder = asyncHandler(async (req, res) => {
-  const { shippingAddress, paymentMethod } = req.body
+  const { shippingAddress, paymentMethod, voucher, items } = req.body
     const userId = req.user._id
 
   console.log('🛒 Creating order for user:', userId)
   console.log('🛒 Shipping address:', shippingAddress)
   console.log('🛒 Payment method:', paymentMethod)
+  console.log('🛒 Selected items:', items)
 
-  // Lấy giỏ hàng của user
-  const cart = await Cart.getUserCart(userId)
-  if (!cart || cart.items.length === 0) {
-    throw new AppError('Cart is empty', 400)
+  // Kiểm tra items được chọn
+  if (!items || items.length === 0) {
+    throw new AppError('No items selected for order', 400)
   }
 
-  // Kiểm tra stock và tính tổng giá
+  // Kiểm tra stock và tính tổng giá cho các items được chọn
   let totalPrice = 0
   const orderItems = []
 
-  for (const item of cart.items) {
+  for (const item of items) {
     const book = await Book.findById(item.bookId)
     if (!book) {
       throw new AppError(`Book ${item.bookId} not found`, 404)
@@ -56,10 +57,15 @@ export const createOrder = asyncHandler(async (req, res) => {
     userId,
     totalPrice,
     paymentMethod: paymentMethod || 'cod',
-    shippingAddress
+    shippingAddress,
+    voucherId: voucher?.voucherId || null,
+    discountAmount: voucher?.discountAmount || 0
   })
 
-  // Tạo order items
+  // Tạo order items và xử lý sách điện tử/sách nói
+  const digitalBooks = []
+  const physicalBooks = []
+  
   for (const item of orderItems) {
     await OrderItem.create({
       orderId: order._id,
@@ -68,23 +74,95 @@ export const createOrder = asyncHandler(async (req, res) => {
       priceAtPurchase: item.priceAtPurchase
     })
 
-    // Cập nhật stock
-    await Book.findByIdAndUpdate(
-      item.bookId,
-      { $inc: { stock: -item.quantity } }
-    )
+    // Lấy thông tin sách để kiểm tra loại
+    const book = await Book.findById(item.bookId)
+    
+    if (book.format === 'ebook' || book.format === 'audiobook') {
+      // Sách điện tử/sách nói - thêm vào UserBooks
+      digitalBooks.push({
+        userId,
+        bookId: item.bookId,
+        orderId: order._id,
+        bookType: book.format === 'ebook' ? 'ebook' : 'audiobook',
+        filePath: book.digitalFile.filePath,
+        fileSize: book.digitalFile.fileSize,
+        mimeType: book.digitalFile.mimeType
+      })
+    } else {
+      // Sách bìa cứng/mềm - cập nhật stock
+      physicalBooks.push(item)
+      await Book.findByIdAndUpdate(
+        item.bookId,
+        { $inc: { stock: -item.quantity } }
+      )
+    }
   }
 
-  // Xóa giỏ hàng
-  await Cart.clearCart(userId)
+  // Tạo UserBooks cho sách điện tử/sách nói
+  if (digitalBooks.length > 0) {
+    // Kiểm tra và chỉ tạo UserBook cho những sách chưa có
+    const existingUserBooks = await UserBook.find({
+      userId,
+      bookId: { $in: digitalBooks.map(book => book.bookId) }
+    })
+    
+    const existingBookIds = existingUserBooks.map(book => book.bookId.toString())
+    const newDigitalBooks = digitalBooks.filter(book => 
+      !existingBookIds.includes(book.bookId.toString())
+    )
+    
+    if (newDigitalBooks.length > 0) {
+      await UserBook.insertMany(newDigitalBooks)
+      console.log(`📚 Added ${newDigitalBooks.length} new digital books to user library`)
+    } else {
+      console.log(`📚 All digital books already exist in user library`)
+    }
+    
+    // Nếu có sách đã tồn tại, thông báo cho user
+    if (digitalBooks.length > newDigitalBooks.length) {
+      const duplicateCount = digitalBooks.length - newDigitalBooks.length
+      console.log(`⚠️ ${duplicateCount} books already in user library`)
+    }
+  }
+
+  // Cập nhật trạng thái đơn hàng dựa trên loại sách
+  if (digitalBooks.length > 0 && physicalBooks.length === 0) {
+    // Chỉ có sách điện tử/sách nói - giao hàng ngay lập tức
+    await Order.findByIdAndUpdate(order._id, { 
+      status: 'digital_delivered',
+      deliveredAt: new Date()
+    })
+    console.log('📱 Order marked as digital delivered')
+  } else if (digitalBooks.length > 0 && physicalBooks.length > 0) {
+    // Có cả sách bìa và sách điện tử - giao sách điện tử trước, sách bìa chờ xác nhận
+    await Order.findByIdAndUpdate(order._id, { 
+      status: 'pending' // Sách bìa cần admin xác nhận
+    })
+    console.log('📦 Mixed order - digital books delivered, physical books pending admin confirmation')
+  } else if (physicalBooks.length > 0) {
+    // Chỉ có sách bìa - chờ admin xác nhận
+    await Order.findByIdAndUpdate(order._id, { 
+      status: 'pending'
+    })
+    console.log('📦 Physical books order - pending admin confirmation')
+  }
+
+  // Xóa các items đã chọn khỏi giỏ hàng
+  const selectedBookIds = items.map(item => item.bookId)
+  await Cart.removeItems(userId, selectedBookIds)
+  console.log(`🛒 Removed ${selectedBookIds.length} selected items from cart`)
 
   // Lấy order items riêng
   const populatedOrderItems = await OrderItem.find({ orderId: order._id })
     .populate('bookId', 'title author price imageUrl')
 
+  // Populate user cho email
+  const orderWithUser = await Order.findById(order._id)
+    .populate('userId', 'name email')
+
   // Tạo object response với order và orderItems
   const populatedOrder = {
-    ...order.toObject(),
+    ...orderWithUser.toObject(),
     orderItems: populatedOrderItems
   }
 
@@ -189,16 +267,38 @@ export const getOrderById = asyncHandler(async (req, res) => {
 // Cập nhật trạng thái đơn hàng (Admin only)
 export const updateOrderStatus = asyncHandler(async (req, res) => {
   const { orderId } = req.params
-  const { status } = req.body
+  const { status, shipper } = req.body
 
   const validStatuses = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled', 'digital_delivered']
   if (!validStatuses.includes(status)) {
     throw new AppError('Invalid status', 400)
   }
 
+  // Chuẩn bị update data
+  const updateData = { status }
+  
+  // Thêm timestamp tương ứng
+  switch (status) {
+    case 'confirmed':
+      updateData.confirmedAt = new Date()
+      break
+    case 'shipped':
+      updateData.shippedAt = new Date()
+      if (shipper) {
+        updateData.shipper = shipper
+      }
+      break
+    case 'delivered':
+      updateData.deliveredAt = new Date()
+      break
+    case 'cancelled':
+      updateData.cancelledAt = new Date()
+      break
+  }
+
   const order = await Order.findByIdAndUpdate(
     orderId,
-    { status },
+    updateData,
     { new: true }
   ).populate('userId', 'name email')
 
@@ -217,39 +317,56 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
   }
 
   res.status(200).json(
-    new ApiResponse(200, order, 'Order status updated successfully').toJSON()
+    new ApiResponse(200, order, 'Order status updated successfully')
   )
 })
 
-// Hủy đơn hàng
+// Hủy đơn hàng (chỉ cho pending và confirmed)
 export const cancelOrder = asyncHandler(async (req, res) => {
   const { orderId } = req.params
-    const userId = req.user._id
+  const userId = req.user._id
 
-  const order = await Order.findOne({ _id: orderId, userId })
+  const order = await Order.findOne({ 
+    _id: orderId, 
+    userId,
+    isDeleted: false 
+  })
+
   if (!order) {
     throw new AppError('Order not found', 404)
   }
 
-  if (order.status === 'delivered' || order.status === 'cancelled') {
-    throw new AppError('Cannot cancel this order', 400)
+  // Chỉ cho phép hủy đơn hàng ở trạng thái pending hoặc confirmed
+  if (!['pending', 'confirmed'].includes(order.status)) {
+    throw new AppError('Cannot cancel order in current status. Only pending and confirmed orders can be cancelled.', 400)
   }
 
-  // Hoàn lại stock
-  const orderItems = await OrderItem.find({ orderId })
-  for (const item of orderItems) {
-    await Book.findByIdAndUpdate(
-      item.bookId,
-      { $inc: { stock: item.quantity } }
-    )
-  }
-
-  // Cập nhật trạng thái
+  // Cập nhật trạng thái đơn hàng
   order.status = 'cancelled'
+  order.cancelledAt = new Date()
   await order.save()
 
+  // Hoàn lại stock cho sách bìa
+  const orderItems = await OrderItem.find({ orderId: order._id })
+    .populate('bookId', 'format stock')
+
+  for (const item of orderItems) {
+    if (item.bookId.format === 'hardcover' || item.bookId.format === 'paperback') {
+      await Book.findByIdAndUpdate(
+        item.bookId._id,
+        { $inc: { stock: item.quantity } }
+      )
+    }
+  }
+
+  // Xóa UserBooks nếu có (cho sách điện tử đã được giao)
+  if (order.status === 'digital_delivered' || order.status === 'confirmed') {
+    const deletedUserBooks = await UserBook.deleteMany({ orderId: order._id })
+    console.log(`📚 Removed ${deletedUserBooks.deletedCount} digital books from user library`)
+  }
+
   res.status(200).json(
-    new ApiResponse(200, order, 'Order cancelled successfully').toJSON()
+    new ApiResponse(200, { order }, 'Order cancelled successfully')
   )
 })
 

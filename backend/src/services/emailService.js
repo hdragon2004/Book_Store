@@ -3,7 +3,7 @@ import config from '~/config/environment'
 
 // Tạo transporter
 const createTransporter = () => {
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: process.env.SMTP_PORT || 587,
     secure: false, // true for 465, false for other ports
@@ -16,7 +16,7 @@ const createTransporter = () => {
 
 // Template cho email xác nhận đơn hàng
 const createOrderConfirmationTemplate = (order) => {
-  const { _id, totalPrice, shippingAddress, orderItems, createdAt } = order
+  const { orderCode, totalPrice, shippingAddress, orderItems, createdAt } = order
   
   const itemsHtml = orderItems.map(item => `
     <tr>
@@ -39,7 +39,7 @@ const createOrderConfirmationTemplate = (order) => {
     <html>
     <head>
       <meta charset="utf-8">
-      <title>Xác nhận đơn hàng #${_id}</title>
+      <title>Xác nhận đơn hàng #${orderCode}</title>
     </head>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
@@ -52,7 +52,7 @@ const createOrderConfirmationTemplate = (order) => {
         
         <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="color: #34495e; margin-top: 0;">📋 Thông tin đơn hàng</h3>
-          <p><strong>Mã đơn hàng:</strong> #${_id}</p>
+          <p><strong>Mã đơn hàng:</strong> #${orderCode}</p>
           <p><strong>Ngày đặt:</strong> ${new Date(createdAt).toLocaleDateString('vi-VN')}</p>
           <p><strong>Tổng tiền:</strong> <span style="color: #e74c3c; font-size: 18px; font-weight: bold;">${totalPrice.toLocaleString('vi-VN')} VND</span></p>
         </div>
@@ -88,7 +88,7 @@ const createOrderConfirmationTemplate = (order) => {
 
 // Template cho email thông báo giao hàng
 const createShippingNotificationTemplate = (order) => {
-  const { _id, shippingAddress, orderItems } = order
+  const { orderCode, shippingAddress, orderItems } = order
   
   const itemsList = orderItems.map(item => 
     `• ${item.bookId.title} - ${item.quantity} cuốn`
@@ -99,7 +99,7 @@ const createShippingNotificationTemplate = (order) => {
     <html>
     <head>
       <meta charset="utf-8">
-      <title>Hàng đang được giao - Đơn hàng #${_id}</title>
+      <title>Hàng đang được giao - Đơn hàng #${orderCode}</title>
     </head>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
@@ -112,7 +112,7 @@ const createShippingNotificationTemplate = (order) => {
         
         <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="color: #34495e; margin-top: 0;">📋 Thông tin đơn hàng</h3>
-          <p><strong>Mã đơn hàng:</strong> #${_id}</p>
+          <p><strong>Mã đơn hàng:</strong> #${orderCode}</p>
           <p><strong>Trạng thái:</strong> <span style="color: #f39c12; font-weight: bold;">Đang giao hàng</span></p>
         </div>
 
@@ -146,12 +146,18 @@ const createShippingNotificationTemplate = (order) => {
 // Gửi email xác nhận đơn hàng
 export const sendOrderConfirmationEmail = async (order) => {
   try {
+    // Kiểm tra nếu không có email
+    if (!order.userId || !order.userId.email) {
+      console.log('⚠️ No email address found for user, skipping email')
+      return
+    }
+
     const transporter = createTransporter()
     
     const mailOptions = {
       from: `"BookStore" <${process.env.SMTP_USER}>`,
       to: order.userId.email,
-      subject: `✅ Xác nhận đơn hàng #${order._id} - BookStore`,
+      subject: `✅ Xác nhận đơn hàng #${order.orderCode} - BookStore`,
       html: createOrderConfirmationTemplate(order)
     }
 
@@ -172,7 +178,7 @@ export const sendShippingNotificationEmail = async (order) => {
     const mailOptions = {
       from: `"BookStore" <${process.env.SMTP_USER}>`,
       to: order.userId.email,
-      subject: `🚚 Hàng đang được giao - Đơn hàng #${order._id} - BookStore`,
+      subject: `🚚 Hàng đang được giao - Đơn hàng #${order.orderCode} - BookStore`,
       html: createShippingNotificationTemplate(order)
     }
 

@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useBookStatus } from '../contexts/BookStatusContext';
-import { cartAPI } from '../services/apiService';
+import { cartAPI, orderAPI } from '../services/apiService';
 import PageLayout from '../layouts/PageLayout';
 
 const CartPage = () => {
   const { user } = useAuth();
   const { refreshData } = useBookStatus();
+  const navigate = useNavigate();
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedItems, setSelectedItems] = useState(new Set());
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -93,6 +95,24 @@ const CartPage = () => {
   // Bỏ chọn tất cả sản phẩm
   const handleDeselectAll = () => {
     setSelectedItems(new Set());
+  };
+
+  // Xử lý thanh toán
+  const handleCheckout = () => {
+    if (selectedItemsCount === 0) {
+      alert('Vui lòng chọn sản phẩm để thanh toán');
+      return;
+    }
+
+    // Lấy sản phẩm đã chọn
+    const selectedBooks = cartItems.filter(item => selectedItems.has(item.bookId._id));
+    
+    // Chuyển đến OrderPage với dữ liệu đã chọn
+    navigate('/order', {
+      state: {
+        selectedItems: selectedBooks
+      }
+    });
   };
 
   if (!user) {
@@ -317,6 +337,8 @@ const CartPage = () => {
                 </div>
               </div>
 
+
+
               {/* Order Summary */}
               <div className="lg:col-span-1">
                 <div className="bg-white rounded-lg shadow-sm p-6 sticky top-8">
@@ -340,8 +362,12 @@ const CartPage = () => {
                   </div>
 
                   {selectedItemsCount > 0 ? (
-                    <button className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors">
-                      Tiến hành thanh toán ({selectedItemsCount} sản phẩm)
+                    <button 
+                      onClick={handleCheckout}
+                      disabled={checkoutLoading}
+                      className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {checkoutLoading ? 'Đang xử lý...' : `Tiến hành thanh toán (${selectedItemsCount} sản phẩm)`}
                     </button>
                   ) : (
                     <button 

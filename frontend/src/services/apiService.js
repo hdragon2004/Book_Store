@@ -159,6 +159,10 @@ export const orderAPI = {
   getUserOrders: (userId, params = {}) => 
     axiosClient.get(`/orders/user/${userId}`, { params }),
 
+  // Cancel order
+  cancelOrder: (orderId) => 
+    axiosClient.patch(`/orders/${orderId}/cancel`),
+
   // Update order status
   updateOrderStatus: (id, status) => 
     axiosClient.patch(`/orders/admin/${id}/status`, { status }),
@@ -458,6 +462,48 @@ export const messageAPI = {
     axiosClient.get(`/messages/conversation/${userId}`),
 };
 
+// Library API
+export const libraryAPI = {
+  // Get user's library
+  getMyLibrary: (params = {}) => 
+    axiosClient.get('/library', { params }),
+
+  // Get library book details
+  getLibraryBook: (bookId) => 
+    axiosClient.get(`/library/book/${bookId}`),
+
+  // Get download history
+  getDownloadHistory: (params = {}) => 
+    axiosClient.get('/library/downloads', { params }),
+
+  // Get library stats
+  getLibraryStats: () => 
+    axiosClient.get('/library/stats'),
+
+  // Search library
+  searchLibrary: (params = {}) => 
+    axiosClient.get('/library/search', { params }),
+};
+
+// Download API
+export const downloadAPI = {
+  // Generate download link
+  generateDownloadLink: (bookId) => 
+    axiosClient.get(`/download/temp/${bookId}`),
+
+  // Download file
+  downloadFile: (bookId, token) => 
+    axiosClient.get(`/download/file/${bookId}?token=${token}`),
+
+  // Stream file
+  streamFile: (bookId) => 
+    axiosClient.get(`/download/stream/${bookId}`),
+
+  // Get file info
+  getFileInfo: (bookId) => 
+    axiosClient.get(`/download/info/${bookId}`),
+};
+
 // Export all APIs
 export default {
   auth: authAPI,
@@ -471,5 +517,7 @@ export default {
   payment: paymentAPI,
   ticket: ticketAPI,
   voucher: voucherAPI,
-  message: messageAPI
+  message: messageAPI,
+  library: libraryAPI,
+  download: downloadAPI
 };
