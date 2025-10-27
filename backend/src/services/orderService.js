@@ -2,9 +2,11 @@ import Order from '~/models/orderModel'
 import OrderItem from '~/models/orderItemModel'
 import Book from '~/models/bookModel'
 import User from '~/models/userModel'
+import Address from '~/models/addressModel'
+import Cart from '~/models/cartModel'
 import { AppError } from '~/utils/AppError'
 import { addOrderConfirmationJob, addOrderStatusUpdateJob } from '~/queue/emailQueue'
-import voucherService from './voucherService'
+import voucherService from '~/services/voucherService'
 
 /**
  * Order Service - Xử lý business logic liên quan đến đơn hàng
@@ -13,14 +15,30 @@ import voucherService from './voucherService'
 
 class OrderService {
   /**
-   * Tạo đơn hàng mới
+   * Tạo đơn hàng mới với địa chỉ đã lưu
    */
   async createOrder(orderData) {
-    const { userId, items, shippingAddress, paymentMethod, note, voucherCode } = orderData
+    const { userId, items, shippingAddressId, paymentMethod, note, voucherCode } = orderData
 
     // Kiểm tra items không rỗng
     if (!items || items.length === 0) {
       throw new AppError('Order items cannot be empty', 400)
+    }
+
+    // Kiểm tra địa chỉ giao hàng
+    if (!shippingAddressId) {
+      throw new AppError('Shipping address is required', 400)
+    }
+
+    // Lấy thông tin địa chỉ giao hàng
+    const shippingAddress = await Address.findOne({ 
+      _id: shippingAddressId, 
+      userId, 
+      isDeleted: false 
+    })
+    
+    if (!shippingAddress) {
+      throw new AppError('Shipping address not found or access denied', 404)
     }
 
     // Tính tổng tiền và kiểm tra tồn kho
@@ -80,18 +98,21 @@ class OrderService {
     // Tính final amount sau khi áp dụng voucher
     const finalAmount = totalAmount - discountAmount
 
+    // Tạo mã đơn hàng
+    const orderCode = await this.generateOrderCode()
+
     // Tạo đơn hàng
     const order = await Order.create({
+      orderCode,
       userId,
-      items: orderItems,
-      totalAmount: finalAmount,
+      totalPrice: finalAmount,
       originalAmount: totalAmount,
       discountAmount,
       voucherId,
-      shippingAddress,
-      paymentMethod,
-      note,
-      status: 'pending'
+      shippingAddressId,
+      paymentMethod: paymentMethod || 'cod',
+      status: 'pending',
+      note
     })
 
     // Sử dụng voucher nếu có
@@ -118,24 +139,41 @@ class OrderService {
         orderId: order._id,
         bookId: item.bookId,
         quantity: item.quantity,
-        price: item.price,
-        total: item.total
+        priceAtPurchase: item.price
       })
     }
-
-    // Cập nhật tồn kho (sẽ được xử lý khi đơn hàng được xác nhận)
-    // await this.updateBookStock(orderItems, 'subtract')
 
     // Lấy thông tin user để gửi email
     const user = await User.findById(userId).select('name email')
     
     // Gửi email xác nhận đơn hàng
     if (user) {
+      console.log('🛒 User found for email:', user.email)
+      console.log('🛒 Order object:', order)
+      console.log('🛒 Order._id:', order._id)
+      
       const orderData = {
-        ...order.toObject(),
-        userName: user.name,
-        userEmail: user.email
+        _id: order._id.toString(), // Chuyển đổi ObjectId thành string
+        orderCode: order.orderCode,
+        totalPrice: order.totalPrice,
+        originalAmount: order.originalAmount,
+        discountAmount: order.discountAmount,
+        status: order.status,
+        paymentMethod: order.paymentMethod,
+        createdAt: order.createdAt,
+        userId: {
+          _id: user._id.toString(), // Chuyển đổi ObjectId thành string
+          name: user.name,
+          email: user.email
+        },
+        shippingAddress: {
+          ...shippingAddress.toObject(),
+          _id: shippingAddress._id.toString() // Chuyển đổi ObjectId thành string
+        }
       }
+      
+      console.log('🛒 OrderData created:', orderData)
+      console.log('🛒 OrderData._id:', orderData._id)
       
       try {
         await addOrderConfirmationJob(user.email, orderData)
@@ -144,9 +182,50 @@ class OrderService {
         console.error('❌ Failed to queue order confirmation email:', error.message)
         // Không throw error để không ảnh hưởng đến việc tạo đơn hàng
       }
+    } else {
+      console.log('⚠️ No user found for email')
     }
 
-    return order
+    // Xóa các items đã đặt khỏi cart
+    try {
+      for (const item of items) {
+        await Cart.removeItem(userId, item.bookId)
+      }
+      console.log('🛒 Removed items from cart')
+    } catch (error) {
+      console.error('❌ Failed to remove items from cart:', error.message)
+      // Không throw error để không ảnh hưởng đến việc tạo đơn hàng
+    }
+
+    // Populate shipping address trong response
+    const populatedOrder = await Order.findById(order._id)
+      .populate('shippingAddressId')
+      .populate('userId', 'name email')
+
+    console.log('🛒 Returning populated order:', populatedOrder._id)
+    return populatedOrder
+  }
+
+  /**
+   * Tạo mã đơn hàng duy nhất
+   */
+  async generateOrderCode() {
+    const timestamp = Date.now().toString().slice(-8) // 8 số cuối của timestamp
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0') // 3 số ngẫu nhiên
+    
+    let orderCode = `ORD${timestamp}${random}`
+    
+    // Kiểm tra mã đơn hàng đã tồn tại chưa
+    let existingOrder = await Order.findOne({ orderCode })
+    let counter = 1
+    
+    while (existingOrder) {
+      orderCode = `ORD${timestamp}${random}${counter.toString().padStart(2, '0')}`
+      existingOrder = await Order.findOne({ orderCode })
+      counter++
+    }
+    
+    return orderCode
   }
 
   /**

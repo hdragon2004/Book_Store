@@ -144,21 +144,38 @@ const createShippingNotificationTemplate = (order) => {
 }
 
 // Gửi email xác nhận đơn hàng
-export const sendOrderConfirmationEmail = async (order) => {
+export const sendOrderConfirmationEmail = async (orderData) => {
   try {
+    console.log('📧 Email service received orderData:', orderData)
+    
     // Kiểm tra nếu không có email
-    if (!order.userId || !order.userId.email) {
+    if (!orderData?.userId || !orderData?.userId?.email) {
       console.log('⚠️ No email address found for user, skipping email')
+      return
+    }
+
+    // Lấy orderId - đảm bảo có ID
+    const orderId = orderData._id?.toString() || orderData._id
+    console.log('📧 Order ID:', orderId)
+    
+    if (!orderId) {
+      console.log('⚠️ No order ID found, skipping email')
       return
     }
 
     const transporter = createTransporter()
     
+    // Tạo email đơn giản với thông tin cơ bản
+    const simpleOrderData = {
+      ...orderData,
+      orderItems: [] // Tạm thời để trống, có thể thêm sau
+    }
+    
     const mailOptions = {
       from: `"BookStore" <${process.env.SMTP_USER}>`,
-      to: order.userId.email,
-      subject: `✅ Xác nhận đơn hàng #${order.orderCode} - BookStore`,
-      html: createOrderConfirmationTemplate(order)
+      to: orderData.userId.email,
+      subject: `✅ Xác nhận đơn hàng #${orderData.orderCode} - BookStore`,
+      html: createOrderConfirmationTemplate(simpleOrderData)
     }
 
     const result = await transporter.sendMail(mailOptions)

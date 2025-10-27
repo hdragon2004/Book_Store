@@ -39,11 +39,17 @@ router.get(
   voucherController.getVouchers
 )
 
-// Lấy voucher theo ID
+// Lấy danh sách voucher có thể áp dụng (phải đặt trước /:id)
 router.get(
-  '/:id',
+  '/available',
   authenticate,
-  voucherController.getVoucherById
+  [
+    query('orderAmount').isNumeric().withMessage('Order amount must be a number'),
+    query('categoryIds').optional().isString().withMessage('Category IDs must be a string'),
+    query('bookIds').optional().isString().withMessage('Book IDs must be a string')
+  ],
+  validationMiddleware,
+  voucherController.getAvailableVouchers
 )
 
 // Kiểm tra voucher có thể áp dụng
@@ -60,17 +66,11 @@ router.post(
   voucherController.checkVoucher
 )
 
-// Lấy danh sách voucher có thể áp dụng
+// Lấy voucher theo ID (phải đặt sau các route cụ thể)
 router.get(
-  '/available',
+  '/:id',
   authenticate,
-  [
-    query('orderAmount').isNumeric().withMessage('Order amount must be a number'),
-    query('categoryIds').optional().isString().withMessage('Category IDs must be a string'),
-    query('bookIds').optional().isString().withMessage('Book IDs must be a string')
-  ],
-  validationMiddleware,
-  voucherController.getAvailableVouchers
+  voucherController.getVoucherById
 )
 
 /**

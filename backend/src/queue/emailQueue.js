@@ -180,7 +180,8 @@ export const emailWorker = {
           break
 
         case EMAIL_JOB_TYPES.SEND_ORDER_CONFIRMATION:
-          await emailService.sendOrderConfirmation(data.email, data.orderData)
+          console.log('📧 Queue processing order confirmation:', data)
+          await emailService.sendOrderConfirmationEmail(data.orderData)
           break
 
         case EMAIL_JOB_TYPES.SEND_ORDER_STATUS_UPDATE:
@@ -197,14 +198,6 @@ export const emailWorker = {
 
         case EMAIL_JOB_TYPES.SEND_OTP_VERIFICATION:
           await emailService.sendOTPVerification(data.email, data.userName, data.otpCode)
-          break
-
-        case EMAIL_JOB_TYPES.SEND_ORDER_CONFIRMATION:
-          await emailService.sendOrderConfirmation(data.email, data.orderData)
-          break
-
-        case EMAIL_JOB_TYPES.SEND_ORDER_STATUS_UPDATE:
-          await emailService.sendOrderStatusUpdate(data.email, data.orderData, data.newStatus)
           break
 
         default:

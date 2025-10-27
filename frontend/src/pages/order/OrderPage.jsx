@@ -3,22 +3,17 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { orderAPI } from '../../services/apiService';
 import PageLayout from '../../layouts/PageLayout';
 import QRPaymentModal from '../../components/QRPaymentModal';
+import AddressSelector from '../../components/AddressSelector';
+import VoucherSelector from '../../components/VoucherSelector';
 
 const OrderPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [selectedItems, setSelectedItems] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('cod');
-  const [voucherCode, setVoucherCode] = useState('');
+  const [selectedVoucherId, setSelectedVoucherId] = useState('');
   const [appliedVoucher, setAppliedVoucher] = useState(null);
-  const [shippingAddress, setShippingAddress] = useState({
-    name: '',
-    phone: '',
-    address: '',
-    city: '',
-    district: '',
-    ward: ''
-  });
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showQRModal, setShowQRModal] = useState(false);
@@ -47,24 +42,31 @@ const OrderPage = () => {
     return calculateSubtotal() - calculateDiscount();
   };
 
+  // Xử lý chọn voucher
+  const handleVoucherSelect = (voucher) => {
+    if (voucher) {
+      setSelectedVoucherId(voucher.voucherId);
+      setAppliedVoucher(voucher);
+    } else {
+      setSelectedVoucherId('');
+      setAppliedVoucher(null);
+    }
+  };
+
   // Xử lý tạo đơn hàng
   const handleCreateOrder = async () => {
-    // Kiểm tra thông tin địa chỉ giao hàng
-    if (!shippingAddress.name || !shippingAddress.phone || !shippingAddress.address || 
-        !shippingAddress.city || !shippingAddress.district || !shippingAddress.ward) {
-      alert('Vui lòng nhập đầy đủ thông tin địa chỉ giao hàng');
+    // Kiểm tra địa chỉ giao hàng
+    if (!selectedAddressId) {
+      alert('Vui lòng chọn địa chỉ giao hàng');
       return;
     }
 
     setLoading(true);
     try {
       const orderData = {
-        shippingAddress,
+        shippingAddressId: selectedAddressId,
         paymentMethod,
-        voucher: appliedVoucher ? {
-          voucherId: appliedVoucher.voucherId,
-          discountAmount: appliedVoucher.discount
-        } : null,
+        voucherCode: appliedVoucher ? appliedVoucher.code : null,
         items: selectedItems.map(item => ({
           bookId: item.bookId._id,
           quantity: item.quantity
@@ -72,7 +74,17 @@ const OrderPage = () => {
       };
 
       const response = await orderAPI.createOrder(orderData);
-      const order = response.data.data;
+      console.log('Order creation response:', response);
+      const order = response.data.data.order; // Sửa từ response.data.data thành response.data.data.order
+      console.log('Order data:', order);
+      console.log('Order ID:', order._id);
+      
+      // Kiểm tra order._id có tồn tại không
+      if (!order || !order._id) {
+        console.error('Order or order._id is missing:', order);
+        alert('Có lỗi khi tạo đơn hàng. Vui lòng thử lại.');
+        return;
+      }
       
       // Nếu là COD, chuyển thẳng đến trang chi tiết đơn hàng
       if (paymentMethod === 'cod') {
@@ -282,113 +294,24 @@ const OrderPage = () => {
                 </div>
 
                 {/* Voucher Section */}
-                <div className="border-t pt-6">
-                  <h4 className="text-md font-semibold text-gray-900 mb-3">Mã giảm giá</h4>
-                  <div className="flex space-x-3">
-                    <input
-                      type="text"
-                      placeholder="Nhập mã voucher"
-                      value={voucherCode}
-                      onChange={(e) => setVoucherCode(e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <button
-                      onClick={() => {
-                        if (voucherCode) {
-                          // TODO: Implement voucher validation
-                          setAppliedVoucher({ 
-                            voucherId: 'mock_voucher_id', 
-                            code: voucherCode, 
-                            discount: 50000 
-                          });
-                          alert('Áp dụng voucher thành công!');
-                        }
-                      }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                    >
-                      Áp dụng
-                    </button>
-                  </div>
-                  {appliedVoucher && (
-                    <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="flex justify-between items-center">
-                        <span className="text-green-800">Voucher: {appliedVoucher.code}</span>
-                        <span className="text-green-800 font-medium">-{appliedVoucher.discount.toLocaleString('vi-VN')} ₫</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <VoucherSelector
+                  selectedItems={selectedItems}
+                  selectedVoucherId={selectedVoucherId}
+                  onVoucherSelect={handleVoucherSelect}
+                  appliedVoucher={appliedVoucher}
+                />
               </div>
             </div>
 
-            {/* Shipping Address Form */}
-            <div className="bg-white rounded-lg shadow-sm">
-              <div className="p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Thông tin giao hàng</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Họ và tên *</label>
-                    <input
-                      type="text"
-                      value={shippingAddress.name}
-                      onChange={(e) => setShippingAddress({...shippingAddress, name: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Nhập họ và tên"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại *</label>
-                    <input
-                      type="tel"
-                      value={shippingAddress.phone}
-                      onChange={(e) => setShippingAddress({...shippingAddress, phone: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Nhập số điện thoại"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Địa chỉ *</label>
-                    <input
-                      type="text"
-                      value={shippingAddress.address}
-                      onChange={(e) => setShippingAddress({...shippingAddress, address: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Nhập địa chỉ chi tiết"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tỉnh/Thành phố *</label>
-                    <input
-                      type="text"
-                      value={shippingAddress.city}
-                      onChange={(e) => setShippingAddress({...shippingAddress, city: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Nhập tỉnh/thành phố"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Quận/Huyện *</label>
-                    <input
-                      type="text"
-                      value={shippingAddress.district}
-                      onChange={(e) => setShippingAddress({...shippingAddress, district: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Nhập quận/huyện"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phường/Xã *</label>
-                    <input
-                      type="text"
-                      value={shippingAddress.ward}
-                      onChange={(e) => setShippingAddress({...shippingAddress, ward: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Nhập phường/xã"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Address Selection */}
+            <AddressSelector
+              selectedAddressId={selectedAddressId}
+              onAddressSelect={setSelectedAddressId}
+              onAddNew={() => {
+                // Có thể mở modal hoặc chuyển đến trang quản lý địa chỉ
+                window.open('/addresses', '_blank');
+              }}
+            />
           </div>
           
           {/* Order Summary */}
@@ -403,7 +326,7 @@ const OrderPage = () => {
                 </div>
                 {appliedVoucher && (
                   <div className="flex justify-between text-green-600">
-                    <span>Giảm giá ({appliedVoucher.code}):</span>
+                    <span>Giảm giá ({appliedVoucher.name}):</span>
                     <span className="font-medium">-{calculateDiscount().toLocaleString('vi-VN')} ₫</span>
                   </div>
                 )}

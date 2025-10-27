@@ -219,6 +219,22 @@ class VoucherService {
   }
 
   /**
+   * Kiểm tra user đã sử dụng voucher chưa
+   */
+  async hasUserUsedVoucher(voucherId, userId) {
+    try {
+      const usage = await VoucherUsage.findOne({
+        voucherId,
+        userId,
+        isRefunded: false
+      })
+      return !!usage
+    } catch (error) {
+      throw new AppError(`Failed to check voucher usage: ${error.message}`, 500)
+    }
+  }
+
+  /**
    * Sử dụng voucher
    */
   async useVoucher(voucherId, userId, orderId, orderAmount, discountAmount) {

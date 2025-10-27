@@ -7,19 +7,20 @@ import UserBook from '~/models/userBookModel'
 import { AppError } from '~/utils/AppError'
 import { ApiResponse } from '~/utils/ApiResponse'
 import { asyncHandler } from '~/utils/asyncHandler'
+import orderService from '~/services/orderService'
 import { sendOrderConfirmationEmail, sendShippingNotificationEmail } from '~/services/emailService'
 
 /**
  * Order Controller - Xử lý logic đơn hàng
  */
 
-// Tạo đơn hàng mới
+// Tạo đơn hàng mới với địa chỉ đã lưu
 export const createOrder = asyncHandler(async (req, res) => {
-  const { shippingAddress, paymentMethod, voucher, items } = req.body
-    const userId = req.user._id
+  const { shippingAddressId, paymentMethod, voucherCode, items, note } = req.body
+  const userId = req.user._id
 
   console.log('🛒 Creating order for user:', userId)
-  console.log('🛒 Shipping address:', shippingAddress)
+  console.log('🛒 Shipping address ID:', shippingAddressId)
   console.log('🛒 Payment method:', paymentMethod)
   console.log('🛒 Selected items:', items)
 
@@ -28,57 +29,28 @@ export const createOrder = asyncHandler(async (req, res) => {
     throw new AppError('No items selected for order', 400)
   }
 
-  // Kiểm tra stock và tính tổng giá cho các items được chọn
-  let totalPrice = 0
-  const orderItems = []
-
-  for (const item of items) {
-    const book = await Book.findById(item.bookId)
-    if (!book) {
-      throw new AppError(`Book ${item.bookId} not found`, 404)
-    }
-
-    if (book.stock < item.quantity) {
-      throw new AppError(`Insufficient stock for ${book.title}. Available: ${book.stock}`, 400)
-    }
-
-    const itemTotal = book.price * item.quantity
-    totalPrice += itemTotal
-
-    orderItems.push({
-      bookId: item.bookId,
-      quantity: item.quantity,
-      priceAtPurchase: book.price
-    })
+  // Kiểm tra địa chỉ giao hàng
+  if (!shippingAddressId) {
+    throw new AppError('Shipping address is required', 400)
   }
 
-  // Tạo đơn hàng
-  const order = await Order.create({
+  // Gọi service để tạo đơn hàng
+  const order = await orderService.createOrder({
     userId,
-    totalPrice,
-    paymentMethod: paymentMethod || 'cod',
-    shippingAddress,
-    voucherId: voucher?.voucherId || null,
-    discountAmount: voucher?.discountAmount || 0
+    items,
+    shippingAddressId,
+    paymentMethod,
+    voucherCode,
+    note
   })
 
-  // Tạo order items và xử lý sách điện tử/sách nói
+  // Xử lý sách điện tử/sách nói - thêm vào UserBooks
   const digitalBooks = []
-  const physicalBooks = []
   
-  for (const item of orderItems) {
-    await OrderItem.create({
-      orderId: order._id,
-      bookId: item.bookId,
-      quantity: item.quantity,
-      priceAtPurchase: item.priceAtPurchase
-    })
-
-    // Lấy thông tin sách để kiểm tra loại
+  for (const item of items) {
     const book = await Book.findById(item.bookId)
     
-    if (book.format === 'ebook' || book.format === 'audiobook') {
-      // Sách điện tử/sách nói - thêm vào UserBooks
+    if (book && (book.format === 'ebook' || book.format === 'audiobook')) {
       digitalBooks.push({
         userId,
         bookId: item.bookId,
@@ -88,95 +60,35 @@ export const createOrder = asyncHandler(async (req, res) => {
         fileSize: book.digitalFile.fileSize,
         mimeType: book.digitalFile.mimeType
       })
-    } else {
-      // Sách bìa cứng/mềm - cập nhật stock
-      physicalBooks.push(item)
+    }
+  }
+
+  // Tạo UserBook records cho sách điện tử/sách nói
+  if (digitalBooks.length > 0) {
+    await UserBook.insertMany(digitalBooks)
+    console.log(`📚 Added ${digitalBooks.length} digital books to user library`)
+  }
+
+  // Cập nhật stock cho sách vật lý
+  for (const item of items) {
+    const book = await Book.findById(item.bookId)
+    
+    if (book && book.format !== 'ebook' && book.format !== 'audiobook') {
       await Book.findByIdAndUpdate(
         item.bookId,
         { $inc: { stock: -item.quantity } }
       )
+      console.log(`📦 Updated stock for physical book: ${book.title}`)
     }
   }
 
-  // Tạo UserBooks cho sách điện tử/sách nói
-  if (digitalBooks.length > 0) {
-    // Kiểm tra và chỉ tạo UserBook cho những sách chưa có
-    const existingUserBooks = await UserBook.find({
-      userId,
-      bookId: { $in: digitalBooks.map(book => book.bookId) }
-    })
-    
-    const existingBookIds = existingUserBooks.map(book => book.bookId.toString())
-    const newDigitalBooks = digitalBooks.filter(book => 
-      !existingBookIds.includes(book.bookId.toString())
-    )
-    
-    if (newDigitalBooks.length > 0) {
-      await UserBook.insertMany(newDigitalBooks)
-      console.log(`📚 Added ${newDigitalBooks.length} new digital books to user library`)
-    } else {
-      console.log(`📚 All digital books already exist in user library`)
-    }
-    
-    // Nếu có sách đã tồn tại, thông báo cho user
-    if (digitalBooks.length > newDigitalBooks.length) {
-      const duplicateCount = digitalBooks.length - newDigitalBooks.length
-      console.log(`⚠️ ${duplicateCount} books already in user library`)
-    }
-  }
-
-  // Cập nhật trạng thái đơn hàng dựa trên loại sách
-  if (digitalBooks.length > 0 && physicalBooks.length === 0) {
-    // Chỉ có sách điện tử/sách nói - giao hàng ngay lập tức
-    await Order.findByIdAndUpdate(order._id, { 
-      status: 'digital_delivered',
-      deliveredAt: new Date()
-    })
-    console.log('📱 Order marked as digital delivered')
-  } else if (digitalBooks.length > 0 && physicalBooks.length > 0) {
-    // Có cả sách bìa và sách điện tử - giao sách điện tử trước, sách bìa chờ xác nhận
-    await Order.findByIdAndUpdate(order._id, { 
-      status: 'pending' // Sách bìa cần admin xác nhận
-    })
-    console.log('📦 Mixed order - digital books delivered, physical books pending admin confirmation')
-  } else if (physicalBooks.length > 0) {
-    // Chỉ có sách bìa - chờ admin xác nhận
-    await Order.findByIdAndUpdate(order._id, { 
-      status: 'pending'
-    })
-    console.log('📦 Physical books order - pending admin confirmation')
-  }
-
-  // Xóa các items đã chọn khỏi giỏ hàng
-  const selectedBookIds = items.map(item => item.bookId)
-  await Cart.removeItems(userId, selectedBookIds)
-  console.log(`🛒 Removed ${selectedBookIds.length} selected items from cart`)
-
-  // Lấy order items riêng
-  const populatedOrderItems = await OrderItem.find({ orderId: order._id })
-    .populate('bookId', 'title author price imageUrl')
-
-  // Populate user cho email
-  const orderWithUser = await Order.findById(order._id)
-    .populate('userId', 'name email')
-
-  // Tạo object response với order và orderItems
-  const populatedOrder = {
-    ...orderWithUser.toObject(),
-    orderItems: populatedOrderItems
-  }
-
-  // Gửi email xác nhận đơn hàng
-  try {
-    await sendOrderConfirmationEmail(populatedOrder)
-    console.log('✅ Order confirmation email sent')
-  } catch (emailError) {
-    console.error('❌ Failed to send order confirmation email:', emailError)
-    // Không throw error để không ảnh hưởng đến việc tạo đơn hàng
-  }
+  // Xóa items khỏi cart sau khi tạo đơn hàng thành công
+  const bookIds = items.map(item => item.bookId)
+  await Cart.deleteMany({ userId, bookId: { $in: bookIds } })
+  console.log('🛒 Removed items from cart')
 
   res.status(201).json(
-    new ApiResponse(201, populatedOrder, 'Order created successfully').toJSON()
+    new ApiResponse(201, { order }, 'Order created successfully')
   )
 })
 

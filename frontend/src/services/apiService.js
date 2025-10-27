@@ -506,6 +506,33 @@ export const chatAPI = {
     axiosClient.get('/chat/unread-count'),
 };
 
+// Address API
+export const addressAPI = {
+  // Get user addresses
+  getUserAddresses: () => 
+    axiosClient.get('/addresses'),
+
+  // Get default address
+  getDefaultAddress: () => 
+    axiosClient.get('/addresses/default'),
+
+  // Create address
+  createAddress: (addressData) => 
+    axiosClient.post('/addresses', addressData),
+
+  // Update address
+  updateAddress: (id, addressData) => 
+    axiosClient.put(`/addresses/${id}`, addressData),
+
+  // Delete address
+  deleteAddress: (id) => 
+    axiosClient.delete(`/addresses/${id}`),
+
+  // Set default address
+  setDefaultAddress: (id) => 
+    axiosClient.put(`/addresses/${id}/default`),
+};
+
 // Export all APIs
 export default {
   auth: authAPI,
@@ -521,5 +548,6 @@ export default {
   message: messageAPI,
   library: libraryAPI,
   download: downloadAPI,
-  chat: chatAPI
+  chat: chatAPI,
+  address: addressAPI
 };

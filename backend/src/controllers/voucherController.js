@@ -138,23 +138,45 @@ class VoucherController {
       limit: 50
     })
 
-    // Lọc voucher có thể áp dụng
-    const availableVouchers = result.vouchers.filter(voucher => {
+    // Lọc voucher có thể áp dụng và kiểm tra đã sử dụng
+    const availableVouchers = []
+    const unavailableVouchers = []
+
+    for (const voucher of result.vouchers) {
       try {
-        return voucher.isApplicableToOrder(
+        const isApplicable = voucher.isApplicableToOrder(
           parseFloat(orderAmount) || 0,
           userId,
           categoryIds ? categoryIds.split(',') : [],
           bookIds ? bookIds.split(',') : []
         )
+
+        // Kiểm tra user đã sử dụng voucher này chưa (nếu có giới hạn)
+        let hasUsed = false
+        if (voucher.usageLimit) {
+          hasUsed = await voucherService.hasUserUsedVoucher(voucher._id, userId)
+        }
+
+        if (isApplicable && !hasUsed) {
+          availableVouchers.push(voucher)
+        } else {
+          unavailableVouchers.push({
+            ...voucher.toObject(),
+            reason: !isApplicable ? 'not_applicable' : 'already_used'
+          })
+        }
       } catch (error) {
-        return false
+        unavailableVouchers.push({
+          ...voucher.toObject(),
+          reason: 'error'
+        })
       }
-    })
+    }
 
     res.status(StatusCodes.OK).json(
       new ApiResponse(StatusCodes.OK, {
-        vouchers: availableVouchers,
+        availableVouchers,
+        unavailableVouchers,
         total: availableVouchers.length
       }, 'Available vouchers retrieved successfully')
     )

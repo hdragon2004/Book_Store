@@ -40,31 +40,10 @@ const orderSchema = new mongoose.Schema({
     enum: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled', 'digital_delivered'],
     default: 'pending'
   },
-  shippingAddress: {
-    name: {
-      type: String,
-      required: [true, 'Shipping name is required']
-    },
-    phone: {
-      type: String,
-      required: [true, 'Phone number is required']
-    },
-    address: {
-      type: String,
-      required: [true, 'Address is required']
-    },
-    city: {
-      type: String,
-      required: [true, 'City is required']
-    },
-    district: {
-      type: String,
-      required: [true, 'District is required']
-    },
-    ward: {
-      type: String,
-      required: [true, 'Ward is required']
-    }
+  shippingAddressId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Address',
+    required: [true, 'Shipping address is required']
   },
   createdAt: {
     type: Date,

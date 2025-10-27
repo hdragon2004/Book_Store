@@ -11,6 +11,7 @@ import FavoritesPage from '../pages/user/FavoritesPage';
 import ProfilePage from '../pages/user/ProfilePage';
 import MyLibraryPage from '../pages/user/MyLibraryPage';
 import ChatPage from '../pages/user/ChatPage';
+import AddressPage from '../pages/user/AddressPage';
 import CartPage from '../pages/CartPage';
 import QRTest from '../components/QRTest';
 import LoginPage from '../pages/auth/LoginPage';
@@ -168,6 +169,14 @@ const AppRoutes = () => {
         element={
           <PrivateRoute>
             <MainLayout><ProfilePage /></MainLayout>
+          </PrivateRoute>
+        } 
+      />
+      <Route 
+        path="/addresses" 
+        element={
+          <PrivateRoute>
+            <MainLayout><AddressPage /></MainLayout>
           </PrivateRoute>
         } 
       />
