@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { orderAPI } from '../../services/apiService';
 import PageLayout from '../../layouts/PageLayout';
 
 const OrdersListPage = () => {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -68,6 +69,33 @@ const OrdersListPage = () => {
       case 'paypal': return 'PayPal';
       default: return method;
     }
+  };
+
+  const handleContactSupport = (order) => {
+    // Tạo thông tin đơn hàng để gửi cho admin
+    const orderInfo = {
+      orderId: order._id,
+      orderCode: order.orderCode || order._id,
+      status: order.status,
+      totalPrice: order.totalPrice,
+      discountAmount: order.discountAmount || 0,
+      finalPrice: order.totalPrice - (order.discountAmount || 0),
+      paymentMethod: order.paymentMethod,
+      createdAt: order.createdAt,
+      items: order.orderItems?.map(item => ({
+        title: item.bookId?.title || 'Sách không xác định',
+        author: item.bookId?.author || 'Tác giả không xác định',
+        quantity: item.quantity,
+        price: item.priceAtPurchase
+      })) || [],
+      shippingAddress: order.shippingAddress
+    };
+
+    // Lưu thông tin đơn hàng vào localStorage để chat có thể sử dụng
+    localStorage.setItem('supportOrderInfo', JSON.stringify(orderInfo));
+    
+    // Chuyển đến trang chat
+    navigate('/chat');
   };
 
   if (loading) {
@@ -176,6 +204,12 @@ const OrdersListPage = () => {
                       <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(order.status)}`}>
                         {getStatusText(order.status)}
                       </span>
+                      <button
+                        onClick={() => handleContactSupport(order)}
+                        className="text-green-600 hover:text-green-800 font-medium text-sm"
+                      >
+                        💬 Hỗ trợ
+                      </button>
                       <Link 
                         to={`/orders/${order._id || order.id}`}
                         className="text-blue-600 hover:text-blue-800 font-medium"

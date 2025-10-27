@@ -39,6 +39,16 @@
       "key": "orderId",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "conversationId",
+      "value": "68fd02e0f6b95ef719ba0e7a_68fd02e0f6b95ef719ba0e7c",
+      "type": "string"
+    },
+    {
+      "key": "adminId",
+      "value": "68fd02e0f6b95ef719ba0e7a",
+      "type": "string"
     }
   ],
   "item": [
@@ -1890,6 +1900,119 @@
               "raw": "{{baseUrl}}/api/messages/conversation/{{userId}}",
               "host": ["{{baseUrl}}"],
               "path": ["api", "messages", "conversation", "{{userId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Chat System",
+      "item": [
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromId\": \"{{userId}}\",\n  \"toId\": \"{{adminId}}\",\n  \"content\": \"Xin chào! Tôi cần hỗ trợ về đơn hàng của mình.\",\n  \"messageType\": \"text\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/chat/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chat", "messages"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Conversations (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chat/admin/chats?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chat", "admin", "chats"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Conversation Messages (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chat/admin/chats/{{conversationId}}?page=1&limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chat", "admin", "chats", "{{conversationId}}"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Message as Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromId\": \"{{adminId}}\",\n  \"toId\": \"{{userId}}\",\n  \"content\": \"Chào bạn! Tôi có thể giúp gì cho bạn?\",\n  \"messageType\": \"text\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/chat/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chat", "messages"]
             }
           },
           "response": []

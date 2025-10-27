@@ -11,6 +11,26 @@ import { AppError } from '~/utils/AppError'
 
 class MessageController {
   /**
+   * Lấy tất cả tin nhắn (Admin only)
+   * GET /api/messages
+   */
+  getAllMessages = asyncHandler(async (req, res) => {
+    const { page = 1, limit = 20, search, sortBy = 'createdAt', sortOrder = 'desc' } = req.query
+
+    const messages = await messageService.getAllMessages({
+      page: parseInt(page),
+      limit: parseInt(limit),
+      search,
+      sortBy,
+      sortOrder
+    })
+
+    res.status(StatusCodes.OK).json(
+      new ApiResponse(StatusCodes.OK, messages, 'All messages retrieved successfully')
+    )
+  })
+
+  /**
    * Gửi tin nhắn mới
    * POST /api/messages
    */
@@ -60,6 +80,26 @@ class MessageController {
 
     res.status(StatusCodes.OK).json(
       new ApiResponse(StatusCodes.OK, messages, 'Messages retrieved successfully')
+    )
+  })
+
+  /**
+   * Lấy tin nhắn theo conversation ID
+   * GET /api/messages/conversation/:conversationId
+   */
+  getMessagesByConversation = asyncHandler(async (req, res) => {
+    const { conversationId } = req.params
+    const { page = 1, limit = 50, sortBy = 'createdAt', sortOrder = 'desc' } = req.query
+
+    const messages = await messageService.getMessagesByConversation(conversationId, {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      sortBy,
+      sortOrder
+    })
+
+    res.status(StatusCodes.OK).json(
+      new ApiResponse(StatusCodes.OK, messages, 'Conversation messages retrieved successfully')
     )
   })
 
@@ -148,6 +188,24 @@ class MessageController {
 
     res.status(StatusCodes.OK).json(
       new ApiResponse(StatusCodes.OK, conversations, 'Conversations retrieved successfully')
+    )
+  })
+
+  /**
+   * Lấy tất cả conversations (Admin only)
+   * GET /api/messages/admin/conversations
+   */
+  getAllConversations = asyncHandler(async (req, res) => {
+    const { page = 1, limit = 20, search } = req.query
+
+    const conversations = await messageService.getAllConversations({
+      page: parseInt(page),
+      limit: parseInt(limit),
+      search
+    })
+
+    res.status(StatusCodes.OK).json(
+      new ApiResponse(StatusCodes.OK, conversations, 'All conversations retrieved successfully')
     )
   })
 

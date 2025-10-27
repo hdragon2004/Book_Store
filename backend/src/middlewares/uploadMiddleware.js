@@ -20,6 +20,18 @@ const storage = multer.diskStorage({
   }
 })
 
+// Cấu hình storage cho chat images
+const chatStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/chat/')
+  },
+  filename: (req, file, cb) => {
+    // Tạo tên file unique
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+    cb(null, 'chat-' + uniqueSuffix + path.extname(file.originalname))
+  }
+})
+
 // Filter function để kiểm tra loại file
 const fileFilter = (req, file, cb) => {
   // Kiểm tra MIME type
@@ -40,6 +52,16 @@ const upload = multer({
   }
 })
 
+// Cấu hình multer cho chat
+const chatUpload = multer({
+  storage: chatStorage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB cho chat
+    files: 1 // Chỉ 1 file cho chat
+  }
+})
+
 // Export upload instance
 export { upload }
 
@@ -49,6 +71,11 @@ export const uploadMiddleware = {
   array: (fieldName, maxCount) => upload.array(fieldName, maxCount),
   fields: (fields) => upload.fields(fields),
   any: () => upload.any()
+}
+
+// Middleware upload cho chat
+export const chatUploadMiddleware = {
+  single: (fieldName) => chatUpload.single(fieldName)
 }
 
 // Middleware xử lý lỗi upload

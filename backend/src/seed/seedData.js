@@ -318,6 +318,70 @@ const sampleVouchers = [
   }
 ]
 
+// Sample messages for chat system
+const sampleMessages = [
+  {
+    content: 'Xin chào! Tôi cần hỗ trợ về đơn hàng của mình.',
+    messageType: 'text',
+    isRead: false,
+    status: 'sent'
+  },
+  {
+    content: 'Chào bạn! Tôi có thể giúp gì cho bạn? Vui lòng cho tôi biết mã đơn hàng.',
+    messageType: 'text',
+    isRead: true,
+    status: 'read'
+  },
+  {
+    content: 'Đơn hàng của tôi có mã là #ORD001. Tôi muốn hủy đơn hàng này.',
+    messageType: 'text',
+    isRead: false,
+    status: 'sent'
+  },
+  {
+    content: 'Tôi đã kiểm tra đơn hàng #ORD001 của bạn. Đơn hàng đang trong quá trình xử lý. Bạn có thể hủy đơn hàng trong vòng 24h kể từ khi đặt.',
+    messageType: 'text',
+    isRead: true,
+    status: 'read'
+  },
+  {
+    content: 'Cảm ơn bạn! Tôi muốn hủy đơn hàng này.',
+    messageType: 'text',
+    isRead: false,
+    status: 'sent'
+  },
+  {
+    content: 'Tôi đã hủy đơn hàng #ORD001 cho bạn. Tiền sẽ được hoàn lại trong vòng 3-5 ngày làm việc.',
+    messageType: 'text',
+    isRead: true,
+    status: 'read'
+  },
+  {
+    content: 'Xin chào admin! Tôi có câu hỏi về sản phẩm.',
+    messageType: 'text',
+    isRead: false,
+    status: 'sent'
+  },
+  {
+    content: 'Chào bạn! Tôi sẵn sàng hỗ trợ bạn. Bạn muốn hỏi về sản phẩm nào?',
+    messageType: 'text',
+    isRead: true,
+    status: 'read'
+  },
+  {
+    content: 'Tôi muốn hỏi về cuốn sách "JavaScript: The Good Parts". Còn hàng không?',
+    messageType: 'text',
+    isRead: false,
+    status: 'sent'
+  },
+  {
+    content: 'Cuốn "JavaScript: The Good Parts" hiện tại còn hàng. Giá là 150,000 VND. Bạn có muốn đặt hàng không?',
+    messageType: 'text',
+    isRead: true,
+    status: 'read'
+  }
+]
+
 
 
 
@@ -461,6 +525,7 @@ const seedDatabase = async () => {
     console.log(`❤️ Favorites: ${favorites.length}`)
     console.log(`🎫 Vouchers: ${vouchers.length}`)
     console.log(`🎫 Voucher usages: ${voucherUsages.length}`)
+    console.log(`💬 Messages: ${messages.length}`)
     
     console.log('\n🛒 Order Details:')
     orders.forEach((order, index) => {

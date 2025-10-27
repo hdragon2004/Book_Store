@@ -36,6 +36,16 @@ router.get(
 )
 
 /**
+ * @route   GET /api/messages/conversation/:conversationId
+ * @desc    Lấy tin nhắn theo conversation ID
+ * @access  Private
+ */
+router.get(
+  '/conversation/:conversationId',
+  messageController.getMessagesByConversation
+)
+
+/**
  * @route   GET /api/messages/unread
  * @desc    Lấy tin nhắn chưa đọc
  * @access  Private
@@ -53,6 +63,17 @@ router.get(
 router.get(
   '/conversations',
   messageController.getConversations
+)
+
+/**
+ * @route   GET /api/messages/admin/conversations
+ * @desc    Lấy tất cả conversations (Admin only)
+ * @access  Private (Admin)
+ */
+router.get(
+  '/admin/conversations',
+  authorize('admin'),
+  messageController.getAllConversations
 )
 
 /**
@@ -146,6 +167,17 @@ router.post(
   '/upload',
   uploadMiddleware.single('attachment'),
   messageController.uploadAttachment
+)
+
+/**
+ * @route   GET /api/messages
+ * @desc    Lấy tất cả tin nhắn (Admin only)
+ * @access  Private (Admin)
+ */
+router.get(
+  '/',
+  authorize('admin'),
+  messageController.getAllMessages
 )
 
 /**

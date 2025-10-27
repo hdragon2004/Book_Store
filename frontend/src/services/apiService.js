@@ -462,6 +462,50 @@ export const downloadAPI = {
     axiosClient.get(`/download/info/${bookId}`),
 };
 
+export const chatAPI = {
+  // Get or create conversation
+  getOrCreateConversation: () => 
+    axiosClient.get('/chat/conversation'),
+
+  // Get admin conversations
+  getAdminConversations: (page = 1, limit = 10) => 
+    axiosClient.get(`/chat/admin/chats?page=${page}&limit=${limit}`),
+
+  // Get conversation info
+  getConversationInfo: (conversationId) => 
+    axiosClient.get(`/chat/admin/chats/${conversationId}`),
+
+  // Get conversation messages (for admin)
+  getConversationMessages: (conversationId, page = 1, limit = 50) => 
+    axiosClient.get(`/chat/admin/chats/${conversationId}?page=${page}&limit=${limit}`),
+
+  // Get conversation messages (for user)
+  getUserConversationMessages: (conversationId, page = 1, limit = 50) => 
+    axiosClient.get(`/chat/messages?conversationId=${conversationId}&page=${page}&limit=${limit}`),
+
+  // Send message
+  sendMessage: (messageData) => 
+    axiosClient.post('/chat/messages', messageData),
+
+  // Upload image for chat
+  uploadImage: (formData) => 
+    axiosClient.post('/chat/upload-image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+
+  // Mark message as read
+  markAsRead: (messageId) => 
+    axiosClient.patch(`/chat/messages/${messageId}/read`),
+
+  // Mark conversation as read
+  markConversationAsRead: (conversationId) => 
+    axiosClient.patch(`/chat/conversations/${conversationId}/read`),
+
+  // Get unread count
+  getUnreadCount: () => 
+    axiosClient.get('/chat/unread-count'),
+};
+
 // Export all APIs
 export default {
   auth: authAPI,
@@ -476,5 +520,6 @@ export default {
   voucher: voucherAPI,
   message: messageAPI,
   library: libraryAPI,
-  download: downloadAPI
+  download: downloadAPI,
+  chat: chatAPI
 };

@@ -98,6 +98,33 @@ const OrderDetailPage = () => {
     return order && ['pending', 'confirmed'].includes(order.status);
   };
 
+  const handleContactSupport = () => {
+    // Tạo thông tin đơn hàng để gửi cho admin
+    const orderInfo = {
+      orderId: order._id,
+      orderCode: order.orderCode || order._id,
+      status: order.status,
+      totalPrice: order.totalPrice,
+      discountAmount: order.discountAmount || 0,
+      finalPrice: order.totalPrice - (order.discountAmount || 0),
+      paymentMethod: order.paymentMethod,
+      createdAt: order.createdAt,
+      items: order.orderItems?.map(item => ({
+        title: item.bookId?.title || 'Sách không xác định',
+        author: item.bookId?.author || 'Tác giả không xác định',
+        quantity: item.quantity,
+        price: item.priceAtPurchase
+      })) || [],
+      shippingAddress: order.shippingAddress
+    };
+
+    // Lưu thông tin đơn hàng vào localStorage để chat có thể sử dụng
+    localStorage.setItem('supportOrderInfo', JSON.stringify(orderInfo));
+    
+    // Chuyển đến trang chat
+    navigate('/chat');
+  };
+
   if (loading) {
     return (
       <PageLayout>
@@ -330,7 +357,10 @@ const OrderDetailPage = () => {
                     <button className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-colors">
                       Hủy đơn hàng
                     </button>
-                    <button className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                    <button 
+                      onClick={handleContactSupport}
+                      className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
                       Liên hệ hỗ trợ
                     </button>
                   </div>

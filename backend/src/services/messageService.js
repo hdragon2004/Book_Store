@@ -11,6 +11,53 @@ import fs from 'fs'
 
 class MessageService {
   /**
+   * Lấy tất cả tin nhắn (Admin only)
+   */
+  async getAllMessages(options = {}) {
+    try {
+      const {
+        page = 1,
+        limit = 20,
+        search,
+        sortBy = 'createdAt',
+        sortOrder = 'desc'
+      } = options
+
+      const skip = (page - 1) * limit
+      const sortOptions = {}
+      sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1
+
+      let query = { isDeleted: false }
+
+      // Thêm tìm kiếm nếu có
+      if (search) {
+        query.content = { $regex: search, $options: 'i' }
+      }
+
+      const messages = await Message.find(query)
+        .populate('fromId', 'name email avatar roleId')
+        .populate('toId', 'name email avatar roleId')
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(limit)
+
+      const total = await Message.countDocuments(query)
+
+      return {
+        messages,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    } catch (error) {
+      throw new AppError(`Failed to get all messages: ${error.message}`, 500)
+    }
+  }
+
+  /**
    * Tạo tin nhắn mới
    */
   async createMessage(messageData) {
@@ -30,8 +77,12 @@ class MessageService {
         throw new AppError('Sender or receiver not found', 404)
       }
 
+      // Tạo conversationId
+      const conversationId = this.generateConversationId(fromId, toId)
+
       // Tạo tin nhắn
       const message = await Message.create({
+        conversationId,
         fromId,
         toId,
         content,
@@ -47,6 +98,38 @@ class MessageService {
       return message
     } catch (error) {
       throw new AppError(`Failed to create message: ${error.message}`, 500)
+    }
+  }
+
+  /**
+   * Lấy tin nhắn theo conversation ID
+   */
+  async getMessagesByConversation(conversationId, options = {}) {
+    try {
+      const {
+        page = 1,
+        limit = 50,
+        sortBy = 'createdAt',
+        sortOrder = 'desc'
+      } = options
+
+      const messages = await Message.findByConversationId(conversationId, page, limit)
+      const total = await Message.countDocuments({ 
+        conversationId, 
+        isDeleted: false 
+      })
+
+      return {
+        messages,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    } catch (error) {
+      throw new AppError(`Failed to get messages by conversation: ${error.message}`, 500)
     }
   }
 
@@ -171,6 +254,108 @@ class MessageService {
       }
     } catch (error) {
       throw new AppError(`Failed to search messages: ${error.message}`, 500)
+    }
+  }
+
+  /**
+   * Lấy tất cả conversations (Admin only)
+   */
+  async getAllConversations(options = {}) {
+    try {
+      const { page = 1, limit = 20, search } = options
+
+      // Lấy tất cả conversations với thông tin user
+      const conversations = await Message.aggregate([
+        {
+          $match: {
+            isDeleted: false
+          }
+        },
+        {
+          $group: {
+            _id: '$conversationId',
+            lastMessage: { $last: '$$ROOT' },
+            messageCount: { $sum: 1 },
+            unreadCount: {
+              $sum: {
+                $cond: [
+                  { $eq: ['$isRead', false] },
+                  1,
+                  0
+                ]
+              }
+            },
+            participants: {
+              $addToSet: {
+                userId: '$fromId',
+                role: 'sender'
+              }
+            }
+          }
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'lastMessage.fromId',
+            foreignField: '_id',
+            as: 'sender'
+          }
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'lastMessage.toId',
+            foreignField: '_id',
+            as: 'receiver'
+          }
+        },
+        {
+          $project: {
+            conversationId: '$_id',
+            lastMessage: 1,
+            messageCount: 1,
+            unreadCount: 1,
+            sender: { $arrayElemAt: ['$sender', 0] },
+            receiver: { $arrayElemAt: ['$receiver', 0] },
+            updatedAt: '$lastMessage.createdAt'
+          }
+        },
+        {
+          $sort: { updatedAt: -1 }
+        },
+        {
+          $skip: (page - 1) * limit
+        },
+        {
+          $limit: limit
+        }
+      ])
+
+      const total = await Message.aggregate([
+        {
+          $match: { isDeleted: false }
+        },
+        {
+          $group: {
+            _id: '$conversationId'
+          }
+        },
+        {
+          $count: 'total'
+        }
+      ])
+
+      return {
+        conversations,
+        pagination: {
+          page,
+          limit,
+          total: total[0]?.total || 0,
+          pages: Math.ceil((total[0]?.total || 0) / limit)
+        }
+      }
+    } catch (error) {
+      throw new AppError(`Failed to get all conversations: ${error.message}`, 500)
     }
   }
 
@@ -334,7 +519,7 @@ class MessageService {
       }
 
       // Kiểm tra quyền
-      if (message.senderId.toString() !== userId.toString()) {
+      if (message.fromId.toString() !== userId.toString()) {
         throw new AppError('Unauthorized to modify this message', 403)
       }
 
@@ -359,7 +544,7 @@ class MessageService {
       }
 
       // Kiểm tra quyền
-      if (message.senderId.toString() !== userId.toString()) {
+      if (message.fromId.toString() !== userId.toString()) {
         throw new AppError('Unauthorized to pin this message', 403)
       }
 
@@ -381,8 +566,8 @@ class MessageService {
         isPinned: true,
         isDeleted: false,
         $or: [
-          { senderId: userId },
-          { receiverId: userId }
+          { fromId: userId },
+          { toId: userId }
         ]
       }
 
@@ -391,8 +576,8 @@ class MessageService {
       }
 
       const pinnedMessages = await Message.find(query)
-        .populate('senderId', 'name email avatar')
-        .populate('receiverId', 'name email avatar')
+        .populate('fromId', 'name email avatar')
+        .populate('toId', 'name email avatar')
         .sort({ createdAt: -1 })
 
       return pinnedMessages
@@ -446,8 +631,8 @@ class MessageService {
   async getMessageById(messageId) {
     try {
       const message = await Message.findById(messageId)
-        .populate('senderId', 'name email avatar roleId')
-        .populate('receiverId', 'name email avatar roleId')
+        .populate('fromId', 'name email avatar roleId')
+        .populate('toId', 'name email avatar roleId')
 
       if (!message) {
         throw new AppError('Message not found', 404)
@@ -491,8 +676,8 @@ class MessageService {
 
       const query = {
         $or: [
-          { senderId: userId },
-          { receiverId: userId }
+          { fromId: userId },
+          { toId: userId }
         ],
         isDeleted: false,
         createdAt: {
@@ -502,8 +687,8 @@ class MessageService {
       }
 
       const messages = await Message.find(query)
-        .populate('senderId', 'name email avatar')
-        .populate('receiverId', 'name email avatar')
+        .populate('fromId', 'name email avatar')
+        .populate('toId', 'name email avatar')
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)

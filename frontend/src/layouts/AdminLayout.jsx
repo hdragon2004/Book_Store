@@ -167,7 +167,7 @@ const AdminLayout = ({ children }) => {
                   {location.pathname === '/admin/vouchers' && 'Quản lý voucher'}
                   {location.pathname === '/admin/vouchers/create' && 'Tạo voucher mới'}
                   {location.pathname.startsWith('/admin/vouchers/update/') && 'Cập nhật voucher'}
-                  {location.pathname === '/admin/chats' && 'Tin nhắn'}
+                  {location.pathname === '/admin/chat' && 'Tin nhắn'}
                 </h1>
                 <p className="text-sm text-gray-500">
                   {(location.pathname === '/admin' || location.pathname === '/admin/dashboard') && 'Tổng quan về cửa hàng sách của bạn'}
@@ -186,7 +186,7 @@ const AdminLayout = ({ children }) => {
                   {location.pathname === '/admin/vouchers' && 'Quản lý mã giảm giá và voucher'}
                   {location.pathname === '/admin/vouchers/create' && 'Tạo mã giảm giá mới cho khách hàng'}
                   {location.pathname.startsWith('/admin/vouchers/update/') && 'Chỉnh sửa thông tin voucher'}
-                  {location.pathname === '/admin/chats' && 'Quản lý tin nhắn và trò chuyện'}
+                  {location.pathname === '/admin/chat' && 'Quản lý tin nhắn và trò chuyện'}
                 </p>
               </div>
             </div>

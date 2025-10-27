@@ -10,6 +10,7 @@ import OrdersListPage from '../pages/order/OrdersListPage';
 import FavoritesPage from '../pages/user/FavoritesPage';
 import ProfilePage from '../pages/user/ProfilePage';
 import MyLibraryPage from '../pages/user/MyLibraryPage';
+import ChatPage from '../pages/user/ChatPage';
 import CartPage from '../pages/CartPage';
 import QRTest from '../components/QRTest';
 import LoginPage from '../pages/auth/LoginPage';
@@ -36,7 +37,7 @@ import VouchersPage from '../pages/admin/vouchers/VouchersPage';
 import CreateVouchersPage from '../pages/admin/vouchers/CreateVouchersPage';
 import UpdateVouchersPage from '../pages/admin/vouchers/UpdateVouchersPage';
 import ViewVouchersPage from '../pages/admin/vouchers/ViewVouchersPage';
-import ChatsPage from '../pages/chat/ChatsPage';
+import ChatsPage from '../pages/admin/chats/ChatsPage';
 import { useAuth } from '../contexts/AuthContext';
 
 // Authentication check using AuthContext
@@ -145,6 +146,14 @@ const AppRoutes = () => {
         element={
           <PrivateRoute>
             <MainLayout><MyLibraryPage /></MainLayout>
+          </PrivateRoute>
+        } 
+      />
+      <Route 
+        path="/chat" 
+        element={
+          <PrivateRoute>
+            <MainLayout><ChatPage /></MainLayout>
           </PrivateRoute>
         } 
       />

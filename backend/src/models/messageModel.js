@@ -1,215 +1,173 @@
 import mongoose from 'mongoose'
 
 const messageSchema = new mongoose.Schema({
+  conversationId: {
+    type: String,
+    required: true,
+    index: true
+  },
   // Người gửi tin nhắn
   fromId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'Sender is required']
+    required: true
   },
-  
-  // Người nhận tin nhắn (có thể là user hoặc admin)
+  // Người nhận tin nhắn (có thể null cho chat group)
   toId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'Receiver is required']
-  },
-  
-  // Nội dung tin nhắn
-  content: {
-    type: String,
-    required: [true, 'Message content is required'],
-    maxlength: [1000, 'Message cannot be more than 1000 characters']
-  },
-  
-  // File đính kèm (nếu có)
-  attachments: [{
-    filename: String,
-    originalName: String,
-    mimeType: String,
-    size: Number,
-    url: String
-  }],
-  
-  // Trạng thái tin nhắn
-  status: {
-    type: String,
-    enum: ['sent', 'delivered', 'read'],
-    default: 'sent'
-  },
-  
-  // Thời gian đọc tin nhắn
-  readAt: {
-    type: Date,
+    required: false,
     default: null
   },
-  
-  // Tin nhắn đã bị xóa chưa
+  content: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  messageType: {
+    type: String,
+    enum: ['text', 'image', 'file'],
+    default: 'text'
+  },
+  // URL ảnh nếu có
+  imageUrl: {
+    type: String,
+    default: null
+  },
+  isRead: {
+    type: Boolean,
+    default: false
+  },
   isDeleted: {
     type: Boolean,
     default: false
   },
-  
-  // Thời gian tạo
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  
-  // Thời gian cập nhật
-  updatedAt: {
-    type: Date,
-    default: Date.now
-  }
+  }, {
+  timestamps: true
 })
 
-// Indexes để tối ưu performance
-messageSchema.index({ fromId: 1, createdAt: -1 })
-messageSchema.index({ toId: 1, createdAt: -1 })
-messageSchema.index({ status: 1, createdAt: -1 })
+// Indexes
+messageSchema.index({ conversationId: 1, createdAt: -1 })
+messageSchema.index({ fromId: 1 })
+messageSchema.index({ toId: 1 })
+messageSchema.index({ isRead: 1 })
 
-// Text search index
-messageSchema.index({ content: 'text' })
-
-// Auto update updatedAt
-messageSchema.pre('save', function(next) {
-  this.updatedAt = new Date()
-  next()
-})
-
-// Virtual để lấy thông tin sender
-messageSchema.virtual('sender', {
-  ref: 'User',
-  localField: 'fromId',
-  foreignField: '_id',
-  justOne: true
-})
-
-// Virtual để lấy thông tin receiver
-messageSchema.virtual('receiver', {
-  ref: 'User',
-  localField: 'toId',
-  foreignField: '_id',
-  justOne: true
-})
-
-// Method để đánh dấu đã đọc
+// Instance methods
 messageSchema.methods.markAsRead = function() {
+  this.isRead = true
   this.status = 'read'
   this.readAt = new Date()
   return this.save()
 }
 
-// Method để đánh dấu đã gửi
-messageSchema.methods.markAsDelivered = function() {
-  this.status = 'delivered'
-  return this.save()
-}
-
-// Method để xóa mềm tin nhắn
 messageSchema.methods.softDelete = function() {
   this.isDeleted = true
+  this.deletedAt = new Date()
   return this.save()
 }
 
-// Method để khôi phục tin nhắn
 messageSchema.methods.restore = function() {
   this.isDeleted = false
+  this.deletedAt = null
   return this.save()
 }
 
-// Static method để lấy tin nhắn giữa 2 user
-messageSchema.statics.getMessagesBetweenUsers = function(fromId, toId, options = {}) {
-  const {
-    page = 1,
-    limit = 50,
-    sortBy = 'createdAt',
-    sortOrder = 'desc'
-  } = options
+// Static methods
+messageSchema.statics.findByConversationId = function(conversationId, page = 1, limit = 50) {
+  const skip = (page - 1) * limit
+  return this.find({ conversationId, isDeleted: false })
+    .populate('fromId', 'name email avatar roleId')
+    .populate('toId', 'name email avatar roleId')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+}
 
-  const query = {
+messageSchema.statics.getMessagesBetweenUsers = function(fromId, toId, options = {}) {
+  const { page = 1, limit = 50, sortBy = 'createdAt', sortOrder = 'desc' } = options
+  const skip = (page - 1) * limit
+  
+  const sortOptions = {}
+  sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1
+  
+  return this.find({
     $or: [
       { fromId, toId },
       { fromId: toId, toId: fromId }
     ],
     isDeleted: false
-  }
-
-  return this.find(query)
+  })
     .populate('fromId', 'name email avatar roleId')
     .populate('toId', 'name email avatar roleId')
-    .sort({ [sortBy]: sortOrder === 'desc' ? -1 : 1 })
-    .skip((page - 1) * limit)
+    .sort(sortOptions)
+    .skip(skip)
     .limit(limit)
 }
 
-// Static method để lấy tin nhắn chưa đọc
 messageSchema.statics.getUnreadMessages = function(userId) {
   return this.find({
     toId: userId,
-    status: { $in: ['sent', 'delivered'] },
+    isRead: false,
     isDeleted: false
   })
-  .populate('fromId', 'name email avatar')
-  .sort({ createdAt: -1 })
+    .populate('fromId', 'name email avatar roleId')
+    .sort({ createdAt: -1 })
 }
 
-// Static method để đánh dấu tất cả tin nhắn đã đọc giữa 2 user
 messageSchema.statics.markAllAsReadBetweenUsers = function(fromId, toId) {
   return this.updateMany(
     {
-      fromId,
-      toId,
-      status: { $in: ['sent', 'delivered'] }
+      $or: [
+        { fromId, toId },
+        { fromId: toId, toId: fromId }
+      ],
+      isRead: false,
+      isDeleted: false
     },
-    {
-      status: 'read',
-      readAt: new Date()
+    { 
+      $set: { 
+        isRead: true,
+        status: 'read',
+        readAt: new Date()
+      } 
     }
   )
 }
 
-// Static method để tìm kiếm tin nhắn
 messageSchema.statics.searchMessages = function(query, options = {}) {
-  const {
-    page = 1,
-    limit = 20,
-    fromId,
-    toId,
-    dateFrom,
-    dateTo
-  } = options
-
+  const { page = 1, limit = 20, fromId, toId, dateFrom, dateTo } = options
+  const skip = (page - 1) * limit
+  
   const searchQuery = {
-    isDeleted: false,
-    $text: { $search: query }
+    content: { $regex: query, $options: 'i' },
+    isDeleted: false
   }
-
-  if (fromId) searchQuery.fromId = fromId
-  if (toId) searchQuery.toId = toId
+  
+  if (fromId) {
+    searchQuery.fromId = fromId
+  }
+  
+  if (toId) {
+    searchQuery.toId = toId
+  }
+  
   if (dateFrom || dateTo) {
     searchQuery.createdAt = {}
     if (dateFrom) searchQuery.createdAt.$gte = new Date(dateFrom)
     if (dateTo) searchQuery.createdAt.$lte = new Date(dateTo)
   }
-
+  
   return this.find(searchQuery)
-    .populate('fromId', 'name email avatar')
-    .populate('toId', 'name email avatar')
+    .populate('fromId', 'name email avatar roleId')
+    .populate('toId', 'name email avatar roleId')
     .sort({ createdAt: -1 })
-    .skip((page - 1) * limit)
+    .skip(skip)
     .limit(limit)
 }
 
-// Static method để lấy thống kê tin nhắn
 messageSchema.statics.getMessageStats = function(options = {}) {
-  const {
-    dateFrom,
-    dateTo,
-    fromId,
-    toId
-  } = options
-
+  const { dateFrom, dateTo, conversationId, senderId } = options
+  
   const matchQuery = { isDeleted: false }
   
   if (dateFrom || dateTo) {
@@ -218,9 +176,14 @@ messageSchema.statics.getMessageStats = function(options = {}) {
     if (dateTo) matchQuery.createdAt.$lte = new Date(dateTo)
   }
   
-  if (fromId) matchQuery.fromId = fromId
-  if (toId) matchQuery.toId = toId
-
+  if (conversationId) {
+    matchQuery.conversationId = conversationId
+  }
+  
+  if (senderId) {
+    matchQuery.fromId = senderId
+  }
+  
   return this.aggregate([
     { $match: matchQuery },
     {
@@ -230,7 +193,25 @@ messageSchema.statics.getMessageStats = function(options = {}) {
         unreadMessages: {
           $sum: {
             $cond: [
-              { $in: ['$status', ['sent', 'delivered']] },
+              { $eq: ['$isRead', false] },
+              1,
+              0
+            ]
+          }
+        },
+        importantMessages: {
+          $sum: {
+            $cond: [
+              { $eq: ['$isImportant', true] },
+              1,
+              0
+            ]
+          }
+        },
+        pinnedMessages: {
+          $sum: {
+            $cond: [
+              { $eq: ['$isPinned', true] },
               1,
               0
             ]
@@ -240,5 +221,17 @@ messageSchema.statics.getMessageStats = function(options = {}) {
     }
   ])
 }
+
+// Virtual for formatted timestamp
+messageSchema.virtual('formattedTime').get(function() {
+  return this.createdAt.toLocaleTimeString('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+})
+
+messageSchema.virtual('formattedDate').get(function() {
+  return this.createdAt.toLocaleDateString('vi-VN')
+})
 
 export default mongoose.model('Message', messageSchema)

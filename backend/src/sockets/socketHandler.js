@@ -32,7 +32,8 @@ class SocketHandler {
         const decoded = jwt.verify(token, config.jwtSecret)
         
         // Lấy thông tin user
-        const user = await User.findById(decoded.id).select('-password')
+        const user = await User.findById(decoded.userId || decoded.id).select('-password').populate('roleId')
+        
         if (!user) {
           return next(new Error('User not found'))
         }
@@ -55,7 +56,6 @@ class SocketHandler {
    */
   setupEventHandlers() {
     this.io.on('connection', (socket) => {
-      console.log(`🔌 User connected: ${socket.user.name} (${socket.id})`)
       
       // Lưu user connection
       this.connectedUsers.set(socket.user._id.toString(), {
@@ -64,24 +64,26 @@ class SocketHandler {
         connectedAt: new Date()
       })
 
+      console.log(`🔌 User connected: ${socket.id} (${socket.user._id})`)
+
       // Join user vào room riêng của họ
       socket.join(`user:${socket.user._id}`)
 
       // Join admin vào admin room nếu là admin
-      if (socket.user.roleId === 'admin') {
+      if (socket.user.roleId?.name === 'admin') {
         socket.join('admin')
       }
 
       // Event: User join room
       socket.on('join_room', (room) => {
         socket.join(room)
-        console.log(`👤 User ${socket.user.name} joined room: ${room}`)
+        console.log(`👤 ${socket.id} joined room: ${room}`)
       })
 
       // Event: User leave room
       socket.on('leave_room', (room) => {
         socket.leave(room)
-        console.log(`👤 User ${socket.user.name} left room: ${room}`)
+        console.log(`👤 ${socket.id} left room: ${room}`)
       })
 
       // Event: Send message
@@ -89,9 +91,33 @@ class SocketHandler {
         this.handleSendMessage(socket, data)
       })
 
-      // Event: Chat message
+      // Event: Chat message (realtime)
       socket.on('chat_message', (data) => {
         this.handleChatMessage(socket, data)
+      })
+
+      // Event: Join conversation
+      socket.on('join_conversation', (data) => {
+        this.handleJoinConversation(socket, data)
+      })
+
+      // Event: Leave conversation
+      socket.on('leave_conversation', (data) => {
+        this.handleLeaveConversation(socket, data)
+      })
+
+      // Event: Send message to conversation
+      socket.on('send_message', (data) => {
+        this.handleSendMessageToConversation(socket, data)
+      })
+
+      // Event: Typing in conversation
+      socket.on('typing_start', (data) => {
+        this.handleTypingStart(socket, data)
+      })
+
+      socket.on('typing_stop', (data) => {
+        this.handleTypingStop(socket, data)
       })
 
       // Event: Join chat room
@@ -166,8 +192,6 @@ class SocketHandler {
       type,
       timestamp: new Date()
     })
-
-    console.log(`💬 Message sent to room ${room} by ${socket.user.name}`)
   }
 
   /**
@@ -261,7 +285,7 @@ class SocketHandler {
    * Handle disconnect
    */
   handleDisconnect(socket) {
-    console.log(`🔌 User disconnected: ${socket.user.name} (${socket.id})`)
+    console.log(`🔌 ${socket.id} disconnected`)
     
     // Xóa user khỏi connected users
     this.connectedUsers.delete(socket.user._id.toString())
@@ -398,7 +422,7 @@ class SocketHandler {
         createdAt: message.createdAt
       })
 
-      console.log(`💬 Chat message sent from ${socket.user.name} to user ${toId}`)
+      console.log(`💬 Chat message sent from ${socket.id} to user ${toId}`)
     } catch (error) {
       console.error('❌ Chat message error:', error)
       socket.emit('chat_error', { message: 'Failed to send message' })
@@ -419,7 +443,7 @@ class SocketHandler {
     // Join user's personal chat room
     socket.join(`user:${socket.user._id}`)
     
-    console.log(`💬 User ${socket.user.name} joined chat with user ${userId}`)
+    console.log(`💬 ${socket.id} joined chat with user ${userId}`)
     
     // Emit confirmation
     socket.emit('chat_joined', { userId })
@@ -431,7 +455,7 @@ class SocketHandler {
   handleLeaveChat(socket, data) {
     const { userId } = data
     
-    console.log(`💬 User ${socket.user.name} left chat with user ${userId}`)
+    console.log(`💬 ${socket.id} left chat with user ${userId}`)
     
     socket.emit('chat_left', { userId })
   }
@@ -461,7 +485,7 @@ class SocketHandler {
         readAt: message.readAt
       })
       
-      console.log(`💬 Message ${messageId} marked as read by ${socket.user.name}`)
+      console.log(`💬 Message ${messageId} marked as read by ${socket.id}`)
     } catch (error) {
       console.error('❌ Mark message read error:', error)
       socket.emit('chat_error', { message: 'Failed to mark message as read' })
@@ -502,6 +526,162 @@ class SocketHandler {
       messageId,
       readBy,
       readAt
+    })
+  }
+
+  /**
+   * Handle join conversation
+   */
+  async handleJoinConversation(socket, data) {
+    const { conversationId } = data
+    
+    if (!conversationId) {
+      socket.emit('conversation_error', { message: 'Conversation ID is required' })
+      return
+    }
+
+    socket.join(`conversation:${conversationId}`)
+    
+    // Emit user joined event
+    socket.to(`conversation:${conversationId}`).emit('user_joined_conversation', {
+      userId: socket.user._id,
+      userName: socket.user.name,
+      conversationId,
+      timestamp: new Date()
+    })
+  }
+
+  /**
+   * Handle leave conversation
+   */
+  handleLeaveConversation(socket, data) {
+    const { conversationId } = data
+    
+    socket.leave(`conversation:${conversationId}`)
+    console.log(`👋 ${socket.id} left conversation: ${conversationId}`)
+    
+    // Emit user left event
+    socket.to(`conversation:${conversationId}`).emit('user_left_conversation', {
+      userId: socket.user._id,
+      userName: socket.user.name,
+      conversationId,
+      timestamp: new Date()
+    })
+  }
+
+  /**
+   * Handle send message to conversation
+   */
+  async handleSendMessageToConversation(socket, data) {
+    try {
+      const { conversationId, content, messageType = 'text', toId, imageUrl } = data
+
+      if (!conversationId || !content) {
+        socket.emit('conversation_error', { message: 'Conversation ID and content are required' })
+        return
+      }
+
+      // Import Message model và User model
+      const Message = (await import('~/models/messageModel')).default
+      const User = (await import('~/models/userModel')).default
+      
+      const userRole = socket.user.roleId?.name || 'user'
+
+      // Xác định toId dựa trên role của người gửi
+      let targetToId = toId
+      
+      if (!targetToId) {
+        if (userRole === 'user') {
+          // Nếu user gửi tin nhắn, toId sẽ là admin
+          const adminUser = await User.findOne({ 'roleId.name': 'admin' })
+          targetToId = adminUser ? adminUser._id : null
+        } else if (userRole === 'admin') {
+          // Nếu admin gửi tin nhắn, toId sẽ là user (lấy từ conversationId)
+          const userId = conversationId.split('_')[1] // conv_userId_user -> userId
+          targetToId = userId
+        }
+      }
+      
+      // Tạo tin nhắn mới
+      const message = await Message.create({
+        conversationId,
+        fromId: socket.user._id,
+        toId: targetToId,
+        content,
+        messageType,
+        imageUrl: imageUrl || null
+      })
+
+      await message.populate('fromId', 'name email avatar roleId')
+      if (targetToId) {
+        await message.populate('toId', 'name email avatar roleId')
+      }
+
+      // Format message cho frontend
+      const formattedMessage = {
+        messageId: message._id,
+        sender: message.fromId.name === 'Admin User' ? 'admin' : 'user',
+        text: message.content,
+        timestamp: message.createdAt,
+        isRead: message.isRead,
+        messageType: message.messageType || 'text',
+        imageUrl: message.imageUrl || null,
+        fromUser: {
+          userId: message.fromId._id,
+          name: message.fromId.name,
+          email: message.fromId.email,
+          avatar: message.fromId.avatar
+        },
+        toUser: message.toId ? {
+          userId: message.toId._id,
+          name: message.toId.name,
+          email: message.toId.email,
+          avatar: message.toId.avatar
+        } : null
+      }
+
+      // Emit tin nhắn đến tất cả users trong conversation
+      this.io.to(`conversation:${conversationId}`).emit('new_message', {
+        message: formattedMessage,
+        conversationId
+      })
+    } catch (error) {
+      console.error('❌ Send message to conversation error:', error)
+      socket.emit('conversation_error', { message: 'Failed to send message' })
+    }
+  }
+
+  /**
+   * Handle typing start
+   */
+  handleTypingStart(socket, data) {
+    const { conversationId } = data
+    
+    if (!conversationId) return
+
+    socket.to(`conversation:${conversationId}`).emit('user_typing_conversation', {
+      userId: socket.user._id,
+      userName: socket.user.name,
+      conversationId,
+      isTyping: true,
+      timestamp: new Date()
+    })
+  }
+
+  /**
+   * Handle typing stop
+   */
+  handleTypingStop(socket, data) {
+    const { conversationId } = data
+    
+    if (!conversationId) return
+
+    socket.to(`conversation:${conversationId}`).emit('user_typing_conversation', {
+      userId: socket.user._id,
+      userName: socket.user.name,
+      conversationId,
+      isTyping: false,
+      timestamp: new Date()
     })
   }
 
