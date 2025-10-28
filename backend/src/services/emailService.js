@@ -166,9 +166,9 @@ const createShippingNotificationTemplate = (order) => {
 // Gửi email xác nhận đơn hàng
 const sendOrderConfirmationEmail = async (orderData) => {
   try {
-    console.log('📧 Email service received orderData:', orderData)
-    console.log('📧 OrderData type:', typeof orderData)
-    console.log('📧 OrderData._id:', orderData?._id)
+    // console.log('📧 Email service received orderData:', orderData)
+    // console.log('📧 OrderData type:', typeof orderData)
+    // console.log('📧 OrderData._id:', orderData?._id)
     
     if (!orderData) {
       console.log('❌ No orderData provided')
@@ -177,7 +177,7 @@ const sendOrderConfirmationEmail = async (orderData) => {
     
     // Kiểm tra nếu không có email
     if (!orderData?.userId || !orderData?.userId?.email) {
-      console.log('❌ No userId or email in orderData')
+      // console.log('❌ No userId or email in orderData')
       return
     }
 
@@ -185,14 +185,21 @@ const sendOrderConfirmationEmail = async (orderData) => {
     const orderId = orderData._id?.toString() || orderData._id
     
     if (!orderId) {
-      console.log('❌ No orderId found')
+      // console.log('❌ No orderId found')
       return
     }
 
-    console.log('📧 Processing email for orderId:', orderId)
+    // console.log('📧 Processing email for orderId:', orderId)
     // console.log('📧 Order items count:', orderData.orderItems?.length || 0)
 
     const transporter = createTransporter()
+    
+    if (!transporter) {
+      // console.log('❌ Failed to create transporter')
+      return
+    }
+    
+    // console.log('📧 Transporter created successfully')
     
     const mailOptions = {
       from: `"BookStore" <${process.env.SMTP_USER}>`,

@@ -98,7 +98,7 @@ export const startOrderCancellationJob = () => {
     }
   })
 
-  console.log('🚀 [CRON] Order cancellation job đã được khởi động - chạy mỗi 5 phút')
+  // console.log('🚀 [CRON] Order cancellation job đã được khởi động - chạy mỗi 5 phút')
 }
 
 /**
@@ -150,18 +150,18 @@ export const startShippingNotificationJob = () => {
     }
   })
 
-  console.log('🚀 [CRON] Shipping notification job đã được khởi động - chạy mỗi phút')
+  // console.log('🚀 [CRON] Shipping notification job đã được khởi động - chạy mỗi phút')
 }
 
 /**
  * Khởi động tất cả cron jobs
  */
 export const startAllCronJobs = () => {
-  console.log('🚀 [CRON] Đang khởi động tất cả cron jobs...')
+  // console.log('🚀 [CRON] Đang khởi động tất cả cron jobs...')
   
   startOrderStatusJob()
   startOrderCancellationJob()
   startShippingNotificationJob()
   
-  console.log('✅ [CRON] Tất cả cron jobs đã được khởi động thành công!')
+  // console.log('✅ [CRON] Tất cả cron jobs đã được khởi động thành công!')
 }

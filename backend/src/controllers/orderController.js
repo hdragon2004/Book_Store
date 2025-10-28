@@ -89,15 +89,6 @@ export const createOrder = asyncHandler(async (req, res) => {
   await Cart.deleteMany({ userId, bookId: { $in: bookIds } })
   // Removed items from cart
 
-  // Gửi email xác nhận đơn hàng
-  try {
-    await orderService.sendOrderConfirmationEmail(order)
-    console.log(`📧 Order confirmation email sent for order ${order.orderCode}`)
-  } catch (emailError) {
-    console.error('❌ Failed to send order confirmation email:', emailError)
-    // Không throw error để không làm fail việc tạo đơn hàng
-  }
-
   res.status(201).json(
     new ApiResponse(201, { order }, 'Order created successfully')
   )

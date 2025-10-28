@@ -7,7 +7,6 @@ import Cart from '~/models/cartModel'
 import ShippingProvider from '~/models/shippingProviderModel'
 import { AppError } from '~/utils/AppError'
 import voucherService from '~/services/voucherService'
-import { addOrderConfirmationJob } from '~/queue/emailQueue'
 
 /**
  * Order Service - Xử lý business logic liên quan đến đơn hàng
@@ -265,10 +264,11 @@ class OrderService {
         }))
       }
 
-      // Thêm job gửi email vào queue
-      await addOrderConfirmationJob(orderWithDetails.userId.email, orderData)
+      // Gửi email xác nhận đơn hàng
+      const { sendOrderConfirmationEmail } = await import('~/services/emailService')
+      await sendOrderConfirmationEmail(orderData)
       
-      console.log(`✅ Order confirmation email queued for user ${orderWithDetails.userId.name} with ${orderData.orderItems.length} items`)
+      // console.log(`✅ Order confirmation email sent to ${orderWithDetails.userId.email}`)
     } catch (error) {
       console.error('❌ Error queuing order confirmation email:', error)
       throw error

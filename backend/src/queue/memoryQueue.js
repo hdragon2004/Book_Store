@@ -48,7 +48,7 @@ class MemoryQueue {
       this.processJobs()
     }, 1000) // Xử lý mỗi giây
 
-    console.log('🚀 Memory queue started processing')
+    // console.log('🚀 Memory queue started processing')
   }
 
   /**
@@ -58,7 +58,7 @@ class MemoryQueue {
     if (this.interval) {
       clearInterval(this.interval)
       this.interval = null
-      console.log('🛑 Memory queue stopped processing')
+      // console.log('🛑 Memory queue stopped processing')
     }
   }
 

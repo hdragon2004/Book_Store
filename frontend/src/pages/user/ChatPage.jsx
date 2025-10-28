@@ -2,21 +2,18 @@ import React, { useState, useEffect, useRef } from 'react'
 import { io } from 'socket.io-client'
 import { useAuth } from '../../contexts/AuthContext'
 import { chatAPI } from '../../services/apiService'
-import OrderInfoCard from '../../components/OrderInfoCard'
 
 const ChatPage = () => {
   console.log('🔍 ChatPage component rendering...')
   const { user, token } = useAuth()
   const [socket, setSocket] = useState(null)
   const [conversationId, setConversationId] = useState(null)
-  const [orderMessageSent, setOrderMessageSent] = useState(false)
   const [newMessage, setNewMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [typingUsers, setTypingUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [uploadingImage, setUploadingImage] = useState(false)
-  const [orderInfo, setOrderInfo] = useState(null)
   const [messages, setMessages] = useState([])
   const [adminUser, setAdminUser] = useState(null)
   const messagesEndRef = useRef(null)
@@ -71,27 +68,6 @@ const ChatPage = () => {
         
         // Load messages
         await loadMessages(conversationId)
-        
-        // Kiểm tra xem có thông tin đơn hàng từ OrderDetailPage không
-        const storedOrderInfo = localStorage.getItem('supportOrderInfo')
-        console.log('🔍 Checking localStorage for supportOrderInfo:', storedOrderInfo)
-        if (storedOrderInfo) {
-          try {
-            const orderData = JSON.parse(storedOrderInfo)
-            console.log('📦 Order info found:', orderData)
-            console.log('📦 Setting orderInfo state...')
-            setOrderInfo(orderData)
-            console.log('📦 orderInfo state set successfully')
-            
-            // Xóa thông tin đơn hàng khỏi localStorage ngay lập tức
-            localStorage.removeItem('supportOrderInfo')
-            console.log('📦 Removed supportOrderInfo from localStorage')
-          } catch (error) {
-            console.error('❌ Error processing order info:', error)
-          }
-        } else {
-          console.log('📦 No supportOrderInfo found in localStorage')
-        }
       } catch (error) {
         console.error('❌ Error getting conversation:', error)
         setError('Không thể tải cuộc trò chuyện')
@@ -111,37 +87,6 @@ const ChatPage = () => {
       socket.emit('join_conversation', { conversationId })
     }
   }, [socket, conversationId])
-
-  // Reset flag khi orderInfo thay đổi để có thể gửi tin nhắn cho đơn hàng mới
-  useEffect(() => {
-    setOrderMessageSent(false)
-  }, [orderInfo])
-
-  // Gửi tin nhắn đơn hàng khi có orderInfo và socket sẵn sàng
-  useEffect(() => {
-    const sendOrderMessage = async () => {
-      // Chỉ gửi nếu chưa gửi và có đủ điều kiện
-      if (orderInfo && socket && socket.connected && conversationId && !orderMessageSent) {
-        try {
-          const orderMessage = `📦 Tôi cần hỗ trợ về đơn hàng ${orderInfo.orderCode}. Vui lòng xem chi tiết bên dưới.`
-
-          // Gửi tin nhắn tự động qua socket
-          socket.emit('send_message', {
-            conversationId,
-            content: orderMessage,
-            messageType: 'text'
-          })
-
-          // Đánh dấu đã gửi để tránh spam
-          setOrderMessageSent(true)
-        } catch (error) {
-          console.error('❌ Error sending order message:', error)
-        }
-      }
-    }
-
-    sendOrderMessage()
-  }, [orderInfo, socket, conversationId, orderMessageSent])
 
   // Load messages
   const loadMessages = async (convId) => {
@@ -429,18 +374,7 @@ const ChatPage = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Debug logs */}
-              {console.log('🔍 Debug - orderInfo:', orderInfo)}
-              {console.log('🔍 Debug - socket connected:', socket?.connected)}
-              {console.log('🔍 Debug - conversationId:', conversationId)}
-              
-              {/* Hiển thị thông tin đơn hàng nếu có */}
-              {orderInfo && (
-                <div className="flex justify-start">
-                  <OrderInfoCard orderInfo={orderInfo} />
-                </div>
-              )}
-                      {messages.map((message) => {
+              {messages.map((message) => {
                         const isFromUser = message.sender === 'user'
                         return (
                           <div
