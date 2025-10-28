@@ -106,8 +106,12 @@ const ChatsPage = () => {
     if (!socket) return
 
     const handleNewMessage = (data) => {
+      console.log('📨 Admin received new message:', data)
+      console.log('📨 Current selected conversation:', selectedConversation)
+      
       // Kiểm tra xem tin nhắn này có thuộc conversation hiện tại không
-      if (data.conversationId !== selectedConversation?.conversationId) {
+      if (data.conversationId !== selectedConversation?._id) {
+        console.log('❌ Message not for current conversation:', data.conversationId, 'vs', selectedConversation?._id)
         return
       }
       

@@ -63,7 +63,7 @@ const setupChatSocket = (io) => {
     // Handle new message - simplified version
     socket.on('send_message', async (data) => {
       try {
-        const { conversationId, content, messageType = 'text' } = data
+        const { conversationId, content, messageType = 'text', imageUrl } = data
 
         // Tìm admin user để làm toId
         const adminRole = await Role.findOne({ name: 'admin' })
@@ -89,6 +89,7 @@ const setupChatSocket = (io) => {
           toId,
           content,
           messageType,
+          imageUrl: imageUrl || null,
           isRead: false,
           isDeleted: false
         })
@@ -121,6 +122,9 @@ const setupChatSocket = (io) => {
         }
 
         // Emit tin nhắn đến tất cả users trong conversation (bao gồm cả người gửi)
+        console.log('📤 Emitting message to conversation:', conversationId, 'Message type:', messageType, 'ImageUrl:', imageUrl)
+        console.log('📤 Formatted message:', formattedMessage)
+        
         io.to(conversationId).emit('new_message', {
           message: formattedMessage,
           conversationId
