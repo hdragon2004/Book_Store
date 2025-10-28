@@ -25,4 +25,25 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+
+  /* Aspect ratio utilities */
+  .aspect-w-3 {
+    position: relative;
+    padding-bottom: 133.333333%; /* 4/3 aspect ratio */
+  }
+  
+  .aspect-h-4 {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+  }
+
+  /* Book cover aspect ratio 2:3 */
+  .aspect-\[2\/3\] {
+    aspect-ratio: 2 / 3;
+  }
 }

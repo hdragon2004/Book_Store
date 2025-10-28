@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { bookAPI, categoryAPI } from '../../services/apiService';
 import PageLayout from '../../layouts/PageLayout';
+import BookCard from '../../components/BookCard';
 
 const BookPage = () => {
-  const navigate = useNavigate();
   const [books, setBooks] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -105,27 +104,6 @@ const BookPage = () => {
     setFilters(prev => ({ ...prev, page }));
   };
 
-  const handleBookClick = (bookId) => {
-    navigate(`/books/${bookId}`);
-  };
-
-  const renderStars = (rating) => {
-    const fullStars = Math.floor(rating || 0);
-    const hasHalfStar = (rating || 0) % 1 >= 0.5;
-    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-    
-    return (
-      <div className="flex items-center">
-        {[...Array(fullStars)].map((_, i) => (
-          <span key={i} className="text-yellow-500">★</span>
-        ))}
-        {hasHalfStar && <span className="text-yellow-500">☆</span>}
-        {[...Array(emptyStars)].map((_, i) => (
-          <span key={i} className="text-gray-300">☆</span>
-        ))}
-      </div>
-    );
-  };
 
   if (loading) {
     return (
@@ -246,73 +224,7 @@ const BookPage = () => {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-12">
               {books.map((book) => (
-                <button
-                  key={book._id}
-                  onClick={() => handleBookClick(book._id)}
-                  className="w-full bg-transparent rounded-2xl hover:shadow-xl transition-all duration-300 p-6 text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                >
-                  {/* Book Image */}
-                  <div className="w-full h-56 bg-gray-100 rounded-xl flex items-center justify-center mb-6">
-                    {book.imageUrl ? (
-                      <img 
-                        src={book.imageUrl.startsWith('http') ? book.imageUrl : `http://localhost:5000${book.imageUrl}`} 
-                        alt={book.title}
-                        className="w-full h-full object-cover rounded-xl"
-                      />
-                    ) : (
-                      <div className="text-gray-500 text-center">
-                        <svg className="w-16 h-16 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
-                        <span className="text-lg">No Image</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Book Info */}
-                  <div className="space-y-3">
-                    <h3 className="font-bold text-xl line-clamp-2 hover:text-amber-600 transition-colors">
-                      {book.title}
-                    </h3>
-                    
-                    <p className="text-gray-600 text-lg">{book.author}</p>
-                    
-                    <div className="flex items-center justify-between">
-                        <span className="text-black font-bold text-xl">
-                          {book.price?.toLocaleString('vi-VN')} ₫
-                        </span>
-                      <div className="flex items-center">
-                        <span className="text-base text-gray-500">
-                          {book.format} • {book.language}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between text-base">
-                      <div className="flex items-center">
-                        {book.stock > 0 ? (
-                          <span className="text-green-600 font-semibold">
-                            ✓ Còn hàng ({book.stock})
-                          </span>
-                        ) : (
-                          <span className="text-red-600 font-semibold">✗ Hết hàng</span>
-                        )}
-                      </div>
-                      
-                      {book.categoryId?.name && (
-                        <span className="bg-gray-100 px-3 py-1 rounded-full text-sm">
-                          {book.categoryId.name}
-                        </span>
-                      )}
-                    </div>
-
-                    {book.description && (
-                      <p className="text-gray-600 text-base line-clamp-2">
-                        {book.description}
-                      </p>
-                    )}
-                  </div>
-                </button>
+                <BookCard key={book._id} book={book} />
               ))}
             </div>
 
