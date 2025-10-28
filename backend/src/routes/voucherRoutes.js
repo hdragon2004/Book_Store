@@ -1,6 +1,7 @@
 import express from 'express'
 import { body, query } from 'express-validator'
 import { authenticate, authorize } from '~/middlewares/authMiddleware'
+import { authorizeRoles } from '~/middlewares/authorizeRoles'
 import { validationMiddleware } from '~/middlewares/validationMiddleware'
 import voucherController from '~/controllers/voucherController'
 

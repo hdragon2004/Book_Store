@@ -18,6 +18,7 @@ import VoucherUsage from '~/models/voucherUsageModel'
 import Message from '~/models/messageModel'
 import Address from '~/models/addressModel'
 import Cart from '~/models/cartModel'
+import roleService from '~/services/roleService'
 import UserBook from '~/models/userBookModel'
 import EmailVerification from '~/models/emailVerificationModel'
 import PasswordReset from '~/models/passwordResetModel'
@@ -130,6 +131,17 @@ const sampleUsers = [
     password: 'admin123',
     phone: '0323456789',
     address: '123 Admin Street, Ho Chi Minh City',
+    isEmailVerified: true,
+    status: 'active',
+    isActive: true
+  },
+  {
+    name: 'Staff User',
+    fullName: 'Lê Văn Staff',
+    email: 'staff@bookstore.com',
+    password: 'staff123',
+    phone: '0123456789',
+    address: '789 Staff Road, Ho Chi Minh City',
     isEmailVerified: true,
     status: 'active',
     isActive: true
@@ -594,23 +606,30 @@ const seedDatabase = async () => {
     // Wait a bit to ensure deletion is complete
     await new Promise(resolve => setTimeout(resolve, 1000))
 
-    // Create roles
-    const adminRole = await Role.create({
-      name: 'admin',
-      description: 'Administrator role'
-    })
-    const userRole = await Role.create({
-      name: 'user',
-      description: 'Regular user role'
-    })
-    console.log('👥 Created roles:', adminRole.name, userRole.name)
+    // Ensure basic roles exist
+    await roleService.ensureBasicRoles()
+    
+    // Get role references for user creation
+    const adminRole = await Role.findOne({ name: 'admin' })
+    const userRole = await Role.findOne({ name: 'user' })
+    const staffRole = await Role.findOne({ name: 'staff' })
+    
+    console.log('👥 Roles available:', adminRole.name, userRole.name, staffRole.name)
 
     // Create users
     const users = []
     for (const userData of sampleUsers) {
+      let roleId = userRole._id // Default role
+      
+      if (userData.email === 'admin@bookstore.com') {
+        roleId = adminRole._id
+      } else if (userData.email === 'staff@bookstore.com') {
+        roleId = staffRole._id
+      }
+      
       const user = new User({
         ...userData,
-        roleId: userData.email === 'admin@bookstore.com' ? adminRole._id : userRole._id
+        roleId: roleId
       })
       await user.save()
       users.push(user)

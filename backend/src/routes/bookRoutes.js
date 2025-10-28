@@ -1,6 +1,7 @@
 import express from 'express'
 import { body, query } from 'express-validator'
 import { authenticate, authorize } from '~/middlewares/authMiddleware'
+import { authorizeRoles } from '~/middlewares/authorizeRoles'
 import { validationMiddleware } from '~/middlewares/validationMiddleware'
 import { uploadMiddleware } from '~/middlewares/uploadMiddleware'
 import bookController from '~/controllers/bookController'
@@ -119,7 +120,7 @@ router.post(
 router.post(
   '/',
   authenticate,
-  authorize('admin'),
+  authorizeRoles('admin', 'staff'),
   [
     body('title').trim().isLength({ min: 1, max: 200 }).withMessage('Title must be between 1 and 200 characters'),
     body('author').trim().isLength({ min: 1, max: 100 }).withMessage('Author must be between 1 and 100 characters'),
@@ -144,7 +145,7 @@ router.post(
 router.put(
   '/:id',
   authenticate,
-  authorize('admin'),
+  authorizeRoles('admin', 'staff'),
   [
     body('title').optional().trim().isLength({ min: 1, max: 200 }).withMessage('Title must be between 1 and 200 characters'),
     body('author').optional().trim().isLength({ min: 1, max: 100 }).withMessage('Author must be between 1 and 100 characters'),
@@ -166,13 +167,13 @@ router.put(
 )
 
 // Xóa sách (Admin only)
-router.delete('/:id', authenticate, authorize('admin'), bookController.deleteBook)
+router.delete('/:id', authenticate, authorizeRoles('admin', 'staff'), bookController.deleteBook)
 
 // Cập nhật tồn kho (Admin only)
 router.put(
   '/:id/stock',
   authenticate,
-  authorize('admin'),
+  authorizeRoles('admin', 'staff'),
   [
     body('quantity').isInt({ min: 0 }).withMessage('Quantity must be a non-negative integer'),
     body('operation').isIn(['set', 'add', 'subtract']).withMessage('Operation must be set, add, or subtract')
@@ -185,7 +186,7 @@ router.put(
 router.get(
   '/statistics',
   authenticate,
-  authorize('admin'),
+  authorizeRoles('admin', 'staff'),
   bookController.getBookStatistics
 )
 

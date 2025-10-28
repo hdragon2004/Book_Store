@@ -18,6 +18,7 @@ import bookRoutes from './bookRoutes'
 import categoryRoutes from './categoryRoutes'
 import orderRoutes from './orderRoutes'
 import favoriteRoutes from './favoriteRoutes'
+import roleRoutes from './roleRoutes'
 import cartRoutes from './cartRoutes'
 import messageRoutes from './messageRoutes'
 import paymentRoutes from './paymentRoutes'
@@ -129,6 +130,7 @@ app.get('/api/health', (req, res) => {
 // API Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
+app.use('/api/roles', roleRoutes)
 app.use('/api/books', bookRoutes)
 app.use('/api/categories', categoryRoutes)
 app.use('/api/orders', orderRoutes)

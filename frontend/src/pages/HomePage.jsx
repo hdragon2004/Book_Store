@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { bookAPI, categoryAPI } from '../services/apiService';
+import axiosClient from '../services/axiosClient';
 import { useBookStatus } from '../contexts/BookStatusContext';
 import BookCard from '../components/BookCard';
 
@@ -68,7 +69,7 @@ const HomePage = () => {
         
         // Test kết nối trước
         try {
-          const testResponse = await fetch('http://localhost:5000/api/health');
+          const testResponse = await axiosClient.get('/health');
           console.log('🏠 HomePage: Health check response:', testResponse.status);
         } catch (testError) {
           console.error('🏠 HomePage: Health check failed:', testError);

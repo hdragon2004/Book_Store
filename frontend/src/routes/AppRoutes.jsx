@@ -59,7 +59,7 @@ const PrivateRoute = ({ children }) => {
 };
 
 const AdminRoute = ({ children }) => {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdminOrStaff, loading } = useAuth();
 
   if (loading) {
     return <div>Loading...</div>;
@@ -69,7 +69,7 @@ const AdminRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (!isAdmin) {
+  if (!isAdminOrStaff) {
     return <Navigate to="/" replace />;
   }
 

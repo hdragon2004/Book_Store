@@ -1,6 +1,7 @@
 import express from 'express'
 import { body, query, param } from 'express-validator'
 import { authenticate, authorize } from '~/middlewares/authMiddleware'
+import { authorizeRoles } from '~/middlewares/authorizeRoles'
 import { validationMiddleware } from '~/middlewares/validationMiddleware'
 import categoryController from '~/controllers/categoryController'
 
@@ -64,7 +65,7 @@ router.get(
 router.post(
   '/',
   authenticate,
-  authorize('admin'),
+  authorizeRoles('admin', 'staff'),
   [
     body('name').notEmpty().trim().isLength({ min: 2, max: 100 }).withMessage('Category name must be between 2 and 100 characters'),
     body('description').optional().trim().isLength({ max: 500 }).withMessage('Description cannot exceed 500 characters')
@@ -77,7 +78,7 @@ router.post(
 router.put(
   '/:id',
   authenticate,
-  authorize('admin'),
+  authorizeRoles('admin', 'staff'),
   [
     body('name').optional().trim().isLength({ min: 2, max: 100 }).withMessage('Category name must be between 2 and 100 characters'),
     body('description').optional().trim().isLength({ max: 500 }).withMessage('Description cannot exceed 500 characters')
@@ -90,7 +91,7 @@ router.put(
 router.delete(
   '/:id',
   authenticate,
-  authorize('admin'),
+  authorizeRoles('admin', 'staff'),
   categoryController.deleteCategory
 )
 

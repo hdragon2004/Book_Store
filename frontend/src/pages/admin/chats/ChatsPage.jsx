@@ -360,7 +360,7 @@ const ChatsPage = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200"> 
-        <div className="flex h-[87vh]">
+        <div className="flex h-[83vh]">
           {/* Chat List */}
           <div className="w-1/3 border-r border-gray-200">
             <div className="p-4 border-b border-gray-200">

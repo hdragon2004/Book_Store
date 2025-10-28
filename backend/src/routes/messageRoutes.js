@@ -1,6 +1,7 @@
 import express from 'express'
 import messageController from '~/controllers/messageController'
 import { authenticate, authorize } from '~/middlewares/authMiddleware'
+import { authorizeRoles } from '~/middlewares/authorizeRoles'
 import { uploadMiddleware } from '~/middlewares/uploadMiddleware'
 import { validateMessage } from '~/middlewares/validationMiddleware'
 
@@ -72,7 +73,7 @@ router.get(
  */
 router.get(
   '/admin/conversations',
-  authorize('admin'),
+  authorizeRoles('admin', 'staff'),
   messageController.getAllConversations
 )
 
@@ -176,7 +177,7 @@ router.post(
  */
 router.get(
   '/',
-  authorize('admin'),
+  authorizeRoles('admin', 'staff'),
   messageController.getAllMessages
 )
 
@@ -187,7 +188,7 @@ router.get(
  */
 router.get(
   '/statistics',
-  authorize('admin'),
+  authorizeRoles('admin', 'staff'),
   messageController.getMessageStatistics
 )
 

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const HeaderLayout = () => {
-  const { user, logout, loading } = useAuth();
+  const { user, logout, loading, isAdminOrStaff } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [cartItems, setCartItems] = useState(0); // Số lượng sản phẩm trong giỏ hàng
@@ -12,9 +12,9 @@ const HeaderLayout = () => {
   // Debug user data
   React.useEffect(() => {
     console.log('🔍 HeaderLayout: User data:', user);
-    console.log('🔍 HeaderLayout: User role:', user?.role);
-    console.log('🔍 HeaderLayout: Is admin:', user?.role === 'admin');
-  }, [user]);
+    console.log('🔍 HeaderLayout: User role:', user?.roleId?.name || user?.role);
+    console.log('🔍 HeaderLayout: Is admin or staff:', isAdminOrStaff);
+  }, [user, isAdminOrStaff]);
 
   // Cập nhật số lượng sản phẩm trong giỏ hàng
   React.useEffect(() => {
@@ -215,8 +215,8 @@ const HeaderLayout = () => {
                           Đơn hàng của tôi
                         </Link>
 
-                        {/* Quản trị (chỉ admin) */}
-                        {user?.role === 'admin' && (
+                        {/* Quản trị (admin và staff) */}
+                        {isAdminOrStaff && (
                           <Link
                             to="/admin/dashboard"
                             className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"

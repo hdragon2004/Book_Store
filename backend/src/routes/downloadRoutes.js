@@ -4,12 +4,17 @@ import {
   createDownloadLink,
   downloadFile,
   getDownloadInfo,
-  streamFile
+  streamFile,
+  getOfflineInfo
 } from '~/controllers/downloadController'
 
 const router = express.Router()
 
-// Tất cả routes đều cần authentication
+// Routes không cần authentication (sử dụng token riêng)
+// Stream file cho đọc online (sử dụng token từ query)
+router.get('/stream/:bookId', streamFile)
+
+// Routes cần authentication
 router.use(authenticate)
 
 // Tạo link download tạm thời
@@ -21,7 +26,7 @@ router.get('/file/:bookId', downloadFile)
 // Lấy thông tin download
 router.get('/info/:bookId', getDownloadInfo)
 
-// Stream file cho đọc online
-router.get('/stream/:bookId', streamFile)
+// Lấy thông tin chi tiết cho offline reading
+router.get('/offline-info/:bookId', getOfflineInfo)
 
 export default router

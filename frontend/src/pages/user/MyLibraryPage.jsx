@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { libraryAPI, downloadAPI } from '../../services/apiService';
 import PageLayout from '../../layouts/PageLayout';
+import OfflineReader from '../../components/OfflineReader';
 
 const MyLibraryPage = () => {
   const { user } = useAuth();
@@ -11,16 +12,40 @@ const MyLibraryPage = () => {
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all'); // all, ebook, audiobook
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedBookId, setSelectedBookId] = useState(null);
 
   useEffect(() => {
+    console.log('🔄 useEffect triggered:', { user: user?.email, filter });
     if (user) {
       fetchLibrary();
+    } else {
+      console.log('⚠️ No user found, skipping library fetch');
+      // Reset states when no user
+      setBooks([]);
+      setError(null);
     }
   }, [user, filter]);
+
+  // Retry mechanism when user comes back
+  useEffect(() => {
+    const handleFocus = () => {
+      if (user && books.length === 0 && !loading) {
+        console.log('🔄 Window focused, retrying library fetch...');
+        fetchLibrary();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [user, books.length, loading]);
 
   const fetchLibrary = async () => {
     try {
       setLoading(true);
+      setError(null); // Reset error state
+      
+      console.log('🔍 Fetching library for user:', user?.email);
+      
       const params = {};
       if (filter !== 'all') {
         params.bookType = filter;
@@ -30,9 +55,11 @@ const MyLibraryPage = () => {
       }
       
       const response = await libraryAPI.getMyLibrary(params);
+      console.log('✅ Library data received:', response.data);
       setBooks(response.data.data.books);
     } catch (error) {
-      console.error('Error fetching library:', error);
+      console.error('❌ Error fetching library:', error);
+      console.error('Error details:', error.response?.data);
       setError('Có lỗi xảy ra khi tải thư viện');
     } finally {
       setLoading(false);
@@ -65,12 +92,16 @@ const MyLibraryPage = () => {
   const handleStream = async (bookId) => {
     try {
       // Tạo token tạm thời cho streaming
-      const response = await downloadAPI.generateDownloadLink(bookId);
-      const downloadUrl = response.data.data.downloadUrl;
-      const token = downloadUrl.split('token=')[1];
+      const response = await downloadAPI.createDownloadLink(bookId);
+      const streamUrl = response.data.data.streamUrl;
+      
+      // Đảm bảo URL đầy đủ với backend port
+      const fullUrl = streamUrl.startsWith('http') 
+        ? streamUrl 
+        : `http://localhost:5000${streamUrl}`;
       
       // Mở file trong tab mới để đọc/nghe trực tuyến
-      window.open(`http://localhost:5000/api/download/stream/${bookId}?token=${token}`, '_blank');
+      window.open(fullUrl, '_blank');
     } catch (error) {
       console.error('Error creating stream link:', error);
       alert('Có lỗi xảy ra khi mở file');
@@ -273,6 +304,12 @@ const MyLibraryPage = () => {
                         {userBook.bookType === 'audiobook' ? 'Nghe ngay' : 'Đọc ngay'}
                       </button>
                       <button
+                        onClick={() => setSelectedBookId(userBook.bookId._id)}
+                        className="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                      >
+                        📱 Offline
+                      </button>
+                      <button
                         onClick={() => handleDownload(userBook.bookId._id)}
                         disabled={userBook.downloadCount >= 3}
                         className="flex-1 bg-gray-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -312,6 +349,14 @@ const MyLibraryPage = () => {
           )}
         </div>
       </div>
+
+      {/* Offline Reader Modal */}
+      {selectedBookId && (
+        <OfflineReader
+          bookId={selectedBookId}
+          onClose={() => setSelectedBookId(null)}
+        />
+      )}
     </PageLayout>
   );
 };

@@ -1,5 +1,6 @@
 import express from 'express'
 import { body, param, query } from 'express-validator'
+import { authorizeRoles } from '~/middlewares/authorizeRoles'
 import {
   createOrder,
   getUserOrders,
@@ -123,7 +124,7 @@ router.get(
 // Admin routes
 router.patch(
   '/admin/:orderId/status',
-  authorize('admin'),
+  authorizeRoles('admin', 'staff'),
   [
     param('orderId')
       .isMongoId()

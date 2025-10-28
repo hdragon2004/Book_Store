@@ -16,15 +16,18 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(null);
 
-  // Check if user is admin
-  const isAdmin = user?.role === 'admin';
+  // Check if user is admin or staff
+  const userRole = user?.roleId?.name || user?.role || 'user';
+  const isAdmin = userRole === 'admin';
+  const isStaff = userRole === 'staff';
+  const isAdminOrStaff = isAdmin || isStaff;
   
   // Debug user data (reduced logging)
   React.useEffect(() => {
     if (user) {
-      console.log('🔍 AuthContext: User authenticated:', user.name, `(${user.role})`);
+      console.log('🔍 AuthContext: User authenticated:', user.name, `(${userRole})`);
     }
-  }, [user]);
+  }, [user, userRole]);
 
   // Initialize auth state from localStorage
   useEffect(() => {
@@ -40,19 +43,24 @@ export const AuthProvider = ({ children }) => {
           
           // Validate token by calling backend
           try {
+            console.log('🔐 AuthContext: Validating token...');
             const response = await authAPI.getCurrentUser();
+            console.log('🔐 AuthContext: Token validation response:', response.data);
+            
             if (response.data && response.data.data) {
               const userData = response.data.data;
               
               // Backend always returns {user: {...}} format
               const finalUserData = userData.user;
+              console.log('🔐 AuthContext: Token valid, setting user:', finalUserData?.name);
               setToken(storedToken);
               setUser(finalUserData);
             } else {
               throw new Error('Invalid token response');
             }
           } catch (tokenError) {
-            console.warn('Token validation failed:', tokenError.message);
+            console.warn('❌ Token validation failed:', tokenError.message);
+            console.warn('❌ Token error details:', tokenError.response?.data);
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             setToken(null);
@@ -218,6 +226,9 @@ export const AuthProvider = ({ children }) => {
     token,
     loading,
     isAdmin,
+    isStaff,
+    isAdminOrStaff,
+    userRole,
     login,
     register,
     logout,

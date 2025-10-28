@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const AdminLayout = ({ children }) => {
-  const { user, logout, loading } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -39,27 +39,30 @@ const AdminLayout = ({ children }) => {
     );
   }
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
-  const menuItems = [
-    { name: 'Bảng điều khiển', path: '/admin/dashboard', icon: '📊' },
-    { name: 'Quản lý sách', path: '/admin/books', icon: '📚' },
-    { name: 'Danh mục', path: '/admin/categories', icon: '📂' },
-    { name: 'Đơn hàng', path: '/admin/orders', icon: '🛒' },
-    { name: 'Thanh toán', path: '/admin/payments', icon: '💳' },
-    { name: 'Người dùng', path: '/admin/users', icon: '👥' },
-    { name: 'Voucher', path: '/admin/vouchers', icon: '🎟️' },
-    { name: 'Vận chuyển', path: '/admin/shipping-providers', icon: '🚚' },
-    { name: 'Tin nhắn', path: '/admin/chat', icon: '💬' },
-    { name: 'Báo cáo', path: '/admin/reports', icon: '📈' },
+  // Menu items với phân quyền
+  const allMenuItems = [
+    { name: 'Bảng điều khiển', path: '/admin/dashboard', icon: '📊', roles: ['admin'] },
+    { name: 'Quản lý sách', path: '/admin/books', icon: '📚', roles: ['admin', 'staff'] },
+    { name: 'Danh mục', path: '/admin/categories', icon: '📂', roles: ['admin', 'staff'] },
+    { name: 'Đơn hàng', path: '/admin/orders', icon: '🛒', roles: ['admin', 'staff'] },
+    { name: 'Thanh toán', path: '/admin/payments', icon: '💳', roles: ['admin'] },
+    { name: 'Người dùng', path: '/admin/users', icon: '👥', roles: ['admin'] },
+    { name: 'Voucher', path: '/admin/vouchers', icon: '🎟️', roles: ['admin'] },
+    { name: 'Vận chuyển', path: '/admin/shipping-providers', icon: '🚚', roles: ['admin'] },
+    { name: 'Tin nhắn', path: '/admin/chat', icon: '💬', roles: ['admin', 'staff'] },
+    { name: 'Báo cáo', path: '/admin/reports', icon: '📈', roles: ['admin'] },
   ];
+
+  // Lọc menu theo role của user
+  const userRole = user?.roleId?.name || user?.role || 'user';
+  const menuItems = allMenuItems.filter(item => 
+    item.roles.includes(userRole)
+  );
 
   const isActivePath = (path) => {
     if (path === '/admin/dashboard') {
@@ -111,7 +114,7 @@ const AdminLayout = ({ children }) => {
         </nav>
 
         {/* Bottom Buttons */}
-        <div className="absolute bottom-16 left-4 right-4 space-y-2">
+        <div className="absolute bottom-4 left-4 right-4">
           {/* Home Button */}
           <button
             onClick={() => navigate('/')}
@@ -122,16 +125,6 @@ const AdminLayout = ({ children }) => {
           </button>
         </div>
 
-        {/* Logout Button */}
-        <div className="absolute bottom-4 left-4 right-4">
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center px-3 py-2 text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors"
-          >
-            <span className="text-lg">🚪</span>
-            {!sidebarCollapsed && <span className="ml-3 font-medium">Đăng xuất</span>}
-          </button>
-        </div>
       </div>
 
       {/* Main Content */}
@@ -205,7 +198,10 @@ const AdminLayout = ({ children }) => {
                 </div>
                 <div className="text-left">
                   <p className="text-sm font-medium text-gray-900">{user?.name || 'Quản trị viên'}</p>
-                  <p className="text-xs text-gray-500">Quản trị viên</p>
+                  <p className="text-xs text-gray-500">
+                    {userRole === 'admin' ? 'Quản trị viên' : 
+                     userRole === 'staff' ? 'Nhân viên' : 'Người dùng'}
+                  </p>
                 </div>
               </div>
             </div>

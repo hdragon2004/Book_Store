@@ -428,6 +428,33 @@ class UserService {
     
     return userObj
   }
+
+  /**
+   * Cập nhật role của user (Admin only)
+   */
+  async updateUserRole(userId, roleId) {
+    // Kiểm tra user tồn tại
+    const user = await User.findById(userId)
+    if (!user) {
+      throw new AppError('User not found', 404)
+    }
+
+    // Kiểm tra role tồn tại
+    const Role = await import('~/models/roleModel')
+    const role = await Role.default.findById(roleId)
+    if (!role) {
+      throw new AppError('Role not found', 404)
+    }
+
+    // Cập nhật role
+    user.roleId = roleId
+    await user.save()
+
+    // Populate role để trả về thông tin đầy đủ
+    await user.populate('roleId', 'name description')
+
+    return this.sanitizeUser(user)
+  }
 }
 
 export default new UserService()

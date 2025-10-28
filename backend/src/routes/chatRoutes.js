@@ -1,6 +1,7 @@
 import express from 'express'
 import chatController from '~/controllers/chatController'
 import { authenticate, authorize } from '~/middlewares/authMiddleware'
+import { authorizeRoles } from '~/middlewares/authorizeRoles'
 import { uploadMiddleware } from '~/middlewares/uploadMiddleware'
 import uploadController from '~/controllers/uploadController'
 
@@ -33,7 +34,7 @@ router.post(
  */
 router.get(
   '/admin/chats',
-  authorize('admin'),
+  authorizeRoles('admin', 'staff'),
   chatController.getAllConversations
 )
 
@@ -79,7 +80,7 @@ router.post(
  */
 router.get(
   '/admin/chats/:conversationId',
-  authorize('admin'),
+  authorizeRoles('admin', 'staff'),
   chatController.getConversationMessages
 )
 

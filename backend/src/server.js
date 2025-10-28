@@ -4,7 +4,7 @@ import { config } from '~/config/environment'
 import connectDB from '~/config/db'
 import { app, server, socketHandler } from '~/routes/index'
 import memoryQueue from '~/queue/memoryQueue'
-import Role from '~/models/roleModel'
+import roleService from '~/services/roleService'
 import { startAllCronJobs } from '~/jobs/orderStatusJob'
 
 /**
@@ -12,27 +12,9 @@ import { startAllCronJobs } from '~/jobs/orderStatusJob'
  */
 const ensureDefaultRoles = async () => {
   try {
-    // Check if user role exists
-    const userRole = await Role.findOne({ name: 'user' })
-    if (!userRole) {
-      await Role.create({
-        name: 'user',
-        description: 'Regular user role'
-      })
-      console.log('✅ Created default user role')
-    }
-
-    // Check if admin role exists
-    const adminRole = await Role.findOne({ name: 'admin' })
-    if (!adminRole) {
-      await Role.create({
-        name: 'admin',
-        description: 'Administrator role'
-      })
-      console.log('✅ Created default admin role')
-    }
+    await roleService.ensureBasicRoles()
   } catch (error) {
-    console.error('❌ Error ensuring default roles:', error)
+    console.error('❌ Error ensuring default roles:', error.message)
   }
 }
 

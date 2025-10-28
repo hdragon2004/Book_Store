@@ -449,17 +449,25 @@ export const downloadAPI = {
   generateDownloadLink: (bookId) => 
     axiosClient.get(`/download/temp/${bookId}`),
 
+  // Create download link (alias)
+  createDownloadLink: (bookId) => 
+    axiosClient.get(`/download/temp/${bookId}`),
+
   // Download file
   downloadFile: (bookId, token) => 
     axiosClient.get(`/download/file/${bookId}?token=${token}`),
 
   // Stream file
-  streamFile: (bookId) => 
-    axiosClient.get(`/download/stream/${bookId}`),
+  streamFile: (bookId, token) => 
+    axiosClient.get(`/download/stream/${bookId}?token=${token}`),
 
   // Get file info
   getFileInfo: (bookId) => 
     axiosClient.get(`/download/info/${bookId}`),
+
+  // Get offline reading info
+  getOfflineInfo: (bookId) => 
+    axiosClient.get(`/download/offline-info/${bookId}`),
 };
 
 export const chatAPI = {

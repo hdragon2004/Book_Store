@@ -322,6 +322,21 @@ class UserController {
       new ApiResponse(StatusCodes.OK, null, 'User deleted successfully')
     )
   })
+
+  /**
+   * Cập nhật role của user (Admin only)
+   * PATCH /api/users/:id/role
+   */
+  updateUserRole = asyncHandler(async (req, res) => {
+    const { id } = req.params
+    const { roleId } = req.body
+
+    const result = await userService.updateUserRole(id, roleId)
+
+    res.status(StatusCodes.OK).json(
+      new ApiResponse(StatusCodes.OK, result, 'User role updated successfully')
+    )
+  })
 }
 
 export default new UserController()

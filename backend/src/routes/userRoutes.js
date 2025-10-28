@@ -1,6 +1,7 @@
 import express from 'express'
 import { body } from 'express-validator'
 import { authenticate, authorize } from '~/middlewares/authMiddleware'
+import { authorizeRoles } from '~/middlewares/authorizeRoles'
 import { validationMiddleware } from '~/middlewares/validationMiddleware'
 import { upload } from '~/middlewares/uploadMiddleware'
 import userController from '~/controllers/userController'
@@ -88,8 +89,24 @@ router.put(
 router.delete(
   '/:id',
   authenticate,
-  authorize('admin'),
+  authorizeRoles('admin'),
   userController.deleteUser
+)
+
+// Cập nhật role của user (Admin only)
+router.patch(
+  '/:id/role',
+  authenticate,
+  authorizeRoles('admin'),
+  [
+    body('roleId')
+      .notEmpty()
+      .withMessage('Role ID is required')
+      .isMongoId()
+      .withMessage('Role ID must be a valid MongoDB ObjectId')
+  ],
+  validationMiddleware,
+  userController.updateUserRole
 )
 
 export default router
