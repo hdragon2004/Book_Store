@@ -8,7 +8,6 @@ import { AppError } from '~/utils/AppError'
 import { ApiResponse } from '~/utils/ApiResponse'
 import { asyncHandler } from '~/utils/asyncHandler'
 import orderService from '~/services/orderService'
-import { sendOrderConfirmationEmail, sendShippingNotificationEmail } from '~/services/emailService'
 
 /**
  * Order Controller - Xử lý logic đơn hàng
@@ -19,10 +18,7 @@ export const createOrder = asyncHandler(async (req, res) => {
   const { shippingAddressId, paymentMethod, voucherCode, items, note } = req.body
   const userId = req.user._id
 
-  console.log('🛒 Creating order for user:', userId)
-  console.log('🛒 Shipping address ID:', shippingAddressId)
-  console.log('🛒 Payment method:', paymentMethod)
-  console.log('🛒 Selected items:', items)
+  // Creating order
 
   // Kiểm tra items được chọn
   if (!items || items.length === 0) {
@@ -78,14 +74,23 @@ export const createOrder = asyncHandler(async (req, res) => {
         item.bookId,
         { $inc: { stock: -item.quantity } }
       )
-      console.log(`📦 Updated stock for physical book: ${book.title}`)
+      // Updated stock for physical book
     }
   }
 
   // Xóa items khỏi cart sau khi tạo đơn hàng thành công
   const bookIds = items.map(item => item.bookId)
   await Cart.deleteMany({ userId, bookId: { $in: bookIds } })
-  console.log('🛒 Removed items from cart')
+  // Removed items from cart
+
+  // Gửi email xác nhận đơn hàng
+  try {
+    await orderService.sendOrderConfirmationEmail(order)
+    console.log(`📧 Order confirmation email sent for order ${order.orderCode}`)
+  } catch (emailError) {
+    console.error('❌ Failed to send order confirmation email:', emailError)
+    // Không throw error để không làm fail việc tạo đơn hàng
+  }
 
   res.status(201).json(
     new ApiResponse(201, { order }, 'Order created successfully')
@@ -179,7 +184,7 @@ export const getOrderById = asyncHandler(async (req, res) => {
 // Cập nhật trạng thái đơn hàng (Admin only)
 export const updateOrderStatus = asyncHandler(async (req, res) => {
   const { orderId } = req.params
-  const { status, shipper } = req.body
+  const { status } = req.body
 
   const validStatuses = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled', 'digital_delivered']
   if (!validStatuses.includes(status)) {
@@ -196,9 +201,6 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
       break
     case 'shipped':
       updateData.shippedAt = new Date()
-      if (shipper) {
-        updateData.shipper = shipper
-      }
       break
     case 'delivered':
       updateData.deliveredAt = new Date()
@@ -218,15 +220,7 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     throw new AppError('Order not found', 404)
   }
 
-  // Gửi email thông báo trạng thái
-  try {
-    if (status === 'shipped') {
-      await sendShippingNotificationEmail(order)
-      console.log('✅ Shipping notification email sent')
-    }
-  } catch (emailError) {
-    console.error('❌ Failed to send shipping notification email:', emailError)
-  }
+  // Đã loại bỏ chức năng gửi email thông báo trạng thái
 
   res.status(200).json(
     new ApiResponse(200, order, 'Order status updated successfully')

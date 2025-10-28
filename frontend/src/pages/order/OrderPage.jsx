@@ -138,9 +138,9 @@ const OrderPage = () => {
   if (loading) {
     return (
       <PageLayout>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-white flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Đang xử lý đơn hàng...</p>
           </div>
         </div>
@@ -151,7 +151,7 @@ const OrderPage = () => {
   if (error) {
     return (
       <PageLayout>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-white flex items-center justify-center">
           <div className="text-center">
             <div className="text-red-500 mb-4">
               <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -161,7 +161,7 @@ const OrderPage = () => {
             <p className="text-gray-600 mb-4">{error}</p>
             <Link 
               to="/cart" 
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition-colors"
             >
               Quay lại giỏ hàng
             </Link>
@@ -175,8 +175,8 @@ const OrderPage = () => {
     <PageLayout>
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Xác nhận đơn hàng</h1>
-          <p className="text-gray-600">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Xác nhận đơn hàng</h1>
+          <p className="text-lg text-gray-600">
             Vui lòng kiểm tra lại thông tin đơn hàng và nhập địa chỉ giao hàng
           </p>
         </div>
@@ -184,19 +184,19 @@ const OrderPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Selected Items */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-sm mb-6">
-              <div className="p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Sản phẩm đã chọn</h2>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6">
+              <div className="p-8">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-6">Sản phẩm đã chọn</h2>
                 
                 <div className="space-y-4">
                   {selectedItems.map((item, index) => (
-                    <div key={index} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
+                    <div key={index} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-xl">
                       {/* Book Image */}
                       <div className="flex-shrink-0">
                         <img 
                           src={item.bookId.imageUrl.startsWith('http') ? item.bookId.imageUrl : `http://localhost:5000${item.bookId.imageUrl}`}
                           alt={item.bookId.title}
-                          className="w-16 h-20 object-cover rounded"
+                          className="w-16 h-20 object-cover rounded-xl"
                           onError={(e) => {
                             e.target.style.display = 'none';
                             if (e.target.nextSibling) {
@@ -204,7 +204,7 @@ const OrderPage = () => {
                             }
                           }}
                         />
-                        <div className="w-16 h-20 bg-gray-200 rounded flex items-center justify-center" style={{display: 'none'}}>
+                        <div className="w-16 h-20 bg-gray-200 rounded-xl flex items-center justify-center" style={{display: 'none'}}>
                           <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                           </svg>
@@ -220,7 +220,7 @@ const OrderPage = () => {
                         <p className="text-sm text-gray-500">
                           {item.bookId.format} • Số lượng: {item.quantity}
                         </p>
-                        <p className="text-lg font-semibold text-blue-600 mt-2">
+                        <p className="text-lg font-semibold text-black mt-2">
                           {(item.bookId.price * item.quantity).toLocaleString('vi-VN')} ₫
                         </p>
                       </div>
@@ -231,11 +231,11 @@ const OrderPage = () => {
             </div>
 
             {/* Payment Method & Voucher Selection */}
-            <div className="bg-white rounded-lg shadow-sm mb-6">
-              <div className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Phương thức thanh toán</h3>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6">
+              <div className="p-8">
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">Phương thức thanh toán</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <label className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                  <label className="flex items-center p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
                     <input
                       type="radio"
                       name="paymentMethod"
@@ -249,7 +249,7 @@ const OrderPage = () => {
                       <div className="text-sm text-gray-500">COD</div>
                     </div>
                   </label>
-                  <label className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                  <label className="flex items-center p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
                     <input
                       type="radio"
                       name="paymentMethod"
@@ -263,7 +263,7 @@ const OrderPage = () => {
                       <div className="text-sm text-gray-500">QR Code</div>
                     </div>
                   </label>
-                  <label className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                  <label className="flex items-center p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
                     <input
                       type="radio"
                       name="paymentMethod"
@@ -277,7 +277,7 @@ const OrderPage = () => {
                       <div className="text-sm text-gray-500">QR Code</div>
                     </div>
                   </label>
-                  <label className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                  <label className="flex items-center p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
                     <input
                       type="radio"
                       name="paymentMethod"
@@ -316,8 +316,8 @@ const OrderPage = () => {
           
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm p-6 sticky top-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Tóm tắt đơn hàng</h2>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 sticky top-8">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Tóm tắt đơn hàng</h2>
               
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between">
@@ -337,7 +337,7 @@ const OrderPage = () => {
                 <div className="border-t pt-3">
                   <div className="flex justify-between">
                     <span className="text-lg font-semibold">Tổng cộng:</span>
-                    <span className="text-lg font-semibold text-blue-600">{calculateTotal().toLocaleString('vi-VN')} ₫</span>
+                    <span className="text-lg font-semibold text-amber-600">{calculateTotal().toLocaleString('vi-VN')} ₫</span>
                   </div>
                 </div>
               </div>
@@ -345,14 +345,14 @@ const OrderPage = () => {
               <button 
                 onClick={handleCreateOrder}
                 disabled={loading}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+                className="w-full bg-amber-600 text-white py-4 rounded-xl font-semibold hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-4"
               >
                 {loading ? 'Đang xử lý...' : 'Đặt hàng'}
               </button>
               
               <Link 
                 to="/cart" 
-                className="block w-full text-center text-blue-600 py-2 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
+                className="block w-full text-center text-amber-600 py-4 border border-amber-600 rounded-xl hover:bg-amber-50 transition-colors"
               >
                 Quay lại giỏ hàng
               </Link>

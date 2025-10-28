@@ -128,9 +128,9 @@ const OrderDetailPage = () => {
   if (loading) {
     return (
       <PageLayout>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-white flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Đang tải chi tiết đơn hàng...</p>
           </div>
         </div>
@@ -141,7 +141,7 @@ const OrderDetailPage = () => {
   if (error || !order) {
     return (
       <PageLayout>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-white flex items-center justify-center">
           <div className="text-center">
             <div className="text-red-500 mb-4">
               <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,7 +153,7 @@ const OrderDetailPage = () => {
             <div className="space-x-4">
               <Link 
                 to="/orders" 
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                className="bg-amber-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-amber-700 transition-colors"
               >
                 Xem đơn hàng của tôi
               </Link>
@@ -177,9 +177,9 @@ const OrderDetailPage = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Chi tiết đơn hàng</h1>
-              <p className="text-gray-600">
-                Mã đơn hàng: <span className="font-medium text-blue-600">{order.orderCode || order._id}</span>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">Chi tiết đơn hàng</h1>
+              <p className="text-lg text-gray-600">
+                Mã đơn hàng: <span className="font-medium text-amber-600">{order.orderCode || order._id}</span>
               </p>
             </div>
             <div className="flex items-center space-x-4">
@@ -208,21 +208,21 @@ const OrderDetailPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Order Items */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-sm">
-              <div className="p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Sản phẩm đã đặt</h2>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+              <div className="p-8">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-6">Sản phẩm đã đặt</h2>
                 
                 {order.orderItems && order.orderItems.length > 0 ? (
                   <div className="space-y-4">
                     {order.orderItems.map((item, index) => (
-                      <div key={index} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
+                      <div key={index} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-xl">
                         {/* Book Image */}
                         <div className="flex-shrink-0">
                           {item.bookId?.imageUrl ? (
                             <img 
                               src={item.bookId.imageUrl.startsWith('http') ? item.bookId.imageUrl : `http://localhost:5000${item.bookId.imageUrl}`}
                               alt={item.bookId?.title || 'Book'}
-                              className="w-16 h-20 object-cover rounded"
+                              className="w-16 h-20 object-cover rounded-xl"
                               onError={(e) => {
                                 e.target.style.display = 'none';
                                 if (e.target.nextSibling) {
@@ -231,7 +231,7 @@ const OrderDetailPage = () => {
                               }}
                             />
                           ) : null}
-                          <div className="w-16 h-20 bg-gray-200 rounded flex items-center justify-center" style={{display: item.bookId?.imageUrl ? 'none' : 'flex'}}>
+                          <div className="w-16 h-20 bg-gray-200 rounded-xl flex items-center justify-center" style={{display: item.bookId?.imageUrl ? 'none' : 'flex'}}>
                             <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                             </svg>
@@ -251,7 +251,7 @@ const OrderDetailPage = () => {
                         
                         {/* Total Price */}
                         <div className="text-right">
-                          <p className="text-lg font-semibold text-blue-600">
+                          <p className="text-lg font-semibold text-black">
                             {formatCurrency(item.priceAtPurchase * item.quantity)}
                           </p>
                         </div>
@@ -271,8 +271,8 @@ const OrderDetailPage = () => {
           <div className="lg:col-span-1">
             <div className="space-y-6">
               {/* Order Info */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Thông tin đơn hàng</h3>
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">Thông tin đơn hàng</h3>
                 <div className="space-y-3">
                   <div>
                     <span className="text-sm text-gray-600">Mã đơn hàng:</span>
@@ -307,8 +307,8 @@ const OrderDetailPage = () => {
 
               {/* Shipping Address */}
               {order.shippingAddress && (
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Địa chỉ giao hàng</h3>
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">Địa chỉ giao hàng</h3>
                   <div className="space-y-2">
                     <p className="font-medium">{order.shippingAddress.name}</p>
                     <p className="text-gray-600">{order.shippingAddress.phone}</p>
@@ -321,8 +321,8 @@ const OrderDetailPage = () => {
               )}
 
               {/* Order Summary */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Tóm tắt đơn hàng</h3>
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">Tóm tắt đơn hàng</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Tạm tính:</span>
@@ -341,7 +341,7 @@ const OrderDetailPage = () => {
                   <div className="border-t pt-3">
                     <div className="flex justify-between">
                       <span className="text-lg font-semibold">Tổng cộng:</span>
-                      <span className="text-lg font-semibold text-blue-600">
+                      <span className="text-lg font-semibold text-amber-600">
                         {formatCurrency(order.totalPrice - (order.discountAmount || 0))}
                       </span>
                     </div>
@@ -351,15 +351,15 @@ const OrderDetailPage = () => {
 
               {/* Actions */}
               {order.status === 'pending' && (
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Thao tác</h3>
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">Thao tác</h3>
                   <div className="space-y-3">
                     <button className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-colors">
                       Hủy đơn hàng
                     </button>
                     <button 
                       onClick={handleContactSupport}
-                      className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                      className="w-full bg-amber-600 text-white py-2 rounded-lg hover:bg-amber-700 transition-colors"
                     >
                       Liên hệ hỗ trợ
                     </button>

@@ -129,10 +129,10 @@ const BookPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Đang tải sách...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">Đang tải sách...</p>
         </div>
       </div>
     );
@@ -140,17 +140,17 @@ const BookPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="text-red-600 mb-4">
+          <div className="text-red-600 mb-6">
             <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
-          <p className="text-red-600 mb-4">{error}</p>
+          <p className="text-red-600 mb-8 text-lg">{error}</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center bg-amber-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-amber-700 transition-all duration-300 shadow-lg hover:shadow-xl"
           >
             Thử lại
           </button>
@@ -162,17 +162,17 @@ const BookPage = () => {
   return (
     <PageLayout>
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Tất cả sách</h1>
-          <p className="text-gray-600">Khám phá bộ sưu tập sách đa dạng của chúng tôi</p>
+        <div className="mb-12">
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">Tất cả sách</h1>
+          <p className="text-xl text-gray-600">Khám phá bộ sưu tập sách đa dạng của chúng tôi</p>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {/* Search */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-lg font-semibold text-gray-900 mb-3">
                 Tìm kiếm
               </label>
               <form onSubmit={handleSearch} className="flex">
@@ -180,13 +180,13 @@ const BookPage = () => {
                   type="text"
                   name="search"
                   placeholder="Tên sách, tác giả..."
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-lg"
                 />
                 <button
                   type="submit"
-                  className="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 transition-colors"
+                  className="bg-amber-600 text-white px-6 py-3 rounded-r-xl hover:bg-amber-700 transition-all duration-300"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </button>
@@ -195,13 +195,13 @@ const BookPage = () => {
 
             {/* Category Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-lg font-semibold text-gray-900 mb-3">
                 Danh mục
               </label>
               <select
                 value={filters.category}
                 onChange={(e) => handleCategoryChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-lg"
               >
                 <option value="">Tất cả danh mục</option>
                 {categories.map((category) => (
@@ -214,13 +214,13 @@ const BookPage = () => {
 
             {/* Sort */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-lg font-semibold text-gray-900 mb-3">
                 Sắp xếp
               </label>
               <select
                 value={`${filters.sortOrder === 'desc' ? '-' : ''}${filters.sortBy}`}
                 onChange={(e) => handleSortChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-lg"
               >
                 <option value="-createdAt">Mới nhất</option>
                 <option value="createdAt">Cũ nhất</option>
@@ -233,7 +233,7 @@ const BookPage = () => {
 
             {/* Results Count */}
             <div className="flex items-end">
-              <div className="text-sm text-gray-600">
+              <div className="text-lg text-gray-600">
                 Hiển thị {books.length} sách
                 {pagination.totalBooks > 0 && ` / ${pagination.totalBooks} tổng cộng`}
               </div>
@@ -244,70 +244,70 @@ const BookPage = () => {
         {/* Books Grid */}
         {books.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-12">
               {books.map((book) => (
                 <button
                   key={book._id}
                   onClick={() => handleBookClick(book._id)}
-                  className="w-full bg-transparent rounded-lg hover:shadow-lg transition-all duration-200 p-4 text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-transparent rounded-2xl hover:shadow-xl transition-all duration-300 p-6 text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 >
                   {/* Book Image */}
-                  <div className="w-full h-48 bg-gray-200 rounded-md flex items-center justify-center mb-4">
+                  <div className="w-full h-56 bg-gray-100 rounded-xl flex items-center justify-center mb-6">
                     {book.imageUrl ? (
                       <img 
                         src={book.imageUrl.startsWith('http') ? book.imageUrl : `http://localhost:5000${book.imageUrl}`} 
                         alt={book.title}
-                        className="w-full h-full object-cover rounded-md"
+                        className="w-full h-full object-cover rounded-xl"
                       />
                     ) : (
                       <div className="text-gray-500 text-center">
-                        <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-16 h-16 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                         </svg>
-                        <span className="text-sm">No Image</span>
+                        <span className="text-lg">No Image</span>
                       </div>
                     )}
                   </div>
 
                   {/* Book Info */}
-                  <div className="space-y-2">
-                    <h3 className="font-semibold text-lg line-clamp-2 hover:text-blue-600 transition-colors">
+                  <div className="space-y-3">
+                    <h3 className="font-bold text-xl line-clamp-2 hover:text-amber-600 transition-colors">
                       {book.title}
                     </h3>
                     
-                    <p className="text-gray-600 text-sm">{book.author}</p>
+                    <p className="text-gray-600 text-lg">{book.author}</p>
                     
                     <div className="flex items-center justify-between">
-                        <span className="text-blue-600 font-bold text-lg">
+                        <span className="text-black font-bold text-xl">
                           {book.price?.toLocaleString('vi-VN')} ₫
                         </span>
                       <div className="flex items-center">
-                        <span className="text-sm text-gray-500">
+                        <span className="text-base text-gray-500">
                           {book.format} • {book.language}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center justify-between text-base">
                       <div className="flex items-center">
                         {book.stock > 0 ? (
-                          <span className="text-green-600 font-medium">
+                          <span className="text-green-600 font-semibold">
                             ✓ Còn hàng ({book.stock})
                           </span>
                         ) : (
-                          <span className="text-red-600 font-medium">✗ Hết hàng</span>
+                          <span className="text-red-600 font-semibold">✗ Hết hàng</span>
                         )}
                       </div>
                       
                       {book.categoryId?.name && (
-                        <span className="bg-gray-100 px-2 py-1 rounded-full text-xs">
+                        <span className="bg-gray-100 px-3 py-1 rounded-full text-sm">
                           {book.categoryId.name}
                         </span>
                       )}
                     </div>
 
                     {book.description && (
-                      <p className="text-gray-600 text-sm line-clamp-2">
+                      <p className="text-gray-600 text-base line-clamp-2">
                         {book.description}
                       </p>
                     )}
@@ -318,11 +318,11 @@ const BookPage = () => {
 
             {/* Pagination */}
             {pagination.totalPages > 1 && (
-              <div className="flex justify-center items-center space-x-2">
+              <div className="flex justify-center items-center space-x-3">
                 <button
                   onClick={() => handlePageChange(pagination.currentPage - 1)}
                   disabled={pagination.currentPage <= 1}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-3 border border-gray-300 rounded-xl text-lg font-semibold text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
                 >
                   Trước
                 </button>
@@ -333,9 +333,9 @@ const BookPage = () => {
                     <button
                       key={page}
                       onClick={() => handlePageChange(page)}
-                      className={`px-3 py-2 border rounded-md text-sm font-medium ${
+                      className={`px-6 py-3 border rounded-xl text-lg font-semibold transition-all duration-300 ${
                         page === pagination.currentPage
-                          ? 'bg-blue-600 text-white border-blue-600'
+                          ? 'bg-amber-600 text-white border-amber-600'
                           : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
                       }`}
                     >
@@ -347,7 +347,7 @@ const BookPage = () => {
                 <button
                   onClick={() => handlePageChange(pagination.currentPage + 1)}
                   disabled={pagination.currentPage >= pagination.totalPages}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-3 border border-gray-300 rounded-xl text-lg font-semibold text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
                 >
                   Sau
                 </button>
@@ -355,14 +355,14 @@ const BookPage = () => {
             )}
           </>
         ) : (
-          <div className="text-center py-12">
-            <div className="text-gray-500 mb-4">
-              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="text-center py-20">
+            <div className="text-gray-500 mb-8">
+              <svg className="w-24 h-24 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy sách</h3>
-            <p className="text-gray-600 mb-4">
+            <h3 className="text-3xl font-bold text-gray-900 mb-4">Không tìm thấy sách</h3>
+            <p className="text-xl text-gray-600 mb-8">
               {filters.search || filters.category 
                 ? 'Thử thay đổi bộ lọc để tìm thấy sách phù hợp'
                 : 'Chưa có sách nào trong hệ thống'
@@ -371,7 +371,7 @@ const BookPage = () => {
             {(filters.search || filters.category) && (
               <button
                 onClick={() => setFilters({ search: '', category: '', sortBy: 'createdAt', sortOrder: 'desc', page: 1, limit: 12 })}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center bg-amber-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-amber-700 transition-all duration-300 shadow-lg hover:shadow-xl"
               >
                 Xóa bộ lọc
               </button>

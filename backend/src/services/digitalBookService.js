@@ -34,20 +34,6 @@ export const sendDigitalBooks = async (orderId) => {
       fileUrl: item.bookId.fileUrl,
       quantity: item.quantity
     }))
-
-    // Gửi email chứa file sách
-    await addDigitalBookEmailJob({
-      to: order.userId.email,
-      userName: order.userId.name,
-      orderId: order._id,
-      books: booksToSend
-    })
-
-    // Cập nhật trạng thái order thành digital_delivered
-    order.status = 'digital_delivered'
-    await order.save()
-
-    console.log(`📧 Digital books sent to ${order.userId.email}`)
     
   } catch (error) {
     console.error('Error sending digital books:', error)

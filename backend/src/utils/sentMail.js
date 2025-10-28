@@ -83,23 +83,139 @@ export const emailService = {
   },
 
   // Send order confirmation email
-  sendOrderConfirmationEmail: async (user, order) => {
-    const transporter = createTransporter()
-    const template = loadTemplate('orderConfirmation')
-    
-    const html = template({
-      userName: user.name,
-      orderId: order._id,
-      totalPrice: order.totalPrice,
-      orderDate: order.createdAt
-    })
+  sendOrderConfirmationEmail: async (orderData) => {
+    try {
+      console.log('📧 sendOrderConfirmationEmail called with:', orderData)
+      
+      if (!orderData) {
+        console.error('❌ No orderData provided')
+        return
+      }
+      
+      if (!orderData._id) {
+        console.error('❌ No orderId in orderData:', orderData)
+        return
+      }
+      
+      if (!orderData.userId) {
+        console.error('❌ No userId in orderData:', orderData)
+        return
+      }
 
-    await transporter.sendMail({
-      from: `"Bookstore Team" <${process.env.SMTP_USER}>`,
-      to: user.email,
-      subject: `Xác nhận đơn hàng #${order._id}`,
-      html
-    })
+      const transporter = createTransporter()
+      
+      if (!transporter) {
+        console.error('❌ SMTP transporter not available')
+        return
+      }
+
+      const template = loadTemplate('orderConfirmation')
+      
+      let html
+      if (template) {
+        html = template({
+          userName: orderData.userId.name,
+          orderId: orderData._id,
+          orderCode: orderData.orderCode,
+          orderDate: new Date(orderData.createdAt).toLocaleDateString('vi-VN'),
+          orderStatus: orderData.status,
+          orderStatusText: orderData.status === 'pending' ? 'Chờ xử lý' : 
+                          orderData.status === 'confirmed' ? 'Đã xác nhận' : 
+                          orderData.status === 'shipped' ? 'Đang giao' : 
+                          orderData.status === 'delivered' ? 'Đã giao' : 'Đã hủy',
+          totalAmount: orderData.totalPrice?.toLocaleString('vi-VN') || '0',
+          originalAmount: orderData.originalAmount?.toLocaleString('vi-VN') || '0',
+          discountAmount: orderData.discountAmount?.toLocaleString('vi-VN') || '0',
+          items: orderData.orderItems || [],
+          shippingAddress: orderData.shippingAddressId || {}
+        })
+      } else {
+        // Simple HTML email if template not found
+        const itemsList = orderData.orderItems && orderData.orderItems.length > 0 
+          ? orderData.orderItems.map(item => `
+              <div style="border-bottom: 1px solid #eee; padding: 10px 0;">
+                <div style="display: flex; align-items: center;">
+                  <img src="${item.bookId?.imageUrl ? (item.bookId.imageUrl.startsWith('http') ? item.bookId.imageUrl : `http://localhost:5000${item.bookId.imageUrl}`) : 'https://via.placeholder.com/50x70?text=📚'}" 
+                       alt="${item.bookId?.title || 'Sách'}" 
+                       style="width: 50px; height: 70px; object-fit: cover; margin-right: 15px; border-radius: 5px;">
+                  <div style="flex: 1;">
+                    <h4 style="margin: 0 0 5px 0; color: #333; font-size: 16px;">${item.bookId?.title || 'Sách'}</h4>
+                    <p style="margin: 2px 0; color: #666; font-size: 14px;"><strong>Tác giả:</strong> ${item.bookId?.author || 'N/A'}</p>
+                    <p style="margin: 2px 0; color: #666; font-size: 14px;"><strong>Định dạng:</strong> ${item.bookId?.format || 'Sách giấy'}</p>
+                    <p style="margin: 2px 0; color: #666; font-size: 14px;"><strong>Số lượng:</strong> ${item.quantity || 1}</p>
+                    <p style="margin: 5px 0 0 0; color: #e74c3c; font-weight: bold; font-size: 16px;">Thành tiền: ${(item.quantity * item.priceAtPurchase).toLocaleString('vi-VN')} ₫</p>
+                  </div>
+                </div>
+              </div>
+            `).join('')
+          : '<p style="color: #666; text-align: center; padding: 20px;">Không có sản phẩm nào</p>'
+
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+              <h1 style="margin: 0; font-size: 28px;">📚 BookStore</h1>
+              <p style="margin: 10px 0 0 0; font-size: 16px;">Cảm ơn bạn đã đặt hàng!</p>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
+              <h2 style="color: #2c3e50; margin-bottom: 20px;">✅ Đơn hàng đã được xác nhận</h2>
+              
+              <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <h3 style="color: #34495e; margin-top: 0;">📋 Thông tin đơn hàng</h3>
+                <p><strong>Mã đơn hàng:</strong> ${orderData.orderCode}</p>
+                <p><strong>Ngày đặt:</strong> ${new Date(orderData.createdAt).toLocaleDateString('vi-VN')} lúc ${new Date(orderData.createdAt).toLocaleTimeString('vi-VN')}</p>
+                <p><strong>Trạng thái:</strong> ${orderData.status === 'pending' ? 'Chờ xử lý' : orderData.status}</p>
+                
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 15px;">
+                  <h4 style="margin: 0 0 10px 0; color: #2c3e50;">💰 Chi tiết thanh toán</h4>
+                  ${orderData.originalAmount !== orderData.totalPrice ? `<p style="margin: 5px 0;"><strong>Tổng giá trị sản phẩm:</strong> ${orderData.originalAmount?.toLocaleString('vi-VN')} ₫</p>` : ''}
+                  ${orderData.discountAmount > 0 ? `<p style="margin: 5px 0; color: #27ae60;"><strong>Giảm giá:</strong> -${orderData.discountAmount?.toLocaleString('vi-VN')} ₫</p>` : ''}
+                  <hr style="margin: 10px 0; border: none; border-top: 1px solid #ddd;">
+                  <p style="margin: 5px 0; font-size: 18px;"><strong>Tổng thanh toán:</strong> <span style="color: #e74c3c; font-weight: bold;">${orderData.totalPrice?.toLocaleString('vi-VN')} ₫</span></p>
+                </div>
+              </div>
+
+              <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <h3 style="color: #34495e; margin-top: 0;">📦 Sản phẩm đã đặt</h3>
+                ${itemsList}
+              </div>
+
+              ${orderData.shippingAddressId ? `
+              <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <h3 style="color: #34495e; margin-top: 0;">🚚 Địa chỉ giao hàng</h3>
+                <p><strong>Người nhận:</strong> ${orderData.shippingAddressId?.name || 'N/A'}</p>
+                <p><strong>Số điện thoại:</strong> ${orderData.shippingAddressId?.phone || 'N/A'}</p>
+                <p><strong>Địa chỉ:</strong> ${orderData.shippingAddressId?.address || 'N/A'}, ${orderData.shippingAddressId?.ward || 'N/A'}, ${orderData.shippingAddressId?.district || 'N/A'}, ${orderData.shippingAddressId?.city || 'N/A'}</p>
+              </div>
+              ` : ''}
+
+              <div style="text-align: center; margin-top: 30px; padding: 20px; background: #e8f5e8; border-radius: 8px;">
+                <p style="margin: 0; color: #27ae60; font-weight: bold;">🎉 Đơn hàng của bạn đang được xử lý!</p>
+                <p style="margin: 10px 0 0 0; color: #666;">Chúng tôi sẽ gửi thông báo khi hàng được giao.</p>
+              </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px; color: #666; font-size: 14px;">
+              <p>📧 Nếu có thắc mắc, vui lòng liên hệ: support@bookstore.com</p>
+              <p>🌐 Truy cập website: <a href="http://localhost:3000" style="color: #3498db;">BookStore.com</a></p>
+            </div>
+          </div>
+        `
+      }
+
+      const result = await transporter.sendMail({
+        from: `"BookStore Team" <${process.env.SMTP_USER}>`,
+        to: orderData.userId.email,
+        subject: `✅ Xác nhận đơn hàng #${orderData.orderCode} - BookStore`,
+        html
+      })
+
+      console.log('✅ Order confirmation email sent successfully to:', orderData.userId.email)
+      return { success: true, messageId: result.messageId }
+    } catch (error) {
+      console.error('❌ Order confirmation email failed:', error.message)
+      throw new Error(`Failed to send order confirmation: ${error.message}`)
+    }
   },
 
   // Send OTP verification code

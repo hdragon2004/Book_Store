@@ -150,15 +150,15 @@ const ProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="flex justify-center items-center h-screen bg-white">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-amber-500"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
+      <div className="flex flex-col items-center justify-center h-screen bg-white">
         <div className="text-red-500 text-6xl mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-24 h-24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.26-1.292 2.561-1.292 3.928V19.588M12 9V3.75m0 0V2.25c0-.591.294-1.14.792-1.405M12 9H1.906a2.25 2.25 0 00-2.25 2.25v.896m12-1.248l-.373-1.005M12 12H3.75m2.25-4.725l-.373-1.005M12 12H9.75m3.75-4.725l-.373 1.005M7.5 8.25h-.373m0 0v-.373m0 3.75h-.373m0 0v-.373m3.75 0h-.373m0 0v-.373m3.75 0h-.373m0 0v-.373m-9 3.75H1.906a2.25 2.25 0 00-2.25 2.25v.896m12-4.477l-.373 1.005M12 12v-.373m0-4.477l-.923-2.477A2.25 2.25 0 009.75 2.25H9M12 12h4.477m-4.477 0l.373 1.005M12 12v.373m0 4.477l.923 2.477A2.25 2.25 0 0014.25 21h.026A2.25 2.25 0 0016.5 18.75v-2.25m-2.25-4.477l.373-1.005M18.75 8.25h.373m0 0v.373m0 3.75h.373m0 0v.373m-3.75 0h.373m0 0v-.373m-3.75 0h-.373m0 0v-.373" />
@@ -167,7 +167,7 @@ const ProfilePage = () => {
         <p className="text-xl text-gray-700 mb-6">{error}</p>
         <button 
           onClick={() => window.location.reload()}
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+          className="bg-amber-600 text-white px-6 py-3 rounded-lg hover:bg-amber-700 transition-colors"
         >
           Thử lại
         </button>
@@ -176,20 +176,20 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-white py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Hồ sơ cá nhân</h1>
-              <p className="text-gray-600 mt-2">Quản lý thông tin cá nhân của bạn</p>
+              <h1 className="text-4xl font-bold text-gray-900">Hồ sơ cá nhân</h1>
+              <p className="text-lg text-gray-600 mt-2">Quản lý thông tin cá nhân của bạn</p>
             </div>
             <div className="flex space-x-3">
               {!isEditing ? (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  className="bg-amber-600 text-white px-6 py-3 rounded-xl hover:bg-amber-700 transition-colors"
                 >
                   Chỉnh sửa
                 </button>
@@ -197,14 +197,14 @@ const ProfilePage = () => {
                 <div className="flex space-x-2">
                   <button
                     onClick={handleCancel}
-                    className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+                    className="bg-gray-500 text-white px-6 py-3 rounded-xl hover:bg-gray-600 transition-colors"
                   >
                     Hủy
                   </button>
                   <button
                     onClick={handleSubmit}
                     disabled={loading}
-                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                    className="bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50"
                   >
                     {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
                   </button>
@@ -215,7 +215,7 @@ const ProfilePage = () => {
         </div>
 
         {/* Profile Form */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Avatar Section */}
             <div className="flex items-center space-x-6">
@@ -255,7 +255,7 @@ const ProfilePage = () => {
                   />
                   <label
                     htmlFor="avatar-upload"
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                    className="bg-amber-600 text-white px-4 py-2 rounded-xl hover:bg-amber-700 transition-colors cursor-pointer"
                   >
                     Chọn ảnh
                   </label>
@@ -264,7 +264,7 @@ const ProfilePage = () => {
                       type="button"
                       onClick={handleAvatarUpload}
                       disabled={uploadingAvatar}
-                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                      className="bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50"
                     >
                       {uploadingAvatar ? 'Đang tải...' : 'Cập nhật'}
                     </button>
@@ -279,7 +279,7 @@ const ProfilePage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-lg font-semibold text-gray-900 mb-3">
                   Tên hiển thị *
                 </label>
                 <input
@@ -289,13 +289,13 @@ const ProfilePage = () => {
                   onChange={handleInputChange}
                   disabled={!isEditing}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-lg"
                 />
               </div>
 
               {/* Full Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-lg font-semibold text-gray-900 mb-3">
                   Họ và tên đầy đủ
                 </label>
                 <input
@@ -304,13 +304,13 @@ const ProfilePage = () => {
                   value={formData.fullName}
                   onChange={handleInputChange}
                   disabled={!isEditing}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-lg"
                 />
               </div>
 
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-lg font-semibold text-gray-900 mb-3">
                   Email *
                 </label>
                 <input
@@ -320,13 +320,13 @@ const ProfilePage = () => {
                   onChange={handleInputChange}
                   disabled={!isEditing}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-lg"
                 />
               </div>
 
               {/* Phone */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-lg font-semibold text-gray-900 mb-3">
                   Số điện thoại
                 </label>
                 <input
@@ -335,14 +335,14 @@ const ProfilePage = () => {
                   value={formData.phone}
                   onChange={handleInputChange}
                   disabled={!isEditing}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-lg"
                 />
               </div>
             </div>
 
             {/* Address */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-lg font-semibold text-gray-900 mb-3">
                 Địa chỉ
               </label>
               <textarea
@@ -351,30 +351,30 @@ const ProfilePage = () => {
                 onChange={handleInputChange}
                 disabled={!isEditing}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-lg"
               />
             </div>
           </form>
         </div>
 
         {/* Account Info */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mt-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Thông tin tài khoản</h2>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-6">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Thông tin tài khoản</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-lg font-semibold text-gray-900 mb-1">
                 ID tài khoản
               </label>
               <p className="text-gray-900 font-mono text-sm">{profile?.id || user?.id}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-lg font-semibold text-gray-900 mb-1">
                 Vai trò
               </label>
               <p className="text-gray-900 capitalize">{profile?.role || user?.role}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-lg font-semibold text-gray-900 mb-1">
                 Trạng thái
               </label>
               <p className="text-gray-900">
@@ -386,7 +386,7 @@ const ProfilePage = () => {
               </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-lg font-semibold text-gray-900 mb-1">
                 Xác thực email
               </label>
               <p className="text-gray-900">
@@ -401,16 +401,16 @@ const ProfilePage = () => {
         </div>
 
         {/* Actions */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mt-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Hành động</h2>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-6">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Hành động</h2>
           <div className="flex flex-wrap gap-4">
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            <button className="bg-amber-600 text-white px-6 py-3 rounded-xl hover:bg-amber-700 transition-colors">
               Đổi mật khẩu
             </button>
-            <button className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors">
+            <button className="bg-yellow-600 text-white px-6 py-3 rounded-xl hover:bg-yellow-700 transition-colors">
               Xác thực email
             </button>
-            <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
+            <button className="bg-red-600 text-white px-6 py-3 rounded-xl hover:bg-red-700 transition-colors">
               Xóa tài khoản
             </button>
           </div>

@@ -5,8 +5,8 @@ import User from '~/models/userModel'
 import Address from '~/models/addressModel'
 import Cart from '~/models/cartModel'
 import { AppError } from '~/utils/AppError'
-import { addOrderConfirmationJob, addOrderStatusUpdateJob } from '~/queue/emailQueue'
 import voucherService from '~/services/voucherService'
+import { addOrderConfirmationJob } from '~/queue/emailQueue'
 
 /**
  * Order Service - Xử lý business logic liên quan đến đơn hàng
@@ -143,55 +143,14 @@ class OrderService {
       })
     }
 
-    // Lấy thông tin user để gửi email
-    const user = await User.findById(userId).select('name email')
-    
-    // Gửi email xác nhận đơn hàng
-    if (user) {
-      console.log('🛒 User found for email:', user.email)
-      console.log('🛒 Order object:', order)
-      console.log('🛒 Order._id:', order._id)
-      
-      const orderData = {
-        _id: order._id.toString(), // Chuyển đổi ObjectId thành string
-        orderCode: order.orderCode,
-        totalPrice: order.totalPrice,
-        originalAmount: order.originalAmount,
-        discountAmount: order.discountAmount,
-        status: order.status,
-        paymentMethod: order.paymentMethod,
-        createdAt: order.createdAt,
-        userId: {
-          _id: user._id.toString(), // Chuyển đổi ObjectId thành string
-          name: user.name,
-          email: user.email
-        },
-        shippingAddress: {
-          ...shippingAddress.toObject(),
-          _id: shippingAddress._id.toString() // Chuyển đổi ObjectId thành string
-        }
-      }
-      
-      console.log('🛒 OrderData created:', orderData)
-      console.log('🛒 OrderData._id:', orderData._id)
-      
-      try {
-        await addOrderConfirmationJob(user.email, orderData)
-        console.log('✅ Order confirmation email queued')
-      } catch (error) {
-        console.error('❌ Failed to queue order confirmation email:', error.message)
-        // Không throw error để không ảnh hưởng đến việc tạo đơn hàng
-      }
-    } else {
-      console.log('⚠️ No user found for email')
-    }
+    // Đã loại bỏ chức năng gửi email thông báo đơn hàng
 
     // Xóa các items đã đặt khỏi cart
     try {
       for (const item of items) {
         await Cart.removeItem(userId, item.bookId)
       }
-      console.log('🛒 Removed items from cart')
+      // Items removed from cart
     } catch (error) {
       console.error('❌ Failed to remove items from cart:', error.message)
       // Không throw error để không ảnh hưởng đến việc tạo đơn hàng
@@ -202,25 +161,120 @@ class OrderService {
       .populate('shippingAddressId')
       .populate('userId', 'name email')
 
-    console.log('🛒 Returning populated order:', populatedOrder._id)
+    // Gửi email xác nhận đơn hàng cho user
+    try {
+      await this.sendOrderConfirmationEmail(populatedOrder)
+    } catch (error) {
+      console.error('❌ Failed to send order confirmation email:', error.message)
+      // Không throw error để không ảnh hưởng đến việc tạo đơn hàng
+    }
+
     return populatedOrder
+  }
+
+  /**
+   * Gửi email xác nhận đơn hàng cho user
+   */
+  async sendOrderConfirmationEmail(order) {
+    try {
+      // Lấy order với thông tin user và địa chỉ
+      const orderWithDetails = await Order.findById(order._id)
+        .populate('userId', 'name email')
+        .populate('shippingAddressId', 'name phone address ward district city')
+
+      if (!orderWithDetails) {
+        throw new Error('Order not found')
+      }
+
+      // Lấy order items riêng biệt
+      const orderItems = await OrderItem.find({ orderId: order._id })
+        .populate('bookId', 'title author imageUrl price format')
+
+      // Tạo orderData để gửi email với thông tin đầy đủ
+      const orderData = {
+        _id: orderWithDetails._id.toString(),
+        orderCode: orderWithDetails.orderCode,
+        userId: {
+          _id: orderWithDetails.userId._id.toString(),
+          name: orderWithDetails.userId.name,
+          email: orderWithDetails.userId.email
+        },
+        totalPrice: orderWithDetails.totalPrice,
+        originalAmount: orderWithDetails.originalAmount,
+        discountAmount: orderWithDetails.discountAmount,
+        status: orderWithDetails.status,
+        paymentMethod: orderWithDetails.paymentMethod,
+        shippingAddressId: {
+          name: orderWithDetails.shippingAddressId?.name,
+          phone: orderWithDetails.shippingAddressId?.phone,
+          address: orderWithDetails.shippingAddressId?.address,
+          ward: orderWithDetails.shippingAddressId?.ward,
+          district: orderWithDetails.shippingAddressId?.district,
+          city: orderWithDetails.shippingAddressId?.city
+        },
+        createdAt: orderWithDetails.createdAt,
+        orderItems: orderItems.map(item => ({
+          _id: item._id,
+          quantity: item.quantity,
+          priceAtPurchase: item.priceAtPurchase,
+          total: item.quantity * item.priceAtPurchase, // Tính total từ quantity * priceAtPurchase
+          bookId: {
+            _id: item.bookId._id,
+            title: item.bookId.title,
+            author: item.bookId.author,
+            imageUrl: item.bookId.imageUrl,
+            price: item.bookId.price,
+            format: item.bookId.format
+          }
+        }))
+      }
+
+      // Thêm job gửi email vào queue
+      await addOrderConfirmationJob(orderWithDetails.userId.email, orderData)
+      
+      console.log(`✅ Order confirmation email queued for user ${orderWithDetails.userId.name} with ${orderData.orderItems.length} items`)
+    } catch (error) {
+      console.error('❌ Error queuing order confirmation email:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Lấy text trạng thái đơn hàng
+   */
+  getStatusText(status) {
+    const statusMap = {
+      'pending': 'Chờ xác nhận',
+      'confirmed': 'Đã xác nhận',
+      'shipped': 'Đang giao hàng',
+      'delivered': 'Đã giao hàng',
+      'cancelled': 'Đã hủy'
+    }
+    return statusMap[status] || status
   }
 
   /**
    * Tạo mã đơn hàng duy nhất
    */
   async generateOrderCode() {
-    const timestamp = Date.now().toString().slice(-8) // 8 số cuối của timestamp
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0') // 3 số ngẫu nhiên
+    // Tạo ngày hiện tại theo format YYYYMMDD
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = (now.getMonth() + 1).toString().padStart(2, '0')
+    const day = now.getDate().toString().padStart(2, '0')
+    const dateString = `${year}${month}${day}`
     
-    let orderCode = `ORD${timestamp}${random}`
+    // Tạo 4 số random
+    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
+    
+    let orderCode = `ORD-${dateString}-${random}`
     
     // Kiểm tra mã đơn hàng đã tồn tại chưa
     let existingOrder = await Order.findOne({ orderCode })
     let counter = 1
     
     while (existingOrder) {
-      orderCode = `ORD${timestamp}${random}${counter.toString().padStart(2, '0')}`
+      orderCode = `ORD-${dateString}-${random}${counter.toString().padStart(2, '0')}`
       existingOrder = await Order.findOne({ orderCode })
       counter++
     }
@@ -329,24 +383,7 @@ class OrderService {
     }
 
     // Gửi email thông báo cập nhật trạng thái đơn hàng
-    if (['shipped', 'delivered'].includes(status)) {
-      try {
-        const user = await User.findById(order.userId).select('name email')
-        if (user) {
-          const orderData = {
-            ...order.toObject(),
-            userName: user.name,
-            userEmail: user.email
-          }
-          
-          await addOrderStatusUpdateJob(user.email, orderData, status)
-          console.log(`✅ Order status update email queued for status: ${status}`)
-        }
-      } catch (error) {
-        console.error('❌ Failed to queue order status update email:', error.message)
-        // Không throw error để không ảnh hưởng đến việc cập nhật trạng thái
-      }
-    }
+    // Đã loại bỏ chức năng gửi email thông báo cập nhật trạng thái đơn hàng
 
     return order
   }

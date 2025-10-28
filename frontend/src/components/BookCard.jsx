@@ -20,6 +20,11 @@ const BookCard = ({ book }) => {
     );
   }
 
+  // Chỉ hiển thị sách có stock > 0
+  if (book.stock <= 0) {
+    return null;
+  }
+
   // Sử dụng cached data thay vì gọi API
   const bookIsFavorite = isFavorite(book._id);
   const bookIsInCart = isInCart(book._id);
@@ -51,11 +56,6 @@ const BookCard = ({ book }) => {
   const handleAddToCart = async () => {
     if (!user) {
       alert('Vui lòng đăng nhập để thêm vào giỏ hàng');
-      return;
-    }
-
-    if (book.stock <= 0) {
-      alert('Sách đã hết hàng');
       return;
     }
 
@@ -100,9 +100,9 @@ const BookCard = ({ book }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg overflow-hidden hover:shadow-lg transition-all duration-200">
+    <div className="bg-white rounded-lg overflow-hidden hover:shadow-lg transition-all duration-200 h-90 flex flex-col">
       <Link to={`/books/${book._id}`}>
-        <div className="h-48 bg-gray-200 flex items-center justify-center">
+        <div className="h-64 bg-gray-200 flex items-center justify-center">
           {book.imageUrl ? (
             <img 
               src={book.imageUrl.startsWith('http') ? book.imageUrl : `http://localhost:5000${book.imageUrl}`} 
@@ -117,7 +117,7 @@ const BookCard = ({ book }) => {
             />
           ) : (
             <div className="text-gray-500 text-center">
-              <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
               <span className="text-sm">No Image</span>
@@ -126,58 +126,28 @@ const BookCard = ({ book }) => {
         </div>
       </Link>
       
-      <div className="p-4">
+      <div className="p-3">
         <Link to={`/books/${book._id}`}>
-          <h3 className="font-semibold text-lg mb-2 line-clamp-2 hover:text-blue-600 transition-colors">
+          <h3 className="font-semibold text-base mb-1 line-clamp-2 hover:text-blue-600 transition-colors">
             {book.title}
           </h3>
         </Link>
         
         <p className="text-gray-600 text-sm mb-2">{book.author}</p>
         
-        <div className="mb-2">
-          <div className="mb-1">
-            <span className="text-sm text-gray-500">
-              {book.format} • {book.language}
-            </span>
-          </div>
-          <div>
-            <span className="text-blue-600 font-bold text-lg">{book.price?.toLocaleString('vi-VN')} ₫</span>
-          </div>
+        <div className="mb-3">
+           <span className="text-black font-bold text-lg">{book.price?.toLocaleString('vi-VN')} ₫</span>
         </div>
         
-        <div className="flex items-center justify-between text-xs mb-3">
-          <div className="flex items-center">
-            {book.stock > 0 ? (
-              <span className="text-green-600 font-medium">
-                ✓ Còn hàng ({book.stock})
-              </span>
-            ) : (
-              <span className="text-red-600 font-medium">✗ Hết hàng</span>
-            )}
-          </div>
-          
-          {book.totalReviews > 0 && (
-            <span className="text-gray-500">
-              {book.totalReviews} đánh giá
-            </span>
-          )}
-        </div>
         
         {/* Add to Cart Button and Favorite Icon */}
         <div className="flex items-center gap-2">
           <button 
             onClick={handleAddToCart}
-            disabled={loading || book.stock <= 0}
-            className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              book.stock <= 0 
-                ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
+            disabled={loading}
+            className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700"
           >
-            {loading ? 'Đang xử lý...' : 
-             book.stock <= 0 ? 'Hết hàng' : 
-             'Thêm vào giỏ hàng'}
+            {loading ? 'Đang xử lý...' : 'Thêm vào giỏ hàng'}
           </button>
           <button 
             onClick={handleToggleFavorite}

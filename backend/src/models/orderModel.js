@@ -57,21 +57,6 @@ const orderSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  // Shipper information
-  shipper: {
-    name: {
-      type: String
-    },
-    phone: {
-      type: String
-    },
-    company: {
-      type: String
-    },
-    trackingNumber: {
-      type: String
-    }
-  },
   // Timestamps for different statuses
   confirmedAt: {
     type: Date

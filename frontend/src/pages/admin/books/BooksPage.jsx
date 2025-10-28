@@ -72,7 +72,10 @@ const BooksPage = () => {
     }).format(amount);
   };
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status, stock) => {
+    // Nếu stock = 0 thì hiển thị màu đỏ
+    if (stock === 0) return 'bg-red-100 text-red-800';
+    
     switch (status) {
       case 'available': return 'bg-green-100 text-green-800';
       case 'out_of_stock': return 'bg-yellow-100 text-yellow-800';
@@ -82,7 +85,10 @@ const BooksPage = () => {
     }
   };
 
-  const getStatusText = (status) => {
+  const getStatusText = (status, stock) => {
+    // Nếu stock = 0 thì hiển thị "Hết hàng" bất kể status
+    if (stock === 0) return 'Hết hàng';
+    
     switch (status) {
       case 'available': return 'Có sẵn';
       case 'out_of_stock': return 'Hết hàng';
@@ -102,7 +108,11 @@ const BooksPage = () => {
     const matchesSearch = book?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           book?.author?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === 'all' || book?.categoryId?.name === filterCategory;
-    const matchesStatus = filterStatus === 'all' || book?.status === filterStatus;
+    
+    // Kiểm tra status, nếu stock = 0 thì coi như out_of_stock
+    const actualStatus = (book?.stock || 0) === 0 ? 'out_of_stock' : book?.status;
+    const matchesStatus = filterStatus === 'all' || actualStatus === filterStatus;
+    
     return matchesSearch && matchesCategory && matchesStatus;
   }) : [];
 
@@ -268,8 +278,8 @@ const BooksPage = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(book?.status)}`}>
-                      {getStatusText(book?.status)}
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(book?.status, book?.stock || 0)}`}>
+                      {getStatusText(book?.status, book?.stock || 0)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

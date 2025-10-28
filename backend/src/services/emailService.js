@@ -16,23 +16,33 @@ const createTransporter = () => {
 
 // Template cho email xác nhận đơn hàng
 const createOrderConfirmationTemplate = (order) => {
-  const { orderCode, totalPrice, shippingAddress, orderItems, createdAt } = order
+  const { orderCode, totalPrice, shippingAddressId, orderItems = [], createdAt, paymentMethod, originalAmount, discountAmount } = order
   
-  const itemsHtml = orderItems.map(item => `
+  const itemsHtml = orderItems && orderItems.length > 0 ? orderItems.map(item => {
+    const imageUrl = item.bookId?.imageUrl ? 
+      (item.bookId.imageUrl.startsWith('http') ? item.bookId.imageUrl : `http://localhost:5000${item.bookId.imageUrl}`) : 
+      'https://via.placeholder.com/50x70?text=📚'
+    
+    return `
     <tr>
-      <td style="padding: 10px; border-bottom: 1px solid #eee;">
-        <img src="${item.bookId.imageUrl || '/default-book.jpg'}" 
-             alt="${item.bookId.title}" 
-             style="width: 50px; height: 70px; object-fit: cover; margin-right: 10px; vertical-align: top;">
-        <div style="display: inline-block; vertical-align: top;">
-          <h4 style="margin: 0; color: #333;">${item.bookId.title}</h4>
-          <p style="margin: 5px 0; color: #666;">Tác giả: ${item.bookId.author}</p>
-          <p style="margin: 5px 0; color: #666;">Số lượng: ${item.quantity}</p>
-          <p style="margin: 5px 0; color: #e74c3c; font-weight: bold;">Giá: ${item.priceAtPurchase.toLocaleString('vi-VN')} VND</p>
+      <td style="padding: 15px; border-bottom: 1px solid #eee;">
+        <div style="display: flex; align-items: flex-start;">
+          <img src="${imageUrl}" 
+               alt="${item.bookId?.title || 'Sách'}" 
+               style="width: 60px; height: 80px; object-fit: cover; margin-right: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <div style="flex: 1;">
+            <h4 style="margin: 0 0 8px 0; color: #333; font-size: 16px;">${item.bookId?.title || 'Sách'}</h4>
+            <p style="margin: 4px 0; color: #666; font-size: 14px;"><strong>Tác giả:</strong> ${item.bookId?.author || 'N/A'}</p>
+            <p style="margin: 4px 0; color: #666; font-size: 14px;"><strong>Định dạng:</strong> ${item.bookId?.format || 'Sách giấy'}</p>
+            <p style="margin: 4px 0; color: #666; font-size: 14px;"><strong>Số lượng:</strong> ${item.quantity || 1}</p>
+            <p style="margin: 4px 0; color: #666; font-size: 14px;"><strong>Đơn giá:</strong> ${(item.priceAtPurchase || item.bookId?.price || 0).toLocaleString('vi-VN')} ₫</p>
+            <p style="margin: 8px 0 0 0; color: #e74c3c; font-weight: bold; font-size: 16px;">Thành tiền: ${(item.total || 0).toLocaleString('vi-VN')} ₫</p>
+          </div>
         </div>
       </td>
     </tr>
-  `).join('')
+    `
+  }).join('') : '<tr><td style="padding: 20px; text-align: center; color: #666;">Không có sản phẩm nào trong đơn hàng</td></tr>'
 
   return `
     <!DOCTYPE html>
@@ -53,8 +63,16 @@ const createOrderConfirmationTemplate = (order) => {
         <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="color: #34495e; margin-top: 0;">📋 Thông tin đơn hàng</h3>
           <p><strong>Mã đơn hàng:</strong> #${orderCode}</p>
-          <p><strong>Ngày đặt:</strong> ${new Date(createdAt).toLocaleDateString('vi-VN')}</p>
-          <p><strong>Tổng tiền:</strong> <span style="color: #e74c3c; font-size: 18px; font-weight: bold;">${totalPrice.toLocaleString('vi-VN')} VND</span></p>
+          <p><strong>Ngày đặt:</strong> ${new Date(createdAt).toLocaleDateString('vi-VN')} lúc ${new Date(createdAt).toLocaleTimeString('vi-VN')}</p>
+          <p><strong>Phương thức thanh toán:</strong> ${paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng (COD)' : paymentMethod === 'momo' ? 'Ví MoMo' : paymentMethod === 'vnpay' ? 'VNPay' : paymentMethod}</p>
+          
+          <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 15px;">
+            <h4 style="margin: 0 0 10px 0; color: #2c3e50;">💰 Chi tiết thanh toán</h4>
+            ${originalAmount !== totalPrice ? `<p style="margin: 5px 0;"><strong>Tổng giá trị sản phẩm:</strong> ${originalAmount.toLocaleString('vi-VN')} ₫</p>` : ''}
+            ${discountAmount > 0 ? `<p style="margin: 5px 0; color: #27ae60;"><strong>Giảm giá:</strong> -${discountAmount.toLocaleString('vi-VN')} ₫</p>` : ''}
+            <hr style="margin: 10px 0; border: none; border-top: 1px solid #ddd;">
+            <p style="margin: 5px 0; font-size: 18px;"><strong>Tổng thanh toán:</strong> <span style="color: #e74c3c; font-weight: bold;">${totalPrice.toLocaleString('vi-VN')} ₫</span></p>
+          </div>
         </div>
 
         <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -66,9 +84,9 @@ const createOrderConfirmationTemplate = (order) => {
 
         <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="color: #34495e; margin-top: 0;">🚚 Địa chỉ giao hàng</h3>
-          <p><strong>Người nhận:</strong> ${shippingAddress.name}</p>
-          <p><strong>Số điện thoại:</strong> ${shippingAddress.phone}</p>
-          <p><strong>Địa chỉ:</strong> ${shippingAddress.address}, ${shippingAddress.ward}, ${shippingAddress.district}, ${shippingAddress.city}</p>
+          <p><strong>Người nhận:</strong> ${shippingAddressId?.name || 'N/A'}</p>
+          <p><strong>Số điện thoại:</strong> ${shippingAddressId?.phone || 'N/A'}</p>
+          <p><strong>Địa chỉ:</strong> ${shippingAddressId?.address || 'N/A'}, ${shippingAddressId?.ward || 'N/A'}, ${shippingAddressId?.district || 'N/A'}, ${shippingAddressId?.city || 'N/A'}</p>
         </div>
 
         <div style="text-align: center; margin-top: 30px; padding: 20px; background: #e8f5e8; border-radius: 8px;">
@@ -123,9 +141,9 @@ const createShippingNotificationTemplate = (order) => {
 
         <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="color: #34495e; margin-top: 0;">🚚 Địa chỉ giao hàng</h3>
-          <p><strong>Người nhận:</strong> ${shippingAddress.name}</p>
-          <p><strong>Số điện thoại:</strong> ${shippingAddress.phone}</p>
-          <p><strong>Địa chỉ:</strong> ${shippingAddress.address}, ${shippingAddress.ward}, ${shippingAddress.district}, ${shippingAddress.city}</p>
+          <p><strong>Người nhận:</strong> ${shippingAddressId?.name || 'N/A'}</p>
+          <p><strong>Số điện thoại:</strong> ${shippingAddressId?.phone || 'N/A'}</p>
+          <p><strong>Địa chỉ:</strong> ${shippingAddressId?.address || 'N/A'}, ${shippingAddressId?.ward || 'N/A'}, ${shippingAddressId?.district || 'N/A'}, ${shippingAddressId?.city || 'N/A'}</p>
         </div>
 
         <div style="text-align: center; margin-top: 30px; padding: 20px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
@@ -147,39 +165,42 @@ const createShippingNotificationTemplate = (order) => {
 export const sendOrderConfirmationEmail = async (orderData) => {
   try {
     console.log('📧 Email service received orderData:', orderData)
+    console.log('📧 OrderData type:', typeof orderData)
+    console.log('📧 OrderData._id:', orderData?._id)
+    
+    if (!orderData) {
+      console.log('❌ No orderData provided')
+      return
+    }
     
     // Kiểm tra nếu không có email
     if (!orderData?.userId || !orderData?.userId?.email) {
-      console.log('⚠️ No email address found for user, skipping email')
+      console.log('❌ No userId or email in orderData')
       return
     }
 
     // Lấy orderId - đảm bảo có ID
     const orderId = orderData._id?.toString() || orderData._id
-    console.log('📧 Order ID:', orderId)
     
     if (!orderId) {
-      console.log('⚠️ No order ID found, skipping email')
+      console.log('❌ No orderId found')
       return
     }
 
+    console.log('📧 Processing email for orderId:', orderId)
+    console.log('📧 Order items count:', orderData.orderItems?.length || 0)
+
     const transporter = createTransporter()
-    
-    // Tạo email đơn giản với thông tin cơ bản
-    const simpleOrderData = {
-      ...orderData,
-      orderItems: [] // Tạm thời để trống, có thể thêm sau
-    }
     
     const mailOptions = {
       from: `"BookStore" <${process.env.SMTP_USER}>`,
       to: orderData.userId.email,
       subject: `✅ Xác nhận đơn hàng #${orderData.orderCode} - BookStore`,
-      html: createOrderConfirmationTemplate(simpleOrderData)
+      html: createOrderConfirmationTemplate(orderData)
     }
 
     const result = await transporter.sendMail(mailOptions)
-    console.log('✅ Order confirmation email sent:', result.messageId)
+    console.log('✅ Order confirmation email sent successfully to:', orderData.userId.email)
     return result
   } catch (error) {
     console.error('❌ Failed to send order confirmation email:', error)
@@ -200,10 +221,20 @@ export const sendShippingNotificationEmail = async (order) => {
     }
 
     const result = await transporter.sendMail(mailOptions)
-    console.log('✅ Shipping notification email sent:', result.messageId)
     return result
   } catch (error) {
     console.error('❌ Failed to send shipping notification email:', error)
     throw error
   }
+}
+
+// Export các functions
+export {
+  sendOrderStatusUpdate,
+  sendWelcomeEmail,
+  sendNewsletter,
+  sendDigitalBooks,
+  sendOTPVerification,
+  sendPasswordReset,
+  sendShippingNotification
 }

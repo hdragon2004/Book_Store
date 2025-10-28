@@ -169,17 +169,17 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">
+          <h2 className="text-4xl font-bold text-gray-900 mb-2">
             Đăng ký tài khoản
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="text-lg text-gray-600">
             Hoặc{' '}
             <Link 
               to="/login" 
-              className="font-medium text-blue-600 hover:text-blue-500"
+              className="font-semibold text-amber-600 hover:text-amber-700 transition-colors"
             >
               đăng nhập nếu đã có tài khoản
             </Link>
@@ -187,17 +187,17 @@ const RegisterPage = () => {
         </div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+      <div className="mt-12 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-12 px-8 shadow-lg border border-gray-100 sm:rounded-2xl sm:px-12">
+          <form className="space-y-8" onSubmit={handleSubmit}>
             {errors.general && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
+              <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-xl">
                 {errors.general}
               </div>
             )}
 
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="name" className="block text-lg font-semibold text-gray-900 mb-3">
                 Tên
               </label>
               <div className="mt-1">
@@ -208,20 +208,19 @@ const RegisterPage = () => {
                   autoComplete="given-name"
                   value={formData.name}
                   onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
+                  className={`appearance-none block w-full px-4 py-4 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-lg ${
                     errors.name ? 'border-red-300' : 'border-gray-300'
                   }`}
                   placeholder="Nhập tên của bạn"
                 />
                 {errors.name && (
-                  <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+                  <p className="mt-2 text-sm text-red-600">{errors.name}</p>
                 )}
               </div>
             </div>
 
-
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-lg font-semibold text-gray-900 mb-3">
                 Email
               </label>
               <div className="mt-1">
@@ -232,19 +231,19 @@ const RegisterPage = () => {
                   autoComplete="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
+                  className={`appearance-none block w-full px-4 py-4 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-lg ${
                     errors.email ? 'border-red-300' : 'border-gray-300'
                   }`}
                   placeholder="Nhập email của bạn"
                 />
                 {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                  <p className="mt-2 text-sm text-red-600">{errors.email}</p>
                 )}
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-lg font-semibold text-gray-900 mb-3">
                 Mật khẩu
               </label>
               <div className="mt-1 relative">
@@ -255,35 +254,35 @@ const RegisterPage = () => {
                   autoComplete="new-password"
                   value={formData.password}
                   onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 pr-10 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
+                  className={`appearance-none block w-full px-4 py-4 pr-12 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-lg ${
                     errors.password ? 'border-red-300' : 'border-gray-300'
                   }`}
                   placeholder="Nhập mật khẩu của bạn"
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
-                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
                     </svg>
                   ) : (
-                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
                   )}
                 </button>
                 {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                  <p className="mt-2 text-sm text-red-600">{errors.password}</p>
                 )}
               </div>
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="confirmPassword" className="block text-lg font-semibold text-gray-900 mb-3">
                 Xác nhận mật khẩu
               </label>
               <div className="mt-1 relative">
@@ -294,29 +293,29 @@ const RegisterPage = () => {
                   autoComplete="new-password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 pr-10 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
+                  className={`appearance-none block w-full px-4 py-4 pr-12 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-lg ${
                     errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
                   }`}
                   placeholder="Nhập lại mật khẩu"
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
                   {showConfirmPassword ? (
-                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
                     </svg>
                   ) : (
-                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
                   )}
                 </button>
                 {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+                  <p className="mt-2 text-sm text-red-600">{errors.confirmPassword}</p>
                 )}
               </div>
             </div>
@@ -325,27 +324,27 @@ const RegisterPage = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex justify-center py-4 px-6 border border-transparent rounded-xl shadow-lg text-lg font-semibold text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
               >
                 {loading ? 'Đang gửi mã...' : 'Đăng ký'}
               </button>
             </div>
           </form>
 
-          <div className="mt-6">
+          <div className="mt-8">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300" />
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Hoặc</span>
+              <div className="relative flex justify-center text-lg">
+                <span className="px-4 bg-white text-gray-500">Hoặc</span>
               </div>
             </div>
 
-            <div className="mt-6">
+            <div className="mt-8">
               <Link
                 to="/login"
-                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="w-full flex justify-center py-4 px-6 border border-gray-300 rounded-xl shadow-sm text-lg font-semibold text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-all duration-300"
               >
                 Đăng nhập
               </Link>
@@ -357,27 +356,27 @@ const RegisterPage = () => {
       {/* Email Verification Modal */}
       {showVerificationModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
             <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
+                <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Xác thực Email</h3>
-              <p className="text-sm text-gray-500 mb-6">
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">Xác thực Email</h3>
+              <p className="text-lg text-gray-600 mb-8">
                 Nhập mã 6 chữ số đã gửi đến <strong>{formData.email}</strong>
               </p>
             </div>
 
             {errors.verificationCode && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md mb-4">
+              <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-xl mb-6">
                 {errors.verificationCode}
               </div>
             )}
 
-            <div className="mb-6">
-              <div className="flex justify-center space-x-2">
+            <div className="mb-8">
+              <div className="flex justify-center space-x-3">
                 {[0, 1, 2, 3, 4, 5].map((index) => (
                   <input
                     key={index}
@@ -428,13 +427,13 @@ const RegisterPage = () => {
                       }
                     }}
                     id={`code-${index}`}
-                    className="w-12 h-12 text-center text-xl font-bold border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-14 h-14 text-center text-2xl font-bold border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
                   />
                 ))}
               </div>
             </div>
 
-            <div className="flex space-x-3">
+            <div className="flex space-x-4">
               <button
                 type="button"
                 onClick={() => {
@@ -442,7 +441,7 @@ const RegisterPage = () => {
                   setVerificationCode('');
                   setVerificationSent(false);
                 }}
-                className="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="flex-1 py-4 px-6 border border-gray-300 rounded-xl shadow-sm text-lg font-semibold text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-all duration-300"
               >
                 Hủy
               </button>
@@ -450,14 +449,14 @@ const RegisterPage = () => {
                 type="button"
                 onClick={handleVerifyCode}
                 disabled={loading || verificationCode.length !== 6}
-                className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 py-4 px-6 border border-transparent rounded-xl shadow-lg text-lg font-semibold text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
               >
                 {loading ? 'Đang xác thực...' : 'Xác thực Email'}
               </button>
             </div>
 
-            <div className="text-center mt-4">
-              <p className="text-sm text-gray-500">
+            <div className="text-center mt-6">
+              <p className="text-lg text-gray-600">
                 Không nhận được mã?{' '}
                 {countdown > 0 ? (
                   <span className="text-gray-400">Gửi lại sau {countdown}s</span>
@@ -465,7 +464,7 @@ const RegisterPage = () => {
                   <button
                     type="button"
                     onClick={handleSendVerificationCode}
-                    className="text-blue-600 hover:text-blue-500 font-medium"
+                    className="text-amber-600 hover:text-amber-700 font-semibold transition-colors"
                   >
                     Gửi lại mã
                   </button>

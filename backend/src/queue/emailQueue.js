@@ -166,37 +166,78 @@ export const emailWorker = {
     const { type, data } = jobData
 
     try {
+      console.log(`📧 Processing email job: ${type}`, { data: JSON.stringify(data, null, 2) })
+
       switch (type) {
         case EMAIL_JOB_TYPES.SEND_VERIFICATION_EMAIL:
+          if (!data?.email || !data?.token) {
+            console.error('❌ Missing email or token in verification job:', data)
+            return
+          }
           await emailService.sendVerificationEmail(data.email, data.token)
           break
 
         case EMAIL_JOB_TYPES.SEND_PASSWORD_RESET_EMAIL:
+          if (!data?.email || !data?.token) {
+            console.error('❌ Missing email or token in password reset job:', data)
+            return
+          }
           await emailService.sendPasswordResetEmail(data.email, data.token)
           break
 
         case EMAIL_JOB_TYPES.SEND_WELCOME_EMAIL:
+          if (!data?.email || !data?.name) {
+            console.error('❌ Missing email or name in welcome job:', data)
+            return
+          }
           await emailService.sendWelcomeEmail(data.email, data.name)
           break
 
         case EMAIL_JOB_TYPES.SEND_ORDER_CONFIRMATION:
-          console.log('📧 Queue processing order confirmation:', data)
+          if (!data?.orderData) {
+            console.error('❌ Missing orderData in order confirmation job:', data)
+            return
+          }
+          if (!data.orderData?._id) {
+            console.error('❌ Invalid orderData - missing _id:', data.orderData)
+            return
+          }
+          if (!data.orderData?.userId) {
+            console.error('❌ Invalid orderData - missing userId:', data.orderData)
+            return
+          }
           await emailService.sendOrderConfirmationEmail(data.orderData)
           break
 
         case EMAIL_JOB_TYPES.SEND_ORDER_STATUS_UPDATE:
+          if (!data?.email || !data?.orderData || !data?.status) {
+            console.error('❌ Missing email, orderData or status in order status update job:', data)
+            return
+          }
           await emailService.sendOrderStatusUpdate(data.email, data.orderData, data.status)
           break
 
         case EMAIL_JOB_TYPES.SEND_NEWSLETTER:
+          if (!data?.subscribers || !data?.newsletterData) {
+            console.error('❌ Missing subscribers or newsletterData in newsletter job:', data)
+            return
+          }
           await emailService.sendNewsletter(data.subscribers, data.newsletterData)
           break
 
         case EMAIL_JOB_TYPES.SEND_DIGITAL_BOOKS:
+          if (!data?.to || !data?.userName || !data?.orderId || !data?.books) {
+            console.error('❌ Missing required data in digital books job:', data)
+            return
+          }
           await emailService.sendDigitalBooks(data.to, data.userName, data.orderId, data.books)
           break
 
         case EMAIL_JOB_TYPES.SEND_OTP_VERIFICATION:
+          if (!data?.email || !data?.userName || !data?.otpCode) {
+            console.error('❌ Missing email, userName or otpCode in OTP verification job:', data)
+            return
+          }
           await emailService.sendOTPVerification(data.email, data.userName, data.otpCode)
           break
 
@@ -204,8 +245,10 @@ export const emailWorker = {
           throw new Error(`Unknown email job type: ${type}`)
       }
 
+      console.log(`✅ Email job completed successfully: ${type}`)
     } catch (error) {
       console.error(`❌ Email job failed: ${type}`, error.message)
+      console.error('❌ Job data:', JSON.stringify(data, null, 2))
       throw error
     }
   }

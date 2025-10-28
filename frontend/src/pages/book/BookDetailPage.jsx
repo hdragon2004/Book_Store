@@ -54,9 +54,9 @@ const BookDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Đang tải thông tin sách...</p>
         </div>
       </div>
@@ -65,7 +65,7 @@ const BookDetailPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-600 mb-4">
             <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -76,7 +76,7 @@ const BookDetailPage = () => {
           <div className="space-x-4">
             <button 
               onClick={() => window.location.reload()} 
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition-colors"
             >
               Thử lại
             </button>
@@ -94,7 +94,7 @@ const BookDetailPage = () => {
 
   if (!book) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="text-gray-500 mb-4">
             <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -105,7 +105,7 @@ const BookDetailPage = () => {
           <p className="text-gray-600 mb-4">Sách bạn tìm kiếm không tồn tại hoặc đã bị xóa.</p>
           <button 
             onClick={() => navigate('/books')} 
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition-colors"
           >
             Quay lại danh sách
           </button>
@@ -120,7 +120,7 @@ const BookDetailPage = () => {
         <div className="mb-6">
           <button
             onClick={() => navigate('/books')}
-            className="flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+            className="flex items-center text-amber-600 hover:text-amber-800 transition-colors"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -129,11 +129,11 @@ const BookDetailPage = () => {
           </button>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="md:flex">
             {/* Book Image */}
             <div className="md:w-1/3">
-              <div className="h-96 md:h-full bg-gray-200 flex items-center justify-center">
+              <div className="h-96 md:h-full bg-gray-100 flex items-center justify-center">
                 {book.imageUrl ? (
                   <img 
                     src={book.imageUrl.startsWith('http') ? book.imageUrl : `http://localhost:5000${book.imageUrl}`} 
@@ -156,13 +156,13 @@ const BookDetailPage = () => {
               <div className="space-y-6">
                 {/* Title and Author */}
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{book.title}</h1>
+                  <h1 className="text-4xl font-bold text-gray-900 mb-2">{book.title}</h1>
                   <p className="text-xl text-gray-600">Tác giả: {book.author}</p>
                 </div>
 
                 {/* Price and Rating */}
                 <div className="flex items-center justify-between">
-                  <div className="text-3xl font-bold text-blue-600">
+                  <div className="text-4xl font-bold text-black">
                     {book.price?.toLocaleString('vi-VN')} ₫
                   </div>
                   <div className="flex items-center space-x-2">
@@ -185,7 +185,7 @@ const BookDetailPage = () => {
                   )}
                   
                   {book.categoryId?.name && (
-                    <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                    <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium">
                       {book.categoryId.name}
                     </span>
                   )}
@@ -193,7 +193,7 @@ const BookDetailPage = () => {
 
                 {/* Description */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Mô tả</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Mô tả</h3>
                   <p className="text-gray-700 leading-relaxed">{book.description}</p>
                 </div>
 
@@ -258,9 +258,9 @@ const BookDetailPage = () => {
 
                 {/* Digital Book Info */}
                 {book.format && ['ebook', 'audiobook'].includes(book.format) && book.fileUrl && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-blue-900 mb-2">Sách điện tử</h4>
-                    <p className="text-blue-800 text-sm">
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                    <h4 className="font-semibold text-amber-900 mb-2">Sách điện tử</h4>
+                    <p className="text-amber-800 text-sm">
                       Sách này có sẵn ở định dạng {book.format === 'ebook' ? 'sách điện tử' : 'sách nói'}.
                     </p>
                   </div>
@@ -269,19 +269,19 @@ const BookDetailPage = () => {
                 {/* Action Buttons */}
                 <div className="flex space-x-4">
                   {book.stock > 0 ? (
-                    <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                    <button className="bg-amber-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-amber-700 transition-colors">
                       Thêm vào giỏ hàng
                     </button>
                   ) : (
                     <button 
                       disabled
-                      className="bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold cursor-not-allowed"
+                      className="bg-gray-400 text-white px-6 py-3 rounded-xl font-semibold cursor-not-allowed"
                     >
                       Hết hàng
                     </button>
                   )}
                   
-                  <button className="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors">
+                  <button className="border border-gray-300 text-gray-700 px-6 py-3 rounded-xl font-semibold hover:bg-gray-50 transition-colors">
                     Thêm vào yêu thích
                   </button>
                 </div>

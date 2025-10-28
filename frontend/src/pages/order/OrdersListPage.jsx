@@ -101,9 +101,9 @@ const OrdersListPage = () => {
   if (loading) {
     return (
       <PageLayout>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-white flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Đang tải danh sách đơn hàng...</p>
           </div>
         </div>
@@ -114,7 +114,7 @@ const OrdersListPage = () => {
   if (error) {
     return (
       <PageLayout>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-white flex items-center justify-center">
           <div className="text-center">
             <div className="text-red-500 mb-4">
               <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,7 +125,7 @@ const OrdersListPage = () => {
             <p className="text-gray-600 mb-8">{error}</p>
             <button 
               onClick={() => window.location.reload()}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              className="bg-amber-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-amber-700 transition-colors"
             >
               Thử lại
             </button>
@@ -140,8 +140,8 @@ const OrdersListPage = () => {
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Đơn hàng của tôi</h1>
-          <p className="text-gray-600">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Đơn hàng của tôi</h1>
+          <p className="text-lg text-gray-600">
             {orders.length > 0 
               ? `Bạn có ${orders.length} đơn hàng`
               : 'Bạn chưa có đơn hàng nào'
@@ -150,13 +150,13 @@ const OrdersListPage = () => {
         </div>
 
         {/* Filter */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-8">
           <div className="flex items-center space-x-4">
-            <label className="text-sm font-medium text-gray-700">Lọc theo trạng thái:</label>
+            <label className="text-lg font-semibold text-gray-900">Lọc theo trạng thái:</label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-amber-500 focus:border-amber-500 text-lg"
             >
               <option value="all">Tất cả</option>
               <option value="pending">Chờ xử lý</option>
@@ -170,17 +170,17 @@ const OrdersListPage = () => {
 
         {/* Orders List */}
         {orders.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-gray-400 mb-6">
+          <div className="text-center py-20">
+            <div className="text-gray-400 mb-8">
               <svg className="w-24 h-24 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
             </div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Chưa có đơn hàng</h2>
-            <p className="text-gray-600 mb-8">Hãy mua sắm và tạo đơn hàng đầu tiên của bạn!</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Chưa có đơn hàng</h2>
+            <p className="text-xl text-gray-600 mb-8">Hãy mua sắm và tạo đơn hàng đầu tiên của bạn!</p>
             <Link 
               to="/books" 
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              className="bg-amber-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-amber-700 transition-all duration-300 shadow-lg hover:shadow-xl"
             >
               Khám phá sách
             </Link>
@@ -188,15 +188,15 @@ const OrdersListPage = () => {
         ) : (
           <div className="space-y-6">
             {orders.map((order) => (
-              <div key={order._id || order.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div key={order._id || order.id} className="bg-white rounded-2xl shadow-sm border border-gray-100">
                 {/* Order Header */}
-                <div className="p-6 border-b border-gray-200">
+                <div className="p-8 border-b border-gray-200">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className="text-xl font-semibold text-gray-900">
                         Đơn hàng #{order.orderCode || order._id}
                       </h3>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-lg text-gray-600">
                         Đặt ngày: {order.createdAt ? new Date(order.createdAt).toLocaleDateString('vi-VN') : 'N/A'}
                       </p>
                     </div>
@@ -212,7 +212,7 @@ const OrdersListPage = () => {
                       </button>
                       <Link 
                         to={`/orders/${order._id || order.id}`}
-                        className="text-blue-600 hover:text-blue-800 font-medium"
+                        className="text-amber-600 hover:text-amber-800 font-medium"
                       >
                         Xem chi tiết
                       </Link>
@@ -221,7 +221,7 @@ const OrdersListPage = () => {
                 </div>
 
                 {/* Order Items Preview */}
-                <div className="p-6">
+                <div className="p-8">
                   {order.orderItems && order.orderItems.length > 0 ? (
                     <div className="space-y-3">
                       {order.orderItems.slice(0, 3).map((item, index) => (
@@ -231,7 +231,7 @@ const OrdersListPage = () => {
                               <img 
                                 src={item.bookId.imageUrl.startsWith('http') ? item.bookId.imageUrl : `http://localhost:5000${item.bookId.imageUrl}`}
                                 alt={item.bookId?.title || 'Book'}
-                                className="w-12 h-16 object-cover rounded"
+                                className="w-12 h-16 object-cover rounded-xl"
                                 onError={(e) => {
                                   e.target.style.display = 'none';
                                   if (e.target.nextSibling) {
@@ -240,7 +240,7 @@ const OrdersListPage = () => {
                                 }}
                               />
                             ) : null}
-                            <div className="w-12 h-16 bg-gray-200 rounded flex items-center justify-center" style={{display: item.bookId?.imageUrl ? 'none' : 'flex'}}>
+                            <div className="w-12 h-16 bg-gray-200 rounded-xl flex items-center justify-center" style={{display: item.bookId?.imageUrl ? 'none' : 'flex'}}>
                               <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                               </svg>
@@ -269,7 +269,7 @@ const OrdersListPage = () => {
                 </div>
 
                 {/* Order Summary */}
-                <div className="px-6 py-4 bg-gray-50 rounded-b-lg">
+                <div className="px-8 py-4 bg-gray-50 rounded-b-2xl">
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-gray-600">
                       <span>Phương thức thanh toán: </span>
@@ -277,7 +277,7 @@ const OrdersListPage = () => {
                     </div>
                     <div className="text-right">
                       <span className="text-sm text-gray-600">Tổng cộng: </span>
-                      <span className="text-lg font-semibold text-blue-600">
+                      <span className="text-lg font-semibold text-amber-600">
                         {formatCurrency(order.totalPrice - (order.discountAmount || 0))}
                       </span>
                     </div>

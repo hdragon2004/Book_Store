@@ -319,11 +319,29 @@ class UserService {
       .skip(skip)
       .limit(limit)
 
+    // Thêm thông tin orders và spending cho mỗi user
+    const usersWithStats = await Promise.all(users.map(async (user) => {
+      const Order = (await import('~/models/orderModel')).default
+      
+      // Đếm số đơn hàng của user
+      const totalOrders = await Order.countDocuments({ userId: user._id })
+      
+      // Tính tổng chi tiêu của user
+      const orders = await Order.find({ userId: user._id }).select('totalPrice')
+      const totalSpent = orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0)
+      
+      return {
+        ...this.sanitizeUser(user),
+        totalOrders,
+        totalSpent
+      }
+    }))
+
     // Đếm tổng số user
     const total = await User.countDocuments(query)
 
     return {
-      users: users.map(user => this.sanitizeUser(user)),
+      users: usersWithStats,
       pagination: {
         page,
         limit,
