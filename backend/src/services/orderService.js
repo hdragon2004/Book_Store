@@ -4,6 +4,7 @@ import Book from '~/models/bookModel'
 import User from '~/models/userModel'
 import Address from '~/models/addressModel'
 import Cart from '~/models/cartModel'
+import ShippingProvider from '~/models/shippingProviderModel'
 import { AppError } from '~/utils/AppError'
 import voucherService from '~/services/voucherService'
 import { addOrderConfirmationJob } from '~/queue/emailQueue'
@@ -18,7 +19,7 @@ class OrderService {
    * Tạo đơn hàng mới với địa chỉ đã lưu
    */
   async createOrder(orderData) {
-    const { userId, items, shippingAddressId, paymentMethod, note, voucherCode } = orderData
+    const { userId, items, shippingAddressId, shippingProviderId, paymentMethod, note, voucherCode } = orderData
 
     // Kiểm tra items không rỗng
     if (!items || items.length === 0) {
@@ -101,15 +102,41 @@ class OrderService {
     // Tạo mã đơn hàng
     const orderCode = await this.generateOrderCode()
 
+    // Lấy thông tin đơn vị giao hàng được chọn
+    let selectedProvider = null
+    let shippingFee = 0
+
+    if (!shippingProviderId) {
+      throw new AppError('Shipping provider is required', 400)
+    }
+
+    // Kiểm tra đơn vị vận chuyển được chọn
+    selectedProvider = await ShippingProvider.findOne({
+      _id: shippingProviderId,
+      active: true,
+      isDeleted: false
+    })
+    
+    if (!selectedProvider) {
+      throw new AppError('Selected shipping provider not found or inactive', 400)
+    }
+    
+    shippingFee = selectedProvider.baseFee
+
+    // Cập nhật tổng tiền bao gồm phí ship
+    const finalAmountWithShipping = finalAmount + shippingFee
+
     // Tạo đơn hàng
     const order = await Order.create({
       orderCode,
       userId,
-      totalPrice: finalAmount,
+      totalPrice: finalAmountWithShipping,
       originalAmount: totalAmount,
       discountAmount,
       voucherId,
       shippingAddressId,
+      shippingProvider: shippingProviderId,
+      shippingFee,
       paymentMethod: paymentMethod || 'cod',
       status: 'pending',
       note
@@ -177,10 +204,11 @@ class OrderService {
    */
   async sendOrderConfirmationEmail(order) {
     try {
-      // Lấy order với thông tin user và địa chỉ
+      // Lấy order với thông tin user, địa chỉ và đơn vị giao hàng
       const orderWithDetails = await Order.findById(order._id)
         .populate('userId', 'name email')
         .populate('shippingAddressId', 'name phone address ward district city')
+        .populate('shippingProvider', 'name code baseFee estimatedTime')
 
       if (!orderWithDetails) {
         throw new Error('Order not found')
@@ -213,6 +241,14 @@ class OrderService {
           city: orderWithDetails.shippingAddressId?.city
         },
         createdAt: orderWithDetails.createdAt,
+        shippingProvider: orderWithDetails.shippingProvider ? {
+          _id: orderWithDetails.shippingProvider._id,
+          name: orderWithDetails.shippingProvider.name,
+          code: orderWithDetails.shippingProvider.code,
+          baseFee: orderWithDetails.shippingProvider.baseFee,
+          estimatedTime: orderWithDetails.shippingProvider.estimatedTime
+        } : null,
+        shippingFee: orderWithDetails.shippingFee,
         orderItems: orderItems.map(item => ({
           _id: item._id,
           quantity: item.quantity,
@@ -800,6 +836,63 @@ class OrderService {
       }
 
       await book.save()
+    }
+  }
+
+  /**
+   * Chọn đơn vị giao hàng thông minh dựa trên địa chỉ và giá trị đơn hàng
+   */
+  async selectShippingProvider(shippingAddress, orderAmount) {
+    try {
+      // Lấy tất cả đơn vị giao hàng đang hoạt động
+      const activeProviders = await ShippingProvider.find({ 
+        active: true, 
+        isDeleted: false 
+      }).sort({ baseFee: 1 }) // Sắp xếp theo phí giao hàng tăng dần
+
+      if (activeProviders.length === 0) {
+        console.log('⚠️ Không có đơn vị giao hàng nào đang hoạt động')
+        return null
+      }
+
+      // Logic chọn đơn vị giao hàng dựa trên các tiêu chí:
+      
+      // 1. Nếu đơn hàng có giá trị cao (> 500,000 VND), ưu tiên đơn vị có thời gian giao nhanh
+      if (orderAmount > 500000) {
+        const fastProviders = activeProviders.filter(p => 
+          p.estimatedTime && p.estimatedTime.includes('1-2')
+        )
+        if (fastProviders.length > 0) {
+          console.log(`🚀 Chọn đơn vị giao hàng nhanh cho đơn hàng giá trị cao: ${fastProviders[0].name}`)
+          return fastProviders[0]
+        }
+      }
+
+      // 2. Nếu đơn hàng có giá trị trung bình (100,000 - 500,000 VND), chọn đơn vị cân bằng
+      if (orderAmount >= 100000 && orderAmount <= 500000) {
+        const balancedProviders = activeProviders.filter(p => 
+          p.estimatedTime && (p.estimatedTime.includes('2-3') || p.estimatedTime.includes('2-4'))
+        )
+        if (balancedProviders.length > 0) {
+          console.log(`⚖️ Chọn đơn vị giao hàng cân bằng cho đơn hàng trung bình: ${balancedProviders[0].name}`)
+          return balancedProviders[0]
+        }
+      }
+
+      // 3. Nếu đơn hàng có giá trị thấp (< 100,000 VND), chọn đơn vị có phí giao hàng thấp nhất
+      if (orderAmount < 100000) {
+        console.log(`💰 Chọn đơn vị giao hàng tiết kiệm cho đơn hàng giá trị thấp: ${activeProviders[0].name}`)
+        return activeProviders[0]
+      }
+
+      // 4. Mặc định: chọn đơn vị đầu tiên (có phí giao hàng thấp nhất)
+      console.log(`📦 Chọn đơn vị giao hàng mặc định: ${activeProviders[0].name}`)
+      return activeProviders[0]
+
+    } catch (error) {
+      console.error('❌ Lỗi khi chọn đơn vị giao hàng:', error)
+      // Fallback: chọn đơn vị mặc định
+      return await ShippingProvider.getDefaultProvider()
     }
   }
 }

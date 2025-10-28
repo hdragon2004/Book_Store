@@ -85,7 +85,7 @@ export const emailService = {
   // Send order confirmation email
   sendOrderConfirmationEmail: async (orderData) => {
     try {
-      console.log('📧 sendOrderConfirmationEmail called with:', orderData)
+      // console.log('📧 sendOrderConfirmationEmail called with:', orderData)
       
       if (!orderData) {
         console.error('❌ No orderData provided')
@@ -102,15 +102,15 @@ export const emailService = {
         return
       }
 
-      const transporter = createTransporter()
+    const transporter = createTransporter()
       
       if (!transporter) {
         console.error('❌ SMTP transporter not available')
         return
       }
 
-      const template = loadTemplate('orderConfirmation')
-      
+    const template = loadTemplate('orderConfirmation')
+    
       let html
       if (template) {
         html = template({
@@ -165,11 +165,14 @@ export const emailService = {
                 <p><strong>Mã đơn hàng:</strong> ${orderData.orderCode}</p>
                 <p><strong>Ngày đặt:</strong> ${new Date(orderData.createdAt).toLocaleDateString('vi-VN')} lúc ${new Date(orderData.createdAt).toLocaleTimeString('vi-VN')}</p>
                 <p><strong>Trạng thái:</strong> ${orderData.status === 'pending' ? 'Chờ xử lý' : orderData.status}</p>
+                ${orderData.shippingProvider ? `<p><strong>Đơn vị giao hàng:</strong> ${orderData.shippingProvider.name || 'N/A'}</p>` : ''}
+                ${orderData.shippingFee > 0 ? `<p><strong>Phí giao hàng:</strong> ${orderData.shippingFee.toLocaleString('vi-VN')} ₫</p>` : ''}
                 
                 <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 15px;">
                   <h4 style="margin: 0 0 10px 0; color: #2c3e50;">💰 Chi tiết thanh toán</h4>
                   ${orderData.originalAmount !== orderData.totalPrice ? `<p style="margin: 5px 0;"><strong>Tổng giá trị sản phẩm:</strong> ${orderData.originalAmount?.toLocaleString('vi-VN')} ₫</p>` : ''}
                   ${orderData.discountAmount > 0 ? `<p style="margin: 5px 0; color: #27ae60;"><strong>Giảm giá:</strong> -${orderData.discountAmount?.toLocaleString('vi-VN')} ₫</p>` : ''}
+                  ${orderData.shippingFee > 0 ? `<p style="margin: 5px 0;"><strong>Phí giao hàng:</strong> ${orderData.shippingFee.toLocaleString('vi-VN')} ₫</p>` : ''}
                   <hr style="margin: 10px 0; border: none; border-top: 1px solid #ddd;">
                   <p style="margin: 5px 0; font-size: 18px;"><strong>Tổng thanh toán:</strong> <span style="color: #e74c3c; font-weight: bold;">${orderData.totalPrice?.toLocaleString('vi-VN')} ₫</span></p>
                 </div>
@@ -207,8 +210,8 @@ export const emailService = {
         from: `"BookStore Team" <${process.env.SMTP_USER}>`,
         to: orderData.userId.email,
         subject: `✅ Xác nhận đơn hàng #${orderData.orderCode} - BookStore`,
-        html
-      })
+      html
+    })
 
       console.log('✅ Order confirmation email sent successfully to:', orderData.userId.email)
       return { success: true, messageId: result.messageId }

@@ -39,6 +39,7 @@ import CreateVouchersPage from '../pages/admin/vouchers/CreateVouchersPage';
 import UpdateVouchersPage from '../pages/admin/vouchers/UpdateVouchersPage';
 import ViewVouchersPage from '../pages/admin/vouchers/ViewVouchersPage';
 import ChatsPage from '../pages/admin/chats/ChatsPage';
+import ShippingProvidersPage from '../pages/admin/shipping/ShippingProvidersPage';
 import { useAuth } from '../contexts/AuthContext';
 
 // Authentication check using AuthContext
@@ -404,6 +405,16 @@ const AppRoutes = () => {
           <AdminRoute>
             <AdminLayout>
               <ChatsPage />
+            </AdminLayout>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/shipping-providers"
+        element={
+          <AdminRoute>
+            <AdminLayout>
+              <ShippingProvidersPage />
             </AdminLayout>
           </AdminRoute>
         }

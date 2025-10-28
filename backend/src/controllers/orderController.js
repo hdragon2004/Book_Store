@@ -15,7 +15,7 @@ import orderService from '~/services/orderService'
 
 // Tạo đơn hàng mới với địa chỉ đã lưu
 export const createOrder = asyncHandler(async (req, res) => {
-  const { shippingAddressId, paymentMethod, voucherCode, items, note } = req.body
+  const { shippingAddressId, shippingProviderId, paymentMethod, voucherCode, items, note } = req.body
   const userId = req.user._id
 
   // Creating order
@@ -30,11 +30,17 @@ export const createOrder = asyncHandler(async (req, res) => {
     throw new AppError('Shipping address is required', 400)
   }
 
+  // Kiểm tra đơn vị vận chuyển
+  if (!shippingProviderId) {
+    throw new AppError('Shipping provider is required', 400)
+  }
+
   // Gọi service để tạo đơn hàng
   const order = await orderService.createOrder({
     userId,
     items,
     shippingAddressId,
+    shippingProviderId,
     paymentMethod,
     voucherCode,
     note

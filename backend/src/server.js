@@ -5,6 +5,7 @@ import connectDB from '~/config/db'
 import { app, server, socketHandler } from '~/routes/index'
 import memoryQueue from '~/queue/memoryQueue'
 import Role from '~/models/roleModel'
+import { startAllCronJobs } from '~/jobs/orderStatusJob'
 
 /**
  * Ensure default roles exist in database
@@ -50,6 +51,9 @@ const START_SERVER = async () => {
 
     // Start memory queue
     memoryQueue.startProcessing()
+
+    // Start cron jobs
+    startAllCronJobs()
 
     // Start server
     server.listen(config.port, config.host, () => {

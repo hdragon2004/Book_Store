@@ -166,7 +166,7 @@ export const emailWorker = {
     const { type, data } = jobData
 
     try {
-      console.log(`📧 Processing email job: ${type}`, { data: JSON.stringify(data, null, 2) })
+      // console.log(`📧 Processing email job: ${type}`, { data: JSON.stringify(data, null, 2) })
 
       switch (type) {
         case EMAIL_JOB_TYPES.SEND_VERIFICATION_EMAIL:
@@ -245,7 +245,7 @@ export const emailWorker = {
           throw new Error(`Unknown email job type: ${type}`)
       }
 
-      console.log(`✅ Email job completed successfully: ${type}`)
+      // console.log(`✅ Email job completed successfully: ${type}`)
     } catch (error) {
       console.error(`❌ Email job failed: ${type}`, error.message)
       console.error('❌ Job data:', JSON.stringify(data, null, 2))

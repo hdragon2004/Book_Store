@@ -28,6 +28,7 @@ import downloadRoutes from './downloadRoutes'
 import libraryRoutes from './libraryRoutes'
 import chatRoutes from './chatRoutes'
 import addressRoutes from './addressRoutes'
+import shippingProviderRoutes from './shippingProviderRoutes'
 
 /**
  * Express App Configuration
@@ -142,6 +143,7 @@ app.use('/api/download', downloadRoutes)
 app.use('/api/library', libraryRoutes)
 app.use('/api/chat', chatRoutes)
 app.use('/api/addresses', addressRoutes)
+app.use('/api/shipping-providers', shippingProviderRoutes)
 
 // 404 handler
 app.use('*', (req, res) => {

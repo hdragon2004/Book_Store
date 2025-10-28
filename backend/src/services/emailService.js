@@ -106,11 +106,11 @@ const createOrderConfirmationTemplate = (order) => {
 
 // Template cho email thông báo giao hàng
 const createShippingNotificationTemplate = (order) => {
-  const { orderCode, shippingAddress, orderItems } = order
+  const { orderCode, shippingAddressId, orderItems, shippingProvider } = order
   
-  const itemsList = orderItems.map(item => 
-    `• ${item.bookId.title} - ${item.quantity} cuốn`
-  ).join('\n')
+  const itemsList = orderItems && orderItems.length > 0 ? orderItems.map(item => 
+    `• ${item.bookId?.title || 'Sách'} - ${item.quantity || 1} cuốn`
+  ).join('\n') : 'Không có sản phẩm nào'
 
   return `
     <!DOCTYPE html>
@@ -144,11 +144,13 @@ const createShippingNotificationTemplate = (order) => {
           <p><strong>Người nhận:</strong> ${shippingAddressId?.name || 'N/A'}</p>
           <p><strong>Số điện thoại:</strong> ${shippingAddressId?.phone || 'N/A'}</p>
           <p><strong>Địa chỉ:</strong> ${shippingAddressId?.address || 'N/A'}, ${shippingAddressId?.ward || 'N/A'}, ${shippingAddressId?.district || 'N/A'}, ${shippingAddressId?.city || 'N/A'}</p>
+          ${shippingProvider ? `<p><strong>Đơn vị giao hàng:</strong> ${shippingProvider.name || 'N/A'}</p>` : ''}
+          ${shippingProvider?.estimatedTime ? `<p><strong>Thời gian giao dự kiến:</strong> ${shippingProvider.estimatedTime}</p>` : ''}
         </div>
 
         <div style="text-align: center; margin-top: 30px; padding: 20px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
           <p style="margin: 0; color: #856404; font-weight: bold;">⚠️ Vui lòng chuẩn bị nhận hàng!</p>
-          <p style="margin: 10px 0 0 0; color: #856404;">Đơn hàng sẽ được giao trong 1-3 ngày làm việc.</p>
+          <p style="margin: 10px 0 0 0; color: #856404;">Đơn hàng sẽ được giao trong ${shippingProvider?.estimatedTime || '1-3 ngày làm việc'}.</p>
         </div>
       </div>
       
@@ -162,7 +164,7 @@ const createShippingNotificationTemplate = (order) => {
 }
 
 // Gửi email xác nhận đơn hàng
-export const sendOrderConfirmationEmail = async (orderData) => {
+const sendOrderConfirmationEmail = async (orderData) => {
   try {
     console.log('📧 Email service received orderData:', orderData)
     console.log('📧 OrderData type:', typeof orderData)
@@ -188,7 +190,7 @@ export const sendOrderConfirmationEmail = async (orderData) => {
     }
 
     console.log('📧 Processing email for orderId:', orderId)
-    console.log('📧 Order items count:', orderData.orderItems?.length || 0)
+    // console.log('📧 Order items count:', orderData.orderItems?.length || 0)
 
     const transporter = createTransporter()
     
@@ -200,7 +202,7 @@ export const sendOrderConfirmationEmail = async (orderData) => {
     }
 
     const result = await transporter.sendMail(mailOptions)
-    console.log('✅ Order confirmation email sent successfully to:', orderData.userId.email)
+    // console.log('✅ Order confirmation email sent successfully to:', orderData.userId.email)
     return result
   } catch (error) {
     console.error('❌ Failed to send order confirmation email:', error)
@@ -209,7 +211,7 @@ export const sendOrderConfirmationEmail = async (orderData) => {
 }
 
 // Gửi email thông báo giao hàng
-export const sendShippingNotificationEmail = async (order) => {
+const sendShippingNotificationEmail = async (order) => {
   try {
     const transporter = createTransporter()
     
@@ -230,11 +232,6 @@ export const sendShippingNotificationEmail = async (order) => {
 
 // Export các functions
 export {
-  sendOrderStatusUpdate,
-  sendWelcomeEmail,
-  sendNewsletter,
-  sendDigitalBooks,
-  sendOTPVerification,
-  sendPasswordReset,
-  sendShippingNotification
+  sendOrderConfirmationEmail,
+  sendShippingNotificationEmail
 }

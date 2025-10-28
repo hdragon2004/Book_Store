@@ -45,6 +45,15 @@ const orderSchema = new mongoose.Schema({
     ref: 'Address',
     required: [true, 'Shipping address is required']
   },
+  shippingProvider: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ShippingProvider'
+  },
+  shippingFee: {
+    type: Number,
+    default: 0,
+    min: [0, 'Shipping fee cannot be negative']
+  },
   createdAt: {
     type: Date,
     default: Date.now

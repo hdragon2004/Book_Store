@@ -21,6 +21,7 @@ import Cart from '~/models/cartModel'
 import UserBook from '~/models/userBookModel'
 import EmailVerification from '~/models/emailVerificationModel'
 import PasswordReset from '~/models/passwordResetModel'
+import ShippingProvider from '~/models/shippingProviderModel'
 
 // Connect to database
 const connectDB = async () => {
@@ -407,6 +408,75 @@ const sampleUserBooks = [
   }
 ]
 
+// Shipping Provider seed data
+const sampleShippingProviders = [
+  {
+    name: 'Giao Hàng Nhanh',
+    code: 'GHN',
+    baseFee: 25000,
+    estimatedTime: '2-3 ngày',
+    description: 'Dịch vụ giao hàng nhanh chóng và tin cậy',
+    contactInfo: {
+      phone: '1900 1234',
+      email: 'support@ghn.vn',
+      website: 'https://ghn.vn'
+    },
+    active: true
+  },
+  {
+    name: 'Giao Hàng Tiết Kiệm',
+    code: 'GHTK',
+    baseFee: 20000,
+    estimatedTime: '3-5 ngày',
+    description: 'Dịch vụ giao hàng tiết kiệm chi phí',
+    contactInfo: {
+      phone: '1900 5678',
+      email: 'support@ghtk.vn',
+      website: 'https://ghtk.vn'
+    },
+    active: true
+  },
+  {
+    name: 'Vietnam Post',
+    code: 'VNPOST',
+    baseFee: 15000,
+    estimatedTime: '5-7 ngày',
+    description: 'Dịch vụ bưu điện quốc gia',
+    contactInfo: {
+      phone: '1900 9012',
+      email: 'support@vnpost.vn',
+      website: 'https://vnpost.vn'
+    },
+    active: true
+  },
+  {
+    name: 'J&T Express',
+    code: 'JNT',
+    baseFee: 22000,
+    estimatedTime: '2-4 ngày',
+    description: 'Dịch vụ giao hàng express',
+    contactInfo: {
+      phone: '1900 3456',
+      email: 'support@jtexpress.vn',
+      website: 'https://jtexpress.vn'
+    },
+    active: true
+  },
+  {
+    name: 'Ninja Van',
+    code: 'NINJA',
+    baseFee: 30000,
+    estimatedTime: '1-2 ngày',
+    description: 'Dịch vụ giao hàng siêu tốc',
+    contactInfo: {
+      phone: '1900 7890',
+      email: 'support@ninjavan.vn',
+      website: 'https://ninjavan.vn'
+    },
+    active: false
+  }
+]
+
 // Sample messages for chat system
 const sampleMessages = [
   {
@@ -495,6 +565,7 @@ const seedDatabase = async () => {
     await UserBook.deleteMany({})
     await EmailVerification.deleteMany({})
     await PasswordReset.deleteMany({})
+    await ShippingProvider.deleteMany({})
     console.log('🧹 Cleared existing data')
     
     // Wait a bit to ensure deletion is complete
@@ -538,6 +609,10 @@ const seedDatabase = async () => {
     const categories = await Category.insertMany(sampleCategories)
     console.log('📚 Created categories:', categories.length)
 
+    // Create shipping providers
+    const shippingProviders = await ShippingProvider.insertMany(sampleShippingProviders)
+    console.log('🚚 Created shipping providers:', shippingProviders.length)
+
     // Create books with categories (giữ nguyên logic)
     const books = []
     for (let i = 0; i < sampleBooks.length; i++) {
@@ -552,11 +627,15 @@ const seedDatabase = async () => {
 
     // Create orders
     const orders = []
+    const defaultProvider = shippingProviders.find(p => p.active) // Lấy provider đầu tiên đang active
     for (let i = 0; i < sampleOrders.length; i++) {
       const order = await Order.create({
         ...sampleOrders[i],
         userId: users[1]._id, // Regular user
-        shippingAddressId: addresses[i % addresses.length]._id // Assign address ID
+        shippingAddressId: addresses[i % addresses.length]._id, // Assign address ID
+        shippingProvider: defaultProvider ? defaultProvider._id : null,
+        shippingFee: defaultProvider ? defaultProvider.baseFee : 0,
+        totalPrice: sampleOrders[i].totalPrice + (defaultProvider ? defaultProvider.baseFee : 0) // Cộng phí ship vào tổng tiền
       })
       orders.push(order)
       console.log(`🛒 Created order ${i + 1}: ${order.orderCode} - ${order.status} - ${order.totalPrice.toLocaleString('vi-VN')} ₫`)
@@ -706,6 +785,7 @@ const seedDatabase = async () => {
     console.log(`💬 Messages: ${messages.length}`)
     console.log(`📧 Email verifications: ${emailVerifications.length}`)
     console.log(`🔐 Password resets: ${passwordResets.length}`)
+    console.log(`🚚 Shipping providers: ${shippingProviders.length}`)
     
     console.log('\n🛒 Order Details:')
     orders.forEach((order, index) => {

@@ -5,6 +5,7 @@ import PageLayout from '../../layouts/PageLayout';
 import QRPaymentModal from '../../components/QRPaymentModal';
 import AddressSelector from '../../components/AddressSelector';
 import VoucherSelector from '../../components/VoucherSelector';
+import ShippingProviderSelector from '../../components/ShippingProviderSelector';
 
 const OrderPage = () => {
   const location = useLocation();
@@ -14,6 +15,8 @@ const OrderPage = () => {
   const [selectedVoucherId, setSelectedVoucherId] = useState('');
   const [appliedVoucher, setAppliedVoucher] = useState(null);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [selectedShippingProvider, setSelectedShippingProvider] = useState(null);
+  const [shippingFee, setShippingFee] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showQRModal, setShowQRModal] = useState(false);
@@ -39,7 +42,7 @@ const OrderPage = () => {
   };
 
   const calculateTotal = () => {
-    return calculateSubtotal() - calculateDiscount();
+    return calculateSubtotal() - calculateDiscount() + shippingFee;
   };
 
   // Xử lý chọn voucher
@@ -53,6 +56,13 @@ const OrderPage = () => {
     }
   };
 
+  // Xử lý chọn đơn vị vận chuyển
+  const handleShippingProviderSelect = (provider) => {
+    console.log('🚚 Selected shipping provider:', provider);
+    setSelectedShippingProvider(provider);
+    setShippingFee(provider ? provider.baseFee : 0);
+  };
+
   // Xử lý tạo đơn hàng
   const handleCreateOrder = async () => {
     // Kiểm tra địa chỉ giao hàng
@@ -61,10 +71,23 @@ const OrderPage = () => {
       return;
     }
 
+    // Kiểm tra đơn vị vận chuyển
+    if (!selectedShippingProvider) {
+      alert('Vui lòng chọn đơn vị vận chuyển');
+      return;
+    }
+
     setLoading(true);
     try {
+      console.log('📦 Creating order with data:', {
+        shippingAddressId: selectedAddressId,
+        shippingProviderId: selectedShippingProvider?._id,
+        selectedShippingProvider: selectedShippingProvider
+      });
+      
       const orderData = {
         shippingAddressId: selectedAddressId,
+        shippingProviderId: selectedShippingProvider._id,
         paymentMethod,
         voucherCode: appliedVoucher ? appliedVoucher.code : null,
         items: selectedItems.map(item => ({
@@ -312,6 +335,12 @@ const OrderPage = () => {
                 window.open('/addresses', '_blank');
               }}
             />
+
+            {/* Shipping Provider Selection */}
+            <ShippingProviderSelector
+              selectedProvider={selectedShippingProvider}
+              onProviderSelect={handleShippingProviderSelect}
+            />
           </div>
           
           {/* Order Summary */}
@@ -332,7 +361,7 @@ const OrderPage = () => {
                 )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">Phí vận chuyển:</span>
-                  <span className="font-medium">0 ₫</span>
+                  <span className="font-medium">{shippingFee.toLocaleString('vi-VN')} ₫</span>
                 </div>
                 <div className="border-t pt-3">
                   <div className="flex justify-between">

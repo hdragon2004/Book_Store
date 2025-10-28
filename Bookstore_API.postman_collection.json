@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Bookstore API - Complete Collection",
-    "description": "Complete API collection for Bookstore Backend with all endpoints",
+    "description": "Complete API collection for Bookstore Backend with all endpoints including Shipping Providers, Addresses, Library, Reports, and Upload functionality",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -48,6 +48,16 @@
     {
       "key": "adminId",
       "value": "68fd02e0f6b95ef719ba0e7a",
+      "type": "string"
+    },
+    {
+      "key": "shippingProviderId",
+      "value": "64f8b1234567890abcdef555",
+      "type": "string"
+    },
+    {
+      "key": "addressId",
+      "value": "64f8b1234567890abcdef444",
       "type": "string"
     }
   ],
@@ -711,7 +721,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"items\": [\n    {\n      \"bookId\": \"{{bookId}}\",\n      \"quantity\": 2,\n      \"price\": 50000\n    }\n  ],\n  \"shippingAddress\": {\n    \"name\": \"Nguyễn Văn A\",\n    \"phone\": \"0123456789\",\n    \"address\": \"123 Đường ABC\",\n    \"city\": \"TP. Hồ Chí Minh\",\n    \"district\": \"Quận 1\",\n    \"ward\": \"Phường Bến Nghé\"\n  },\n  \"paymentMethod\": \"cod\",\n  \"notes\": [\n    {\n      \"message\": \"Giao hàng vào buổi chiều\",\n      \"type\": \"note\"\n    }\n  ]\n}"
+              "raw": "{\n  \"items\": [\n    {\n      \"bookId\": \"{{bookId}}\",\n      \"quantity\": 2\n    }\n  ],\n  \"shippingAddressId\": \"{{addressId}}\",\n  \"shippingProviderId\": \"{{shippingProviderId}}\",\n  \"paymentMethod\": \"cod\",\n  \"voucherCode\": null\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/orders",
@@ -2013,6 +2023,554 @@
               "raw": "{{baseUrl}}/api/chat/messages",
               "host": ["{{baseUrl}}"],
               "path": ["api", "chat", "messages"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Shipping Providers",
+      "item": [
+        {
+          "name": "Get All Shipping Providers (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/shipping-providers?page=1&limit=10&active=true&search=GHN",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shipping-providers"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "active",
+                  "value": "true"
+                },
+                {
+                  "key": "search",
+                  "value": "GHN"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Shipping Provider by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/shipping-providers/{{shippingProviderId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shipping-providers", "{{shippingProviderId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Shipping Provider (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Giao Hàng Nhanh\",\n  \"code\": \"GHN\",\n  \"baseFee\": 25000,\n  \"estimatedTime\": \"2-3 ngày\",\n  \"description\": \"Dịch vụ giao hàng nhanh chóng và đáng tin cậy\",\n  \"contactInfo\": {\n    \"phone\": \"1900-1234\",\n    \"email\": \"support@ghn.vn\",\n    \"website\": \"https://ghn.vn\"\n  },\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/shipping-providers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shipping-providers"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Shipping Provider (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Giao Hàng Nhanh (Updated)\",\n  \"baseFee\": 30000,\n  \"estimatedTime\": \"1-2 ngày\",\n  \"description\": \"Dịch vụ giao hàng siêu nhanh\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/shipping-providers/{{shippingProviderId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shipping-providers", "{{shippingProviderId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Shipping Provider (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/shipping-providers/{{shippingProviderId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shipping-providers", "{{shippingProviderId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Restore Shipping Provider (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/shipping-providers/{{shippingProviderId}}/restore",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shipping-providers", "{{shippingProviderId}}", "restore"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Active Shipping Providers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/shipping-providers/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shipping-providers", "active"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Simulate Shipping Selection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderAmount\": 150000,\n  \"shippingAddress\": {\n    \"city\": \"TP. Hồ Chí Minh\",\n    \"district\": \"Quận 1\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/shipping-providers/simulate-selection",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shipping-providers", "simulate-selection"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Addresses",
+      "item": [
+        {
+          "name": "Get User Addresses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/addresses",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "addresses"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Address by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/addresses/{{addressId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "addresses", "{{addressId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Address",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"phone\": \"0123456789\",\n  \"address\": \"123 Đường ABC\",\n  \"city\": \"TP. Hồ Chí Minh\",\n  \"district\": \"Quận 1\",\n  \"ward\": \"Phường Bến Nghé\",\n  \"isDefault\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/addresses",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "addresses"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Address",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nguyễn Văn A (Updated)\",\n  \"phone\": \"0987654321\",\n  \"address\": \"456 Đường XYZ\",\n  \"city\": \"TP. Hồ Chí Minh\",\n  \"district\": \"Quận 2\",\n  \"ward\": \"Phường Thủ Thiêm\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/addresses/{{addressId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "addresses", "{{addressId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Address",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/addresses/{{addressId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "addresses", "{{addressId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Set Default Address",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/addresses/64f8b1234567890abcdef444/default",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "addresses", "64f8b1234567890abcdef444", "default"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Library",
+      "item": [
+        {
+          "name": "Get User Library",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/library?page=1&limit=10&bookType=digital",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "library"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "bookType",
+                  "value": "digital"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Download Digital Book",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/library/download/{{bookId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "library", "download", "{{bookId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Get Sales Report (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/sales?startDate=2024-01-01&endDate=2024-12-31&groupBy=month",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "sales"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31"
+                },
+                {
+                  "key": "groupBy",
+                  "value": "month"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Orders Report (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/orders?startDate=2024-01-01&endDate=2024-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "orders"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Users Report (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/users?startDate=2024-01-01&endDate=2024-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "users"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Upload",
+      "item": [
+        {
+          "name": "Upload Avatar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "avatar",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/upload/avatar",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "upload", "avatar"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Book Image (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/upload/book-image",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "upload", "book-image"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Chat Image",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/upload/chat-image",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "upload", "chat-image"]
             }
           },
           "response": []

@@ -56,6 +56,7 @@ const AdminLayout = ({ children }) => {
     { name: 'Thanh toán', path: '/admin/payments', icon: '💳' },
     { name: 'Người dùng', path: '/admin/users', icon: '👥' },
     { name: 'Voucher', path: '/admin/vouchers', icon: '🎟️' },
+    { name: 'Vận chuyển', path: '/admin/shipping-providers', icon: '🚚' },
     { name: 'Tin nhắn', path: '/admin/chat', icon: '💬' },
     { name: 'Báo cáo', path: '/admin/reports', icon: '📈' },
   ];
@@ -167,6 +168,7 @@ const AdminLayout = ({ children }) => {
                   {location.pathname === '/admin/vouchers' && 'Quản lý voucher'}
                   {location.pathname === '/admin/vouchers/create' && 'Tạo voucher mới'}
                   {location.pathname.startsWith('/admin/vouchers/update/') && 'Cập nhật voucher'}
+                  {location.pathname === '/admin/shipping-providers' && 'Quản lý đơn vị vận chuyển'}
                   {location.pathname === '/admin/chat' && 'Tin nhắn'}
                 </h1>
                 <p className="text-sm text-gray-500">
@@ -186,6 +188,7 @@ const AdminLayout = ({ children }) => {
                   {location.pathname === '/admin/vouchers' && 'Quản lý mã giảm giá và voucher'}
                   {location.pathname === '/admin/vouchers/create' && 'Tạo mã giảm giá mới cho khách hàng'}
                   {location.pathname.startsWith('/admin/vouchers/update/') && 'Chỉnh sửa thông tin voucher'}
+                  {location.pathname === '/admin/shipping-providers' && 'Quản lý các đơn vị vận chuyển và phí giao hàng'}
                   {location.pathname === '/admin/chat' && 'Quản lý tin nhắn và trò chuyện'}
                 </p>
               </div>
