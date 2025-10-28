@@ -9,57 +9,63 @@ import OrderItem from '~/models/orderItemModel'
  * - Nếu đã cancelled hoặc digital_delivered thì bỏ qua
  */
 export const startOrderStatusJob = () => {
-  cron.schedule('* * * * *', async () => {
-    // console.log('🕒 [CRON] Kiểm tra và cập nhật trạng thái đơn hàng...')
-
+  cron.schedule('*/2 * * * *', async () => { // Chạy mỗi 2 phút thay vì mỗi phút
     try {
+      // Chỉ lấy 5 đơn hàng mỗi lần để tránh block
       const orders = await Order.find({
         status: { $in: ['pending', 'confirmed', 'shipped'] },
         isDeleted: false
-      })
+      }).limit(5).lean() // Sử dụng lean() để tăng performance
 
-      // console.log(`📋 Tìm thấy ${orders.length} đơn hàng cần cập nhật`)
+      if (orders.length === 0) return
+
+      // Cập nhật batch để tăng performance
+      const bulkOps = []
+      const now = new Date()
 
       for (const order of orders) {
         let nextStatus = null
-        const now = new Date()
+        let updateData = { updatedAt: now }
 
         switch (order.status) {
           case 'pending':
             nextStatus = 'confirmed'
-            order.confirmedAt = now
+            updateData.confirmedAt = now
             break
           case 'confirmed':
             nextStatus = 'shipped'
-            order.shippedAt = now
+            updateData.shippedAt = now
             break
           case 'shipped':
             nextStatus = 'delivered'
-            order.deliveredAt = now
-            order.paymentStatus = 'completed'
+            updateData.deliveredAt = now
+            updateData.paymentStatus = 'completed'
             break
           default:
-            break
+            continue
         }
 
         if (nextStatus) {
-          order.status = nextStatus
-          order.updatedAt = now
-          await order.save()
-          // console.log(`✅ Đơn hàng ${order.orderCode} chuyển sang trạng thái: ${nextStatus}`)
+          updateData.status = nextStatus
+          bulkOps.push({
+            updateOne: {
+              filter: { _id: order._id },
+              update: updateData
+            }
+          })
         }
       }
 
-      // if (orders.length === 0) {
-      //   console.log('ℹ️ Không có đơn hàng nào cần cập nhật')
-      // }
-
+      if (bulkOps.length > 0) {
+        await Order.bulkWrite(bulkOps)
+      }
     } catch (err) {
       console.error('❌ [CRON ERROR] Lỗi cập nhật trạng thái đơn hàng:', err.message)
     }
+  }, {
+    scheduled: true,
+    timezone: 'Asia/Ho_Chi_Minh'
   })
-
-  // console.log('🚀 [CRON] Order status job đã được khởi động - chạy mỗi phút')
 }
 
 /**
@@ -105,52 +111,46 @@ export const startOrderCancellationJob = () => {
  * Job: Gửi email thông báo khi đơn hàng chuyển sang shipped
  */
 export const startShippingNotificationJob = () => {
-  cron.schedule('* * * * *', async () => {
-    // console.log('🕒 [CRON] Kiểm tra đơn hàng mới shipped để gửi thông báo...')
-
+  cron.schedule('*/3 * * * *', async () => { // Chạy mỗi 3 phút thay vì mỗi phút
     try {
-      const oneMinuteAgo = new Date(Date.now() - 60 * 1000)
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000) // Tăng thời gian window
       
       const orders = await Order.find({
         status: 'shipped',
-        shippedAt: { $gte: oneMinuteAgo },
+        shippedAt: { $gte: fiveMinutesAgo },
         isDeleted: false
       })
+      .limit(3) // Chỉ xử lý 3 đơn hàng mỗi lần
       .populate('userId', 'name email')
       .populate('shippingAddressId')
       .populate('shippingProvider')
 
-      // console.log(`📋 Tìm thấy ${orders.length} đơn hàng mới shipped`)
+      if (orders.length === 0) return
 
       for (const order of orders) {
-        // Query orderItems riêng biệt
-        const orderItems = await OrderItem.find({ orderId: order._id })
-          .populate('bookId', 'title author')
-        
-        // Thêm orderItems vào order object
-        order.orderItems = orderItems
-
-        // Import email service dynamically để tránh circular dependency
-        const { sendShippingNotificationEmail } = await import('~/services/emailService')
-        
         try {
+          // Query orderItems riêng biệt
+          const orderItems = await OrderItem.find({ orderId: order._id })
+            .populate('bookId', 'title author')
+          
+          // Thêm orderItems vào order object
+          order.orderItems = orderItems
+
+          // Import email service dynamically để tránh circular dependency
+          const { sendShippingNotificationEmail } = await import('~/services/emailService')
+          
           await sendShippingNotificationEmail(order)
-          // console.log(`📧 Đã gửi email thông báo giao hàng cho đơn hàng ${order.orderCode}`)
         } catch (emailError) {
           console.error(`❌ Lỗi gửi email cho đơn hàng ${order.orderCode}:`, emailError.message)
         }
       }
-
-      // if (orders.length === 0) {
-      //   console.log('ℹ️ Không có đơn hàng nào cần gửi thông báo giao hàng')
-      // }
-
     } catch (err) {
       console.error('❌ [CRON ERROR] Lỗi gửi thông báo giao hàng:', err.message)
     }
+  }, {
+    scheduled: true,
+    timezone: 'Asia/Ho_Chi_Minh'
   })
-
-  // console.log('🚀 [CRON] Shipping notification job đã được khởi động - chạy mỗi phút')
 }
 
 /**

@@ -17,10 +17,12 @@ const PaymentsPage = () => {
           search: searchTerm,
           status: filterStatus !== 'all' ? filterStatus : undefined
         });
-        setPayments(response?.data?.data?.payments || response?.data?.payments || response?.data || []);
+        
+        const paymentsData = response?.data?.data?.payments || response?.data?.payments || response?.data || [];
+        setPayments(paymentsData);
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching payments:', error);
+        console.error('❌ Error fetching payments:', error);
         setLoading(false);
       }
     };
@@ -43,6 +45,7 @@ const PaymentsPage = () => {
       case 'completed': return 'bg-green-100 text-green-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'failed': return 'bg-red-100 text-red-800';
+      case 'refunded': return 'bg-blue-100 text-blue-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -52,12 +55,14 @@ const PaymentsPage = () => {
       case 'completed': return 'Hoàn thành';
       case 'pending': return 'Chờ xử lý';
       case 'failed': return 'Thất bại';
+      case 'refunded': return 'Đã hoàn tiền';
       default: return status;
     }
   };
 
   const filteredPayments = Array.isArray(payments) ? payments.filter(payment => {
-    const matchesSearch = payment?.transactionId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = payment?.transactionCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         payment?.transactionId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          payment?.orderId?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || payment?.status === filterStatus;
     return matchesSearch && matchesStatus;
@@ -106,6 +111,7 @@ const PaymentsPage = () => {
               <option value="completed">Hoàn thành</option>
               <option value="pending">Chờ xử lý</option>
               <option value="failed">Thất bại</option>
+              <option value="refunded">Đã hoàn tiền</option>
             </select>
           </div>
           <div className="flex items-end">
@@ -131,7 +137,7 @@ const PaymentsPage = () => {
                   Mã giao dịch
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Khách hàng
+                  Đơn hàng
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Số tiền
@@ -150,19 +156,29 @@ const PaymentsPage = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {Array.isArray(currentPayments) && currentPayments.length > 0 ? (
                 currentPayments.map((payment) => (
-                  <tr key={payment.id} className="hover:bg-gray-50">
+                  <tr key={payment._id || payment.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{payment.transactionId}</div>
-                      <div className="text-sm text-gray-500">{payment.orderId}</div>
+                      <div className="text-sm font-medium text-gray-900">{payment.transactionCode || payment.transactionId || 'N/A'}</div>
+                      <div className="text-sm text-gray-500">{payment.description || 'Không có mô tả'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      N/A
+                      {payment.orderId ? (
+                        <span className="text-blue-600 hover:text-blue-800 cursor-pointer">
+                          {typeof payment.orderId === 'object' ? payment.orderId.orderCode || payment.orderId._id : payment.orderId}
+                        </span>
+                      ) : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(payment.amount)}
+                      {formatCurrency(payment.amount || 0)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {payment.method}
+                      <span className="capitalize">
+                        {payment.method === 'cod' ? 'Thanh toán khi nhận hàng' :
+                         payment.method === 'vnpay' ? 'VNPay' :
+                         payment.method === 'momo' ? 'MoMo' :
+                         payment.method === 'bank_transfer' ? 'Chuyển khoản' :
+                         payment.method || 'N/A'}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(payment.status)}`}>

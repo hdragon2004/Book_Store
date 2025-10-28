@@ -359,32 +359,25 @@ const ChatsPage = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-6 py-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Tin nhắn</h1>
-              <p className="text-gray-600 mt-1">Quản lý tin nhắn và hỗ trợ khách hàng</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-500">
-                {conversations.length} cuộc trò chuyện
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className={`w-3 h-3 rounded-full ${socket?.connected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                <span className="text-sm text-gray-500">
-                  {socket?.connected ? 'Đã kết nối' : 'Mất kết nối'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex h-96">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200"> 
+        <div className="flex h-[87vh]">
           {/* Chat List */}
           <div className="w-1/3 border-r border-gray-200">
             <div className="p-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Cuộc trò chuyện</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-gray-900">Cuộc trò chuyện</h3>
+                <div className="flex items-center space-x-4">
+                  <div className="text-sm text-gray-500">
+                    {conversations.length} cuộc trò chuyện
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-3 h-3 rounded-full ${socket?.connected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <span className="text-sm text-gray-500">
+                      {socket?.connected ? 'Đã kết nối' : 'Mất kết nối'}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="overflow-y-auto">
               {conversations.length === 0 ? (

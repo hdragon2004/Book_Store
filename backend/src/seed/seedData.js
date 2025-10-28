@@ -22,6 +22,7 @@ import UserBook from '~/models/userBookModel'
 import EmailVerification from '~/models/emailVerificationModel'
 import PasswordReset from '~/models/passwordResetModel'
 import ShippingProvider from '~/models/shippingProviderModel'
+import Payment from '~/models/paymentModel'
 
 // Connect to database
 const connectDB = async () => {
@@ -477,6 +478,27 @@ const sampleShippingProviders = [
   }
 ]
 
+// Sample payments data - chỉ 1 payment mẫu
+const samplePayments = [
+  {
+    amount: 250000,
+    method: 'vnpay',
+    status: 'completed',
+    transactionId: 'TXN001',
+    description: 'Thanh toán VNPay cho đơn hàng #ORD001',
+    paymentUrl: 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
+    customerInfo: {
+      ipAddress: '192.168.1.100',
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    },
+    gatewayResponse: {
+      responseCode: '00',
+      message: 'Giao dịch thành công',
+      transactionNo: 'TXN001'
+    }
+  }
+]
+
 // Sample messages for chat system
 const sampleMessages = [
   {
@@ -566,6 +588,7 @@ const seedDatabase = async () => {
     await EmailVerification.deleteMany({})
     await PasswordReset.deleteMany({})
     await ShippingProvider.deleteMany({})
+    await Payment.deleteMany({})
     console.log('🧹 Cleared existing data')
     
     // Wait a bit to ensure deletion is complete
@@ -656,6 +679,18 @@ const seedDatabase = async () => {
       orderItems.push(orderItem)
     }
     console.log('📦 Created order items:', orderItems.length)
+
+    // Create payments
+    const payments = []
+    for (let i = 0; i < samplePayments.length; i++) {
+      const payment = await Payment.create({
+        ...samplePayments[i],
+        orderId: orders[i % orders.length]._id // Link to existing orders
+      })
+      payments.push(payment)
+      console.log(`💳 Created payment ${i + 1}: ${payment.transactionCode} - ${payment.method} - ${payment.status} - ${payment.amount.toLocaleString('vi-VN')} ₫`)
+    }
+    console.log('💳 Total payments created:', payments.length)
 
     // Create favorites
     const favorites = []
@@ -777,6 +812,7 @@ const seedDatabase = async () => {
     console.log(`🏠 Addresses: ${addresses.length}`)
     console.log(`🛒 Orders: ${orders.length}`)
     console.log(`📦 Order items: ${orderItems.length}`)
+    console.log(`💳 Payments: ${payments.length}`)
     console.log(`❤️ Favorites: ${favorites.length}`)
     console.log(`🎫 Vouchers: ${vouchers.length}`)
     console.log(`🎫 Voucher usages: ${voucherUsages.length}`)
@@ -790,6 +826,11 @@ const seedDatabase = async () => {
     console.log('\n🛒 Order Details:')
     orders.forEach((order, index) => {
       console.log(`${index + 1}. ${order.orderCode} - ${order.status} - ${order.totalPrice.toLocaleString('vi-VN')} ₫`)
+    })
+
+    console.log('\n💳 Payment Details:')
+    payments.forEach((payment, index) => {
+      console.log(`${index + 1}. ${payment.transactionCode} - ${payment.method} - ${payment.status} - ${payment.amount.toLocaleString('vi-VN')} ₫`)
     })
 
   } catch (error) {

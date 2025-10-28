@@ -2,6 +2,7 @@ import crypto from 'crypto'
 import axios from 'axios'
 import { config } from '~/config/environment'
 import { AppError } from '~/utils/AppError'
+import Payment from '~/models/paymentModel'
 
 /**
  * Payment Service - Xử lý thanh toán qua VNPay và Momo
@@ -36,13 +37,28 @@ class PaymentService {
         customerInfo
       } = orderData
 
+      // Tạo payment record
+      const payment = new Payment({
+        orderId,
+        amount,
+        method: 'vnpay',
+        status: 'pending',
+        description: orderDescription,
+        customerInfo: {
+          ipAddress: customerInfo.ipAddress || '127.0.0.1',
+          userAgent: customerInfo.userAgent
+        }
+      })
+
+      await payment.save()
+
       const vnp_Params = {
         vnp_Version: '2.1.0',
         vnp_Command: 'pay',
         vnp_TmnCode: this.vnpayConfig.tmnCode,
         vnp_Amount: amount * 100, // VNPay yêu cầu số tiền nhân 100
         vnp_CurrCode: 'VND',
-        vnp_TxnRef: orderId,
+        vnp_TxnRef: payment.transactionCode, // Sử dụng transactionCode thay vì orderId
         vnp_OrderInfo: orderDescription,
         vnp_OrderType: 'other',
         vnp_Locale: 'vn',
@@ -65,11 +81,17 @@ class PaymentService {
 
       const paymentUrl = `${this.vnpayConfig.url}?${querystring}&vnp_SecureHash=${secureHash}`
 
+      // Cập nhật paymentUrl vào payment record
+      payment.paymentUrl = paymentUrl
+      await payment.save()
+
       return {
         success: true,
         paymentUrl,
         orderId,
-        amount
+        amount,
+        transactionCode: payment.transactionCode,
+        paymentId: payment._id
       }
     } catch (error) {
       throw new AppError(`VNPay payment creation failed: ${error.message}`, 500)
@@ -88,6 +110,21 @@ class PaymentService {
         customerInfo
       } = orderData
 
+      // Tạo payment record
+      const payment = new Payment({
+        orderId,
+        amount,
+        method: 'momo',
+        status: 'pending',
+        description: orderDescription,
+        customerInfo: {
+          ipAddress: customerInfo.ipAddress || '127.0.0.1',
+          userAgent: customerInfo.userAgent
+        }
+      })
+
+      await payment.save()
+
       const requestId = `${Date.now()}`
       const orderInfo = orderDescription
       const redirectUrl = config.MOMO_RETURN_URL
@@ -95,7 +132,7 @@ class PaymentService {
       const extraData = ''
 
       // Tạo raw signature
-      const rawSignature = `accessKey=${this.momoConfig.accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${this.momoConfig.partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=captureMoMoWallet`
+      const rawSignature = `accessKey=${this.momoConfig.accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${payment.transactionCode}&orderInfo=${orderInfo}&partnerCode=${this.momoConfig.partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=captureMoMoWallet`
 
       // Tạo signature
       const signature = crypto
@@ -109,7 +146,7 @@ class PaymentService {
         storeId: 'BookStore',
         requestId,
         amount,
-        orderId,
+        orderId: payment.transactionCode, // Sử dụng transactionCode
         orderInfo,
         redirectUrl,
         ipnUrl,
@@ -126,12 +163,18 @@ class PaymentService {
       })
 
       if (response.data.resultCode === 0) {
+        // Cập nhật paymentUrl vào payment record
+        payment.paymentUrl = response.data.payUrl
+        await payment.save()
+
         return {
           success: true,
           paymentUrl: response.data.payUrl,
           orderId,
           amount,
-          requestId: response.data.requestId
+          requestId: response.data.requestId,
+          transactionCode: payment.transactionCode,
+          paymentId: payment._id
         }
       } else {
         throw new AppError(`Momo payment failed: ${response.data.message}`, 400)
@@ -172,13 +215,30 @@ class PaymentService {
         throw new AppError('Invalid VNPay signature', 400)
       }
 
+      // Tìm payment record theo transactionCode
+      const payment = await Payment.findByTransactionCode(vnp_TxnRef)
+      if (!payment) {
+        throw new AppError('Payment not found', 404)
+      }
+
+      const isSuccess = vnp_ResponseCode === '00'
+      
+      // Cập nhật payment status
+      await payment.updateStatus(
+        isSuccess ? 'completed' : 'failed',
+        queryParams.vnp_TransactionNo,
+        queryParams
+      )
+
       return {
-        success: vnp_ResponseCode === '00',
-        orderId: vnp_TxnRef,
+        success: isSuccess,
+        orderId: payment.orderId,
         amount: parseInt(vnp_Amount) / 100, // Chia 100 vì VNPay nhân 100
         transactionId: queryParams.vnp_TransactionNo,
         responseCode: vnp_ResponseCode,
-        message: this.getVNPayResponseMessage(vnp_ResponseCode)
+        message: this.getVNPayResponseMessage(vnp_ResponseCode),
+        transactionCode: payment.transactionCode,
+        paymentId: payment._id
       }
     } catch (error) {
       throw new AppError(`VNPay verification failed: ${error.message}`, 400)
@@ -220,13 +280,30 @@ class PaymentService {
         throw new AppError('Invalid Momo signature', 400)
       }
 
+      // Tìm payment record theo transactionCode
+      const payment = await Payment.findByTransactionCode(orderId)
+      if (!payment) {
+        throw new AppError('Payment not found', 404)
+      }
+
+      const isSuccess = resultCode === '0'
+      
+      // Cập nhật payment status
+      await payment.updateStatus(
+        isSuccess ? 'completed' : 'failed',
+        transId,
+        queryParams
+      )
+
       return {
-        success: resultCode === '0',
-        orderId,
+        success: isSuccess,
+        orderId: payment.orderId,
         amount: parseInt(amount),
         transactionId: transId,
         resultCode,
-        message
+        message,
+        transactionCode: payment.transactionCode,
+        paymentId: payment._id
       }
     } catch (error) {
       throw new AppError(`Momo verification failed: ${error.message}`, 400)
@@ -277,35 +354,102 @@ class PaymentService {
    * Lấy danh sách payments (Admin only)
    */
   async getPayments(params) {
-    // Mock data for now - replace with actual database query
-    const mockPayments = [
-      {
-        id: 1,
-        orderId: 'ORD-001',
-        amount: 850000,
-        method: 'vnpay',
-        status: 'completed',
-        transactionId: 'TXN-001',
-        createdAt: '2024-01-15T10:30:00Z',
-        updatedAt: '2024-01-15T10:35:00Z'
-      },
-      {
-        id: 2,
-        orderId: 'ORD-002',
-        amount: 150000,
-        method: 'momo',
-        status: 'pending',
-        transactionId: 'TXN-002',
-        createdAt: '2024-01-16T14:20:00Z',
-        updatedAt: '2024-01-16T14:20:00Z'
+    try {
+      const { page = 1, limit = 10, status, method, startDate, endDate } = params
+      
+      // Tạo query filter
+      const filter = {}
+      if (status) filter.status = status
+      if (method) filter.method = method
+      if (startDate || endDate) {
+        filter.createdAt = {}
+        if (startDate) filter.createdAt.$gte = new Date(startDate)
+        if (endDate) filter.createdAt.$lte = new Date(endDate)
       }
-    ]
 
-    return {
-      payments: mockPayments,
-      totalPayments: mockPayments.length,
-      totalPages: 1,
-      currentPage: params.page || 1
+      // Tính toán pagination
+      const skip = (page - 1) * limit
+
+      // Lấy payments với populate orderId
+      const payments = await Payment.find(filter)
+        .populate('orderId', 'orderCode totalPrice status')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+
+      // Đếm tổng số payments
+      const totalPayments = await Payment.countDocuments(filter)
+      const totalPages = Math.ceil(totalPayments / limit)
+
+      return {
+        payments,
+        totalPayments,
+        totalPages,
+        currentPage: page,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      }
+    } catch (error) {
+      throw new AppError(`Failed to get payments: ${error.message}`, 500)
+    }
+  }
+
+  /**
+   * Lấy payment theo ID
+   */
+  async getPaymentById(paymentId) {
+    try {
+      const payment = await Payment.findById(paymentId)
+        .populate('orderId', 'orderCode totalPrice status userId')
+        .populate('orderId.userId', 'name email')
+
+      if (!payment) {
+        throw new AppError('Payment not found', 404)
+      }
+
+      return payment
+    } catch (error) {
+      throw new AppError(`Failed to get payment: ${error.message}`, 500)
+    }
+  }
+
+  /**
+   * Lấy payment theo transactionCode
+   */
+  async getPaymentByTransactionCode(transactionCode) {
+    try {
+      const payment = await Payment.findByTransactionCode(transactionCode)
+        .populate('orderId', 'orderCode totalPrice status userId')
+        .populate('orderId.userId', 'name email')
+
+      if (!payment) {
+        throw new AppError('Payment not found', 404)
+      }
+
+      return payment
+    } catch (error) {
+      throw new AppError(`Failed to get payment: ${error.message}`, 500)
+    }
+  }
+
+  /**
+   * Tạo payment cho COD (Cash on Delivery)
+   */
+  async createCODPayment(orderId, amount, description) {
+    try {
+      const payment = new Payment({
+        orderId,
+        amount,
+        method: 'cod',
+        status: 'pending',
+        description: description || 'Thanh toán khi nhận hàng (COD)'
+      })
+
+      await payment.save()
+
+      return payment
+    } catch (error) {
+      throw new AppError(`Failed to create COD payment: ${error.message}`, 500)
     }
   }
 }

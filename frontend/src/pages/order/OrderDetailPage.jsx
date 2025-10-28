@@ -302,6 +302,54 @@ const OrderDetailPage = () => {
                     <span className="text-sm text-gray-600">Phương thức thanh toán:</span>
                     <p className="font-medium">{getPaymentMethodText(order.paymentMethod)}</p>
                   </div>
+                  {order.confirmedAt && (
+                    <div>
+                      <span className="text-sm text-gray-600">Ngày xác nhận:</span>
+                      <p className="font-medium">
+                        {new Date(order.confirmedAt).toLocaleDateString('vi-VN', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                  )}
+                  {order.shippedAt && (
+                    <div>
+                      <span className="text-sm text-gray-600">Ngày giao hàng:</span>
+                      <p className="font-medium">
+                        {new Date(order.shippedAt).toLocaleDateString('vi-VN', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                  )}
+                  {order.deliveredAt && (
+                    <div>
+                      <span className="text-sm text-gray-600">Ngày nhận hàng:</span>
+                      <p className="font-medium">
+                        {new Date(order.deliveredAt).toLocaleDateString('vi-VN', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                  )}
+                  {order.note && (
+                    <div>
+                      <span className="text-sm text-gray-600">Ghi chú:</span>
+                      <p className="font-medium">{order.note}</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -316,6 +364,17 @@ const OrderDetailPage = () => {
                     <p className="text-gray-600">
                       {order.shippingAddress.ward}, {order.shippingAddress.district}, {order.shippingAddress.city}
                     </p>
+                    {order.shippingProvider && (
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <p className="text-sm text-gray-600">Đơn vị vận chuyển:</p>
+                        <p className="font-medium">{order.shippingProvider.name}</p>
+                        {order.shippingProvider.estimatedTime && (
+                          <p className="text-sm text-gray-600">
+                            Thời gian giao dự kiến: {order.shippingProvider.estimatedTime}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -326,7 +385,7 @@ const OrderDetailPage = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Tạm tính:</span>
-                    <span className="font-medium">{formatCurrency(order.totalPrice)}</span>
+                    <span className="font-medium">{formatCurrency(order.originalAmount || order.totalPrice)}</span>
                   </div>
                   {order.discountAmount > 0 && (
                     <div className="flex justify-between text-green-600">
@@ -334,15 +393,29 @@ const OrderDetailPage = () => {
                       <span className="font-medium">-{formatCurrency(order.discountAmount)}</span>
                     </div>
                   )}
+                  {order.voucherId && (
+                    <div className="flex justify-between text-blue-600">
+                      <span>Voucher:</span>
+                      <span className="font-medium">{order.voucherId.code || 'Đã áp dụng'}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-gray-600">Phí vận chuyển:</span>
-                    <span className="font-medium">Miễn phí</span>
+                    <span className="font-medium">
+                      {order.shippingFee > 0 ? formatCurrency(order.shippingFee) : 'Miễn phí'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Đơn vị vận chuyển:</span>
+                    <span className="font-medium">
+                      {order.shippingProvider?.name || 'Chưa xác định'}
+                    </span>
                   </div>
                   <div className="border-t pt-3">
                     <div className="flex justify-between">
                       <span className="text-lg font-semibold">Tổng cộng:</span>
                       <span className="text-lg font-semibold text-amber-600">
-                        {formatCurrency(order.totalPrice - (order.discountAmount || 0))}
+                        {formatCurrency(order.totalPrice)}
                       </span>
                     </div>
                   </div>

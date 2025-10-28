@@ -5,6 +5,7 @@ import User from '~/models/userModel'
 import Address from '~/models/addressModel'
 import Cart from '~/models/cartModel'
 import ShippingProvider from '~/models/shippingProviderModel'
+import Payment from '~/models/paymentModel'
 import { AppError } from '~/utils/AppError'
 import voucherService from '~/services/voucherService'
 
@@ -167,6 +168,31 @@ class OrderService {
         quantity: item.quantity,
         priceAtPurchase: item.price
       })
+    }
+
+    // Tạo Payment record
+    try {
+      const paymentData = {
+        orderId: order._id,
+        amount: order.totalPrice,
+        method: paymentMethod || 'cod',
+        status: paymentMethod === 'cod' ? 'pending' : 'pending',
+        description: `Thanh toán ${paymentMethod === 'cod' ? 'khi nhận hàng' : paymentMethod.toUpperCase()} cho đơn hàng ${order.orderCode}`,
+        customerInfo: {
+          ipAddress: '127.0.0.1', // Có thể lấy từ request
+          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      }
+
+      // Thêm transactionId nếu có
+      if (paymentMethod !== 'cod') {
+        paymentData.transactionId = `TXN-${Date.now()}`
+      }
+
+      await Payment.create(paymentData)
+    } catch (error) {
+      console.error('❌ Failed to create payment record:', error.message)
+      // Không throw error để không ảnh hưởng đến việc tạo đơn hàng
     }
 
     // Đã loại bỏ chức năng gửi email thông báo đơn hàng

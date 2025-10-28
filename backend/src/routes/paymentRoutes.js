@@ -52,6 +52,36 @@ router.get(
   paymentController.getPayments
 )
 
+// Lấy payment theo ID (Admin only)
+router.get(
+  '/:paymentId',
+  authenticate,
+  authorize('admin'),
+  paymentController.getPaymentById
+)
+
+// Lấy payment theo transactionCode (Admin only)
+router.get(
+  '/transaction/:transactionCode',
+  authenticate,
+  authorize('admin'),
+  paymentController.getPaymentByTransactionCode
+)
+
+// Tạo payment cho COD (Admin only)
+router.post(
+  '/cod',
+  authenticate,
+  authorize('admin'),
+  [
+    body('orderId').notEmpty().withMessage('Order ID is required'),
+    body('amount').isNumeric().withMessage('Amount must be a number'),
+    body('description').optional().isString().withMessage('Description must be a string')
+  ],
+  validationMiddleware,
+  paymentController.createCODPayment
+)
+
 /**
  * Protected routes (cần authentication)
  */

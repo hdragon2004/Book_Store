@@ -151,6 +151,7 @@ export const getOrderById = asyncHandler(async (req, res) => {
 
   const order = await Order.findOne(query)
     .populate('userId', 'name email phone address status')
+    .populate('shippingProvider', 'name code baseFee estimatedTime')
 
   if (!order) {
     throw new AppError('Order not found', 404)
@@ -331,6 +332,7 @@ export const getOrders = asyncHandler(async (req, res) => {
     
     orders = await Order.find(query)
       .populate('userId')
+      .populate('shippingProvider', 'name code baseFee estimatedTime')
       .sort(sortObj)
       .skip(skip)
       .limit(parseInt(limit))
@@ -347,6 +349,7 @@ export const getOrders = asyncHandler(async (req, res) => {
     // Lấy tất cả orders không phân trang
     orders = await Order.find(query)
       .populate('userId')
+      .populate('shippingProvider', 'name code baseFee estimatedTime')
       .sort(sortObj)
     
     total = orders.length

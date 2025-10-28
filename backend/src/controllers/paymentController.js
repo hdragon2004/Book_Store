@@ -233,6 +233,52 @@ class PaymentController {
       new ApiResponse(StatusCodes.OK, payments, 'Payments retrieved successfully').toJSON()
     )
   })
+
+  /**
+   * Lấy payment theo ID
+   * GET /api/payments/:paymentId
+   */
+  getPaymentById = asyncHandler(async (req, res) => {
+    const { paymentId } = req.params
+
+    const payment = await paymentService.getPaymentById(paymentId)
+
+    res.status(StatusCodes.OK).json(
+      new ApiResponse(StatusCodes.OK, payment, 'Payment retrieved successfully').toJSON()
+    )
+  })
+
+  /**
+   * Lấy payment theo transactionCode
+   * GET /api/payments/transaction/:transactionCode
+   */
+  getPaymentByTransactionCode = asyncHandler(async (req, res) => {
+    const { transactionCode } = req.params
+
+    const payment = await paymentService.getPaymentByTransactionCode(transactionCode)
+
+    res.status(StatusCodes.OK).json(
+      new ApiResponse(StatusCodes.OK, payment, 'Payment retrieved successfully').toJSON()
+    )
+  })
+
+  /**
+   * Tạo payment cho COD
+   * POST /api/payments/cod
+   */
+  createCODPayment = asyncHandler(async (req, res) => {
+    const { orderId, amount, description } = req.body
+
+    if (!orderId || !amount) {
+      throw new AppError('OrderId and amount are required', 400)
+    }
+
+    const payment = await paymentService.createCODPayment(orderId, amount, description)
+
+    res.status(StatusCodes.CREATED).json(
+      new ApiResponse(StatusCodes.CREATED, payment, 'COD payment created successfully').toJSON()
+    )
+  })
 }
 
 export default new PaymentController()
