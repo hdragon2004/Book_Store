@@ -101,7 +101,7 @@ const setupChatSocket = (io) => {
         // Format message cho frontend
         const formattedMessage = {
           messageId: message._id,
-          sender: message.fromId.name === 'Admin User' ? 'admin' : 'user',
+          sender: socket.user.roleId.name === 'admin' ? 'admin' : 'user',
           text: message.content,
           timestamp: message.createdAt,
           isRead: message.isRead,
@@ -121,17 +121,12 @@ const setupChatSocket = (io) => {
           } : null
         }
 
-        // Emit tin nhắn đến tất cả users trong conversation (bao gồm cả người gửi)
+        // Emit tin nhắn đến tất cả users trong conversation
         console.log('📤 Emitting message to conversation:', conversationId, 'Message type:', messageType, 'ImageUrl:', imageUrl)
         console.log('📤 Formatted message:', formattedMessage)
+        console.log('📤 Sender role:', socket.user.roleId.name)
         
         io.to(conversationId).emit('new_message', {
-          message: formattedMessage,
-          conversationId
-        })
-
-        // Đảm bảo người gửi cũng nhận được tin nhắn của mình
-        socket.emit('new_message', {
           message: formattedMessage,
           conversationId
         })

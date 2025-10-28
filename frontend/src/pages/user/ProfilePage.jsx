@@ -21,6 +21,9 @@ const ProfilePage = () => {
 
   // Fetch user profile data
   useEffect(() => {
+    // Scroll to top when component mounts
+    window.scrollTo(0, 0);
+    
     const fetchProfile = async () => {
       try {
         setLoading(true);
@@ -60,21 +63,16 @@ const ProfilePage = () => {
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         alert('Vui lòng chọn file ảnh hợp lệ');
         return;
       }
-      
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         alert('Kích thước file không được vượt quá 5MB');
         return;
       }
       
       setAvatarFile(file);
-      
-      // Create preview URL
       const reader = new FileReader();
       reader.onload = (e) => {
         setAvatarPreview(e.target.result);
@@ -89,12 +87,8 @@ const ProfilePage = () => {
     
     try {
       setUploadingAvatar(true);
-      
-      // Create FormData for file upload
       const formData = new FormData();
       formData.append('avatar', avatarFile);
-      
-      // Upload avatar
       const uploadResponse = await userAPI.uploadAvatar(formData);
       
       if (uploadResponse.data && uploadResponse.data.data) {
@@ -118,7 +112,9 @@ const ProfilePage = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      const response = await userAPI.updateProfile(formData);
+      // Loại bỏ email khỏi dữ liệu gửi lên server vì email không thể thay đổi
+      const { email, ...updateData } = formData;
+      const response = await userAPI.updateProfile(updateData);
       if (response.data && response.data.data) {
         const updatedUser = response.data.data.user;
         setProfile(updatedUser);
@@ -139,7 +135,7 @@ const ProfilePage = () => {
     if (profile) {
       setFormData({
         name: profile.name || '',
-        email: profile.email || '',
+        email: profile.email || '', // Giữ nguyên email
         phone: profile.phone || '',
         address: profile.address || '',
         fullName: profile.fullName || ''
@@ -148,26 +144,34 @@ const ProfilePage = () => {
     setIsEditing(false);
   };
 
+  // Handle change password
+  const handleChangePassword = () => {
+    alert('Chức năng đổi mật khẩu sẽ được triển khai sớm');
+  };
+
+  // Handle delete account
+  const handleDeleteAccount = () => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác.')) {
+      alert('Chức năng xóa tài khoản sẽ được triển khai sớm');
+    }
+  };
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-white">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-amber-500"></div>
+      <div className="flex justify-center items-center h-screen bg-gray-50">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-amber-600"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-white">
-        <div className="text-red-500 text-6xl mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-24 h-24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.26-1.292 2.561-1.292 3.928V19.588M12 9V3.75m0 0V2.25c0-.591.294-1.14.792-1.405M12 9H1.906a2.25 2.25 0 00-2.25 2.25v.896m12-1.248l-.373-1.005M12 12H3.75m2.25-4.725l-.373-1.005M12 12H9.75m3.75-4.725l-.373 1.005M7.5 8.25h-.373m0 0v-.373m0 3.75h-.373m0 0v-.373m3.75 0h-.373m0 0v-.373m3.75 0h-.373m0 0v-.373m-9 3.75H1.906a2.25 2.25 0 00-2.25 2.25v.896m12-4.477l-.373 1.005M12 12v-.373m0-4.477l-.923-2.477A2.25 2.25 0 009.75 2.25H9M12 12h4.477m-4.477 0l.373 1.005M12 12v.373m0 4.477l.923 2.477A2.25 2.25 0 0014.25 21h.026A2.25 2.25 0 0016.5 18.75v-2.25m-2.25-4.477l.373-1.005M18.75 8.25h.373m0 0v.373m0 3.75h.373m0 0v.373m-3.75 0h.373m0 0v-.373m-3.75 0h-.373m0 0v-.373" />
-          </svg>
-        </div>
+      <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
+        <div className="text-red-500 text-6xl mb-4">⚠️</div>
         <p className="text-xl text-gray-700 mb-6">{error}</p>
         <button 
           onClick={() => window.location.reload()}
-          className="bg-amber-600 text-white px-6 py-3 rounded-lg hover:bg-amber-700 transition-colors"
+          className="bg-amber-600 text-white px-6 py-3 rounded-xl hover:bg-amber-700 transition-colors"
         >
           Thử lại
         </button>
@@ -176,243 +180,198 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900">Hồ sơ cá nhân</h1>
-              <p className="text-lg text-gray-600 mt-2">Quản lý thông tin cá nhân của bạn</p>
-            </div>
-            <div className="flex space-x-3">
-              {!isEditing ? (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="bg-amber-600 text-white px-6 py-3 rounded-xl hover:bg-amber-700 transition-colors"
-                >
-                  Chỉnh sửa
-                </button>
-              ) : (
-                <div className="flex space-x-2">
-                  <button
-                    onClick={handleCancel}
-                    className="bg-gray-500 text-white px-6 py-3 rounded-xl hover:bg-gray-600 transition-colors"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    onClick={handleSubmit}
-                    disabled={loading}
-                    className="bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50"
-                  >
-                    {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900">Hồ sơ cá nhân</h1>
+          <p className="text-gray-600 mt-2">Quản lý thông tin và cài đặt tài khoản của bạn</p>
         </div>
 
-        {/* Profile Form */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Avatar Section */}
-            <div className="flex items-center space-x-6">
-              <div className="flex-shrink-0">
-                <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-                  {avatarPreview ? (
-                    <img
-                      src={avatarPreview}
-                      alt="Avatar preview"
-                      className="w-full h-full object-cover"
+        {/* Main Content - 2 Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Avatar Section */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-2xl shadow-sm p-8 sticky top-8">
+              {/* Avatar Display */}
+              <div className="text-center">
+                <div className="relative inline-block">
+                  <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 mx-auto mb-6 ring-4 ring-amber-100">
+                    {avatarPreview ? (
+                      <img src={avatarPreview} alt="Avatar preview" className="w-full h-full object-cover" />
+                    ) : profile?.avatar ? (
+                      <img 
+                        src={profile.avatar.startsWith('http') ? profile.avatar : `http://localhost:5000${profile.avatar}`} 
+                        alt="Avatar" 
+                        className="w-full h-full object-cover" 
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <span className="text-4xl font-bold text-gray-400">
+                          {profile?.name?.charAt(0)?.toUpperCase() || 'U'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Upload Button */}
+                  <div className="space-y-3">
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleAvatarChange} 
+                      className="hidden" 
+                      id="avatar-upload" 
                     />
-                  ) : profile?.avatar ? (
-                    <img
-                      src={profile.avatar.startsWith('http') ? profile.avatar : `http://localhost:5000${profile.avatar}`}
-                      alt="Avatar"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-2xl font-bold text-gray-500">
-                      {profile?.name?.charAt(0)?.toUpperCase() || 'U'}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-medium text-gray-900">Ảnh đại diện</h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  Chọn ảnh đại diện mới cho tài khoản của bạn
-                </p>
-                <div className="flex space-x-3">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarChange}
-                    className="hidden"
-                    id="avatar-upload"
-                  />
-                  <label
-                    htmlFor="avatar-upload"
-                    className="bg-amber-600 text-white px-4 py-2 rounded-xl hover:bg-amber-700 transition-colors cursor-pointer"
-                  >
-                    Chọn ảnh
-                  </label>
-                  {avatarFile && (
-                    <button
-                      type="button"
-                      onClick={handleAvatarUpload}
-                      disabled={uploadingAvatar}
-                      className="bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50"
+                    <label 
+                      htmlFor="avatar-upload" 
+                      className="block w-full bg-amber-600 text-white px-4 py-2.5 rounded-xl hover:bg-amber-700 transition-colors cursor-pointer text-center font-medium"
                     >
-                      {uploadingAvatar ? 'Đang tải...' : 'Cập nhật'}
-                    </button>
-                  )}
+                      {uploadingAvatar ? 'Đang tải...' : 'Thay đổi ảnh'}
+                    </label>
+                    
+                    {avatarFile && (
+                      <button 
+                        onClick={handleAvatarUpload} 
+                        disabled={uploadingAvatar}
+                        className="w-full bg-gray-900 text-white px-4 py-2.5 rounded-xl hover:bg-black/80 transition-colors disabled:opacity-50 font-medium"
+                      >
+                        {uploadingAvatar ? 'Đang tải...' : 'Cập nhật'}
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <p className="text-xs text-gray-400 mt-2">
-                  Định dạng: JPG, PNG, GIF. Kích thước tối đa: 5MB
-                </p>
+
+                {/* User Info */}
+                <div className="mt-6">
+                  <h2 className="text-2xl font-bold text-gray-900">{profile?.name || 'Chưa có tên'}</h2>
+                  <p className="text-gray-600 mt-1">{profile?.email}</p>
+                  <div className="mt-4">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                      profile?.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {profile?.isActive ? 'Tài khoản hoạt động' : 'Tài khoản bị khóa'}
+                    </span>
+                  </div>
+                </div>
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Name */}
-              <div>
-                <label className="block text-lg font-semibold text-gray-900 mb-3">
-                  Tên hiển thị *
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  disabled={!isEditing}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-lg"
-                />
-              </div>
-
-              {/* Full Name */}
-              <div>
-                <label className="block text-lg font-semibold text-gray-900 mb-3">
-                  Họ và tên đầy đủ
-                </label>
-                <input
-                  type="text"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  disabled={!isEditing}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-lg"
-                />
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block text-lg font-semibold text-gray-900 mb-3">
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  disabled={!isEditing}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-lg"
-                />
-              </div>
-
-              {/* Phone */}
-              <div>
-                <label className="block text-lg font-semibold text-gray-900 mb-3">
-                  Số điện thoại
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  disabled={!isEditing}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-lg"
-                />
-              </div>
-            </div>
-
-            {/* Address */}
-            <div>
-              <label className="block text-lg font-semibold text-gray-900 mb-3">
-                Địa chỉ
-              </label>
-              <textarea
-                name="address"
-                value={formData.address}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-                rows={3}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-lg"
-              />
-            </div>
-          </form>
-        </div>
-
-        {/* Account Info */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-6">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Thông tin tài khoản</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-lg font-semibold text-gray-900 mb-1">
-                ID tài khoản
-              </label>
-              <p className="text-gray-900 font-mono text-sm">{profile?.id || user?.id}</p>
-            </div>
-            <div>
-              <label className="block text-lg font-semibold text-gray-900 mb-1">
-                Vai trò
-              </label>
-              <p className="text-gray-900 capitalize">{profile?.role || user?.role}</p>
-            </div>
-            <div>
-              <label className="block text-lg font-semibold text-gray-900 mb-1">
-                Trạng thái
-              </label>
-              <p className="text-gray-900">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  profile?.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
-                  {profile?.isActive ? 'Hoạt động' : 'Không hoạt động'}
-                </span>
-              </p>
-            </div>
-            <div>
-              <label className="block text-lg font-semibold text-gray-900 mb-1">
-                Xác thực email
-              </label>
-              <p className="text-gray-900">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  profile?.isEmailVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {profile?.isEmailVerified ? 'Đã xác thực' : 'Chưa xác thực'}
-                </span>
-              </p>
             </div>
           </div>
-        </div>
 
-        {/* Actions */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-6">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Hành động</h2>
-          <div className="flex flex-wrap gap-4">
-            <button className="bg-amber-600 text-white px-6 py-3 rounded-xl hover:bg-amber-700 transition-colors">
-              Đổi mật khẩu
-            </button>
-            <button className="bg-yellow-600 text-white px-6 py-3 rounded-xl hover:bg-yellow-700 transition-colors">
-              Xác thực email
-            </button>
-            <button className="bg-red-600 text-white px-6 py-3 rounded-xl hover:bg-red-700 transition-colors">
-              Xóa tài khoản
-            </button>
+          {/* Right Column - Profile Information */}
+          <div className="lg:col-span-2">
+            <div className="space-y-6">
+              {/* Personal Information Card */}
+              <div className="bg-white rounded-2xl shadow-sm p-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900">Thông tin cá nhân</h3>
+                  <div className="flex space-x-3">
+                    {!isEditing ? (
+                      <>
+                        <button
+                          onClick={handleChangePassword}
+                          className="bg-amber-600 text-white px-6 py-2.5 rounded-xl hover:bg-amber-700 transition-colors font-medium"
+                        >
+                          Đổi mật khẩu
+                        </button>
+                        <button
+                          onClick={() => setIsEditing(true)}
+                          className="bg-amber-600 text-white px-6 py-2.5 rounded-xl hover:bg-amber-700 transition-colors font-medium"
+                        >
+                          Chỉnh sửa
+                        </button>
+                      </>
+                    ) : (
+                      <div className="flex space-x-3">
+                        <button
+                          onClick={handleCancel}
+                          className="px-6 py-2.5 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+                        >
+                          Hủy
+                        </button>
+                        <button
+                          onClick={handleSubmit}
+                          disabled={loading}
+                          className="bg-green-600 text-white px-6 py-2.5 rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50 font-medium"
+                        >
+                          {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Name */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">Tên hiển thị *</label>
+                      <input 
+                        type="text" 
+                        name="name" 
+                        value={formData.name} 
+                        onChange={handleInputChange} 
+                        disabled={!isEditing} 
+                        required 
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-600 focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed text-lg" 
+                      />
+                    </div>
+
+                    {/* Full Name */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">Họ và tên đầy đủ</label>
+                      <input 
+                        type="text" 
+                        name="fullName" 
+                        value={formData.fullName} 
+                        onChange={handleInputChange} 
+                        disabled={!isEditing} 
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-600 focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed text-lg" 
+                      />
+                    </div>
+
+                    {/* Email */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">Email *</label>
+                      <input 
+                        type="email" 
+                        name="email" 
+                        value={formData.email} 
+                        disabled={true}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100 cursor-not-allowed text-lg text-gray-500" 
+                      />
+                      <p className="text-sm text-gray-500 mt-1">Email không thể thay đổi sau khi đăng ký</p>
+                    </div>
+
+                    {/* Phone */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">Số điện thoại</label>
+                      <input 
+                        type="tel" 
+                        name="phone" 
+                        value={formData.phone} 
+                        onChange={handleInputChange} 
+                        disabled={!isEditing} 
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-600 focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed text-lg" 
+                      />
+                    </div>
+                  </div>
+
+                  {/* Address */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Địa chỉ</label>
+                    <textarea 
+                      name="address" 
+                      value={formData.address} 
+                      onChange={handleInputChange} 
+                      disabled={!isEditing} 
+                      rows={4} 
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-600 focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed text-lg" 
+                    />
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
         </div>
       </div>

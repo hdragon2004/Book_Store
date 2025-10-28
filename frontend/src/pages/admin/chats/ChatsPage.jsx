@@ -84,12 +84,15 @@ const ChatsPage = () => {
         
         // Join conversation room
         if (socket) {
+          console.log('🔌 Admin joining conversation:', selectedConversation.conversationId)
           socket.emit('join_conversation', { conversationId: selectedConversation.conversationId })
         }
         
         // Join tất cả conversations để nhận tin nhắn real-time từ bất kỳ conversation nào
         if (socket && conversations.length > 0) {
+          console.log('🔌 Admin joining all conversations:', conversations.map(c => c.conversationId))
           conversations.forEach(conversation => {
+            console.log('🔌 Admin joining conversation:', conversation.conversationId)
             socket.emit('join_conversation', { conversationId: conversation.conversationId })
           })
         }
@@ -108,12 +111,22 @@ const ChatsPage = () => {
     const handleNewMessage = (data) => {
       console.log('📨 Admin received new message:', data)
       console.log('📨 Current selected conversation:', selectedConversation)
+      console.log('📨 Message conversationId:', data.conversationId)
+      console.log('📨 Selected conversation _id:', selectedConversation?._id)
+      console.log('📨 Selected conversation conversationId:', selectedConversation?.conversationId)
+      console.log('📨 Message sender:', data.message?.sender)
+      console.log('📨 Message fromUser:', data.message?.fromUser)
       
       // Kiểm tra xem tin nhắn này có thuộc conversation hiện tại không
-      if (data.conversationId !== selectedConversation?._id) {
-        console.log('❌ Message not for current conversation:', data.conversationId, 'vs', selectedConversation?._id)
+      const isForCurrentConversation = data.conversationId === selectedConversation?._id || 
+                                     data.conversationId === selectedConversation?.conversationId
+      
+      if (!isForCurrentConversation) {
+        console.log('❌ Message not for current conversation:', data.conversationId, 'vs', selectedConversation?._id, 'or', selectedConversation?.conversationId)
         return
       }
+      
+      console.log('✅ Message is for current conversation, processing...')
       
       // Kiểm tra xem tin nhắn này có phải là tin nhắn temp không
       const isTempMessage = data.message.messageId?.startsWith('temp_')

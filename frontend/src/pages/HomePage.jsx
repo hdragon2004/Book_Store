@@ -13,9 +13,18 @@ const HomePage = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [visibleBooksCount, setVisibleBooksCount] = useState(4); // Số sách hiển thị ban đầu
+
+  // Function để hiển thị thêm sách
+  const handleLoadMoreBooks = () => {
+    setVisibleBooksCount(prev => prev + 8); // Thêm 2 hàng x 4 sách = 8 sách
+  };
 
   // Fetch data from API
   useEffect(() => {
+    // Scroll to top when component mounts
+    window.scrollTo(0, 0);
+    
     const fetchData = async () => {
       try {
         console.log('🏠 HomePage: Starting to fetch data...');
@@ -35,6 +44,7 @@ const HomePage = () => {
         
         setAllBooks(allBooks);
         setCategories(categoriesData);
+        setVisibleBooksCount(4); // Reset về 4 sách ban đầu
 
         // Phân loại books theo category từ data đã có, chỉ hiển thị sách có stock > 0
         const booksByCategoryData = {};
@@ -119,7 +129,7 @@ const HomePage = () => {
             <div className="max-w-2xl">
               <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
                 Nền tảng mua sách uy tín và chất lượng
-              </h1>
+            </h1>
               <p className="text-xl md:text-2xl text-white mb-8 opacity-90">
                 dành riêng cho người đọc sách
               </p>
@@ -135,12 +145,14 @@ const HomePage = () => {
       <div className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-2xl text-gray-400 mb-2">Giới thiệu chung</h2>
-          <h3 className="text-4xl font-bold text-gray-800 mb-8">Comicola Ebook là gì?</h3>
-          <p className="text-lg text-gray-600 max-w-4xl mx-auto mb-12 leading-relaxed">
-            Comicola Ebook là nền tảng tải sách điện tử bản quyền hàng đầu Việt Nam, 
-            chuyên cung cấp các đầu sách chất lượng cao dành riêng cho máy đọc sách. 
-            Chúng tôi cam kết mang đến trải nghiệm đọc sách tuyệt vời với định dạng 
-            tối ưu và nội dung phong phú.
+          <h3 className="text-4xl font-bold text-gray-800 mb-4 wavy-underline">BookStore là gì?</h3>
+          <p className="text-lg text-gray-600 max-w-5xl mx-auto mb-12 leading-relaxed">
+            BookStore là một hệ thống cung cấp sách bản quyền đa dạng, từ các nhà xuất bản 
+            và đơn vị làm sách lớn nhất Việt Nam hiện nay. Sản phẩm hướng tới cộng đồng những 
+            người yêu thích đọc sách, từ sách in truyền thống đến sách điện tử hiện đại. 
+            Các sách được bán trên hệ thống BookStore đều có bản quyền chính thức, được 
+            biên tập và chỉnh sửa kỹ lưỡng, đảm bảo chất lượng nội dung và hình thức tốt nhất 
+            cho người đọc.
           </p>
           <button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-colors flex items-center justify-center space-x-3 mx-auto">
             <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
@@ -156,27 +168,33 @@ const HomePage = () => {
       {/* Bestselling Books Section */}
       <div className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-2xl text-gray-400 mb-2">Sách bán chạy nhất</h2>
-            <h3 className="text-4xl font-bold text-gray-800 mb-8">Các sản phẩm bán chạy nhất</h3>
-          </div>
+        <div className="text-center mb-16">
+            <h2 className="text-3xl text-gray-300 mb-2 font-light">Sách bán chạy nhất</h2>
+            <h3 className="text-4xl font-bold text-gray-800 mb-4 wavy-underline">Các sản phẩm bán chạy nhất</h3>
+        </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-            {allBooks.slice(0, 4).map((book) => (
-              <BookCard key={book._id} book={book} />
-            ))}
-          </div>
+            {allBooks.filter(book => book.stock > 0).slice(0, visibleBooksCount).map((book) => (
+              <BookCard key={book._id} book={book} showActions={true} />
+          ))}
+        </div>
 
-          <div className="text-center">
-            <button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-colors flex items-center justify-center space-x-3 mx-auto">
-              <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-              </div>
-              <span>XEM THÊM</span>
-            </button>
-          </div>
+          {/* Chỉ hiển thị button khi còn sách để load */}
+          {allBooks.filter(book => book.stock > 0).length > visibleBooksCount && (
+            <div className="text-center">
+              <button 
+                onClick={handleLoadMoreBooks}
+                className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-colors flex items-center justify-center space-x-3 mx-auto"
+              >
+                <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+                </div>
+                <span>XEM THÊM</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -207,15 +225,15 @@ const HomePage = () => {
               <h3 className="text-lg font-bold text-gray-900 mb-3">TẢI VỀ DỄ DÀNG</h3>
               <p className="text-gray-600 text-sm leading-relaxed">
                 Quy trình tải về đơn giản, nhanh chóng với nhiều định dạng file phù hợp.
-              </p>
-            </div>
+                </p>
+              </div>
 
             {/* Feature 3 */}
             <div className="text-center p-6 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
               <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
+                  </svg>
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-3">ĐỊNH DẠNG FILE PHỔ BIẾN</h3>
               <p className="text-gray-600 text-sm leading-relaxed">
@@ -228,7 +246,7 @@ const HomePage = () => {
               <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
+                  </svg>
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-3">BẢO MẬT NỘI DUNG</h3>
               <p className="text-gray-600 text-sm leading-relaxed">
@@ -243,17 +261,137 @@ const HomePage = () => {
       <div className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-2xl text-gray-400 mb-2">Sách kinh doanh nổi bật</h2>
-            <h3 className="text-4xl font-bold text-gray-800 mb-8">Các cuốn sách với chủ đề kinh doanh</h3>
-          </div>
+            <h2 className="text-3xl text-gray-300 mb-2 font-light">Sách kinh doanh nổi bật</h2>
+            <h3 className="text-4xl font-bold text-gray-800 mb-4 wavy-underline">Các cuốn sách với chủ đề kinh doanh</h3>
+                    </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {allBooks.slice(4, 8).map((book) => (
-              <BookCard key={book._id} book={book} />
+            {allBooks.filter(book => book.stock > 0).slice(4, 8).map((book) => (
+              <BookCard key={book._id} book={book} showActions={true} />
             ))}
           </div>
         </div>
       </div>
+
+      {/* News Section */}
+      <div className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl text-gray-300 mb-2 font-light">Tin tức</h2>
+            <h3 className="text-4xl font-bold text-gray-800 mb-4 wavy-underline">Những tin tức mới nhất</h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* News Card 1 */}
+            <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+              <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center relative">
+                <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+                <div className="text-white text-center relative z-10">
+                  <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  <span className="text-sm font-medium">Tính năng mới</span>
+                </div>
+              </div>
+              <div className="p-6">
+                <p className="text-sm text-gray-500 mb-2">Tháng 10, 2025</p>
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">Bổ sung tính năng nâng cao chung</h4>
+                <p className="text-gray-600 text-sm">Cập nhật những tính năng mới nhất để nâng cao trải nghiệm người dùng</p>
+              </div>
+            </div>
+
+            {/* News Card 2 */}
+            <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+              <div className="aspect-video bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center relative">
+                <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+                <div className="text-white text-center relative z-10">
+                  <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-sm font-medium">Hợp tác</span>
+                </div>
+              </div>
+              <div className="p-6">
+                <p className="text-sm text-gray-500 mb-2">Tháng 10, 2025</p>
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">Thông báo bản quyền với công ty sách First News</h4>
+                <p className="text-gray-600 text-sm">Hợp tác chiến lược với First News để mang đến những cuốn sách chất lượng</p>
+              </div>
+            </div>
+
+            {/* News Card 3 */}
+            <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+              <div className="aspect-video bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center relative">
+                <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+                <div className="text-white text-center relative z-10">
+                  <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m0 0V1a1 1 0 011-1h2a1 1 0 011 1v18a1 1 0 01-1 1H4a1 1 0 01-1-1V1a1 1 0 011-1h2a1 1 0 011 1v3m0 0h8" />
+                  </svg>
+                  <span className="text-sm font-medium">Truyện tranh</span>
+                </div>
+              </div>
+              <div className="p-6">
+                <p className="text-sm text-gray-500 mb-2">Tháng 10, 2025</p>
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">Ngôn - Một nhóm trong làng truyện tranh Việt</h4>
+                <p className="text-gray-600 text-sm">Khám phá thế giới truyện tranh Việt Nam với những tác phẩm độc đáo</p>
+              </div>
+            </div>
+
+            {/* News Card 4 */}
+            <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+              <div className="aspect-video bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center relative">
+                <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+                <div className="text-white text-center relative z-10">
+                  <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                  <span className="text-sm font-medium">Tuổi trẻ</span>
+                </div>
+              </div>
+              <div className="p-6">
+                <p className="text-sm text-gray-500 mb-2">Tháng 10, 2025</p>
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">Tuổi Trẻ Hoang Dại</h4>
+                <p className="text-gray-600 text-sm">Cuốn sách về tuổi trẻ và những trải nghiệm đáng nhớ</p>
+              </div>
+            </div>
+
+            {/* News Card 5 */}
+            <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+              <div className="aspect-video bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center relative">
+                <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+                <div className="text-white text-center relative z-10">
+                  <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                  <span className="text-sm font-medium">Sức khỏe</span>
+                </div>
+              </div>
+              <div className="p-6">
+                <p className="text-sm text-gray-500 mb-2">Tháng 10, 2025</p>
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">Thật Tỉnh Không Sao</h4>
+                <p className="text-gray-600 text-sm">Tác phẩm về sức khỏe tinh thần và cách vượt qua khó khăn</p>
+              </div>
+            </div>
+
+            {/* News Card 6 */}
+            <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+              <div className="aspect-video bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center relative">
+                <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+                <div className="text-white text-center relative z-10">
+                  <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                  </svg>
+                  <span className="text-sm font-medium">Khoa học</span>
+                </div>
+              </div>
+              <div className="p-6">
+                <p className="text-sm text-gray-500 mb-2">Tháng 10, 2025</p>
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">Aftermath - Cuốn tiểu thuyết khoa học viễn tưởng hiếm hoi</h4>
+                <p className="text-gray-600 text-sm">Tác phẩm khoa học viễn tưởng đặc sắc của làng văn học Việt Nam</p>
+              </div>
+                </div>
+              </div>
+            </div>
+          </div>
     </div>
   );
 };

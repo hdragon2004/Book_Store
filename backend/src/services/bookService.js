@@ -41,6 +41,7 @@ class BookService {
       author,
       minPrice,
       maxPrice,
+      stock,
       sortBy,
       sortOrder
     } = filters
@@ -93,6 +94,13 @@ class BookService {
       if (maxPrice !== undefined) query.price.$lte = maxPrice
     }
 
+    // Lọc theo stock
+    if (stock === 'inStock') {
+      query.stock = { $gt: 0 }
+    } else if (stock === 'outOfStock') {
+      query.stock = { $lte: 0 }
+    }
+
     // Xây dựng sort
     const sort = {}
     sort[sortBy] = sortOrder === 'desc' ? -1 : 1
@@ -117,10 +125,10 @@ class BookService {
       return {
         books,
         pagination: {
-          page: pagination.page,
-          limit: pagination.limit,
-          total,
-          pages: Math.ceil(total / pagination.limit)
+          currentPage: pagination.page,
+          totalPages: Math.ceil(total / pagination.limit),
+          totalBooks: total,
+          limit: pagination.limit
         }
       }
     }

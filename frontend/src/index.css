@@ -46,4 +46,22 @@
   .aspect-\[2\/3\] {
     aspect-ratio: 2 / 3;
   }
+
+  /* Wavy underline for section headers */
+  .wavy-underline {
+    position: relative;
+  }
+
+  .wavy-underline::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(45deg, #ef4444, #dc2626);
+    border-radius: 2px;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+  }
 }

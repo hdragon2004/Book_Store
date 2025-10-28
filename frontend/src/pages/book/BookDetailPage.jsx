@@ -20,6 +20,9 @@ const BookDetailPage = () => {
   const [relatedBooks, setRelatedBooks] = useState([]);
 
   useEffect(() => {
+    // Scroll to top when component mounts
+    window.scrollTo(0, 0);
+    
     const fetchBook = async () => {
       try {
         setLoading(true);

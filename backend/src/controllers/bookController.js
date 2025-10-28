@@ -85,6 +85,7 @@ class BookController {
       author,
       minPrice,
       maxPrice,
+      stock,
       sortBy = 'createdAt',
       sortOrder = 'desc'
     } = req.query
@@ -103,6 +104,7 @@ class BookController {
       author,
       minPrice: minPrice ? parseFloat(minPrice) : undefined,
       maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+      stock,
       sortBy,
       sortOrder
     })

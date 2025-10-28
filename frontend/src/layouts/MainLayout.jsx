@@ -1,6 +1,7 @@
 import React from 'react';
 import HeaderLayout from './HeaderLayout';
 import FooterLayout from './FooterLayout';
+import ChatWidget from '../components/ChatWidget';
 
 const MainLayout = ({ children }) => {
   return (
@@ -13,6 +14,9 @@ const MainLayout = ({ children }) => {
       </main>
 
       <FooterLayout />
+
+      {/* Chat Widget */}
+      <ChatWidget />
     </div>
   );
 };
