@@ -109,34 +109,69 @@ const AddressSelector = ({ selectedAddressId, onAddressSelect, onAddNew }) => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }))
 
     // Handle cascade dropdown changes
     if (name === 'provinceCode') {
-      const selectedProvince = provinces.find(p => p.code === value)
-      setFormData(prev => ({
-        ...prev,
-        provinceCode: value,
-        city: selectedProvince?.name || ''
-      }))
+      // Tìm province theo code (xử lý cả string và number)
+      const selectedProvince = provinces.find(p => 
+        String(p.code) === String(value) || p.code === value
+      )
+      console.log('🔍 Selecting province:', { code: value, province: selectedProvince })
+      
+      setFormData(prev => {
+        const newData = {
+          ...prev,
+          provinceCode: value,
+          city: selectedProvince?.name || '', // Set city name ngay lập tức
+          district: '', // Reset district khi đổi province
+          districtCode: '',
+          ward: '', // Reset ward khi đổi province
+          wardCode: ''
+        }
+        console.log('✅ Updated formData.city to:', newData.city)
+        return newData
+      })
       loadDistricts(value)
     } else if (name === 'districtCode') {
-      const selectedDistrict = districts.find(d => d.code === value)
-      setFormData(prev => ({
-        ...prev,
-        districtCode: value,
-        district: selectedDistrict?.name || ''
-      }))
+      // Tìm district theo code (xử lý cả string và number)
+      const selectedDistrict = districts.find(d => 
+        String(d.code) === String(value) || d.code === value
+      )
+      console.log('🔍 Selecting district:', { code: value, district: selectedDistrict })
+      
+      setFormData(prev => {
+        const newData = {
+          ...prev,
+          districtCode: value,
+          district: selectedDistrict?.name || '', // Set district name ngay lập tức
+          ward: '', // Reset ward khi đổi district
+          wardCode: ''
+        }
+        console.log('✅ Updated formData.district to:', newData.district)
+        return newData
+      })
       loadWards(value)
     } else if (name === 'wardCode') {
-      const selectedWard = wards.find(w => w.code === value)
+      // Tìm ward theo code (xử lý cả string và number)
+      const selectedWard = wards.find(w => 
+        String(w.code) === String(value) || w.code === value
+      )
+      console.log('🔍 Selecting ward:', { code: value, ward: selectedWard })
+      
+      setFormData(prev => {
+        const newData = {
+          ...prev,
+          wardCode: value,
+          ward: selectedWard?.name || '' // Set ward name ngay lập tức
+        }
+        console.log('✅ Updated formData.ward to:', newData.ward)
+        return newData
+      })
+    } else {
+      // Các input field khác
       setFormData(prev => ({
         ...prev,
-        wardCode: value,
-        ward: selectedWard?.name || ''
+        [name]: type === 'checkbox' ? checked : value
       }))
     }
   }
@@ -144,8 +179,31 @@ const AddressSelector = ({ selectedAddressId, onAddressSelect, onAddNew }) => {
   const handleAddAddress = async (e) => {
     e.preventDefault()
     
+    // Debug: Log formData để kiểm tra
+    console.log('📋 FormData before validation:', formData)
+    
+    // Validation phía frontend - đảm bảo city, district, ward đã được chọn
+    if (!formData.city || !formData.district || !formData.ward) {
+      alert(`Vui lòng chọn đầy đủ Tỉnh/Thành phố, Quận/Huyện và Phường/Xã\n\nHiện tại:\n- City: ${formData.city || '(chưa chọn)'}\n- District: ${formData.district || '(chưa chọn)'}\n- Ward: ${formData.ward || '(chưa chọn)'}`)
+      return
+    }
+
+    // Chuẩn bị data để gửi (chỉ gửi các field cần thiết, không gửi provinceCode, districtCode, wardCode)
+    const addressData = {
+      name: formData.name,
+      phone: formData.phone,
+      address: formData.address,
+      city: formData.city.trim(), // Trim để loại bỏ khoảng trắng thừa
+      district: formData.district.trim(),
+      ward: formData.ward.trim(),
+      isDefault: formData.isDefault
+    }
+    
+    // Debug: Log data sẽ gửi lên
+    console.log('📤 Address data to send:', addressData)
+    
     try {
-      const response = await addressService.createAddress(formData)
+      const response = await addressService.createAddress(addressData)
       alert('Thêm địa chỉ thành công')
       
       setShowAddForm(false)
@@ -171,8 +229,15 @@ const AddressSelector = ({ selectedAddressId, onAddressSelect, onAddNew }) => {
       onAddressSelect(response.data.address._id)
       
     } catch (error) {
-      alert(error.response?.data?.message || 'Có lỗi xảy ra')
-      console.error('Error adding address:', error)
+      console.error('❌ Error adding address:', error)
+      console.error('❌ Error response:', error.response?.data)
+      
+      // Hiển thị thông báo lỗi chi tiết hơn
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          error.message || 
+                          'Có lỗi xảy ra khi thêm địa chỉ'
+      alert(`Lỗi: ${errorMessage}`)
     }
   }
 
@@ -271,8 +336,11 @@ const AddressSelector = ({ selectedAddressId, onAddressSelect, onAddNew }) => {
                 onChange={handleInputChange}
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                placeholder="Nhập địa chỉ chi tiết"
+                placeholder="Nhập số nhà và tên đường"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Ví dụ: 123 Nguyễn Văn A (không cần ghi lại tỉnh/thành phố, quận/huyện, phường/xã đã chọn ở trên)
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
