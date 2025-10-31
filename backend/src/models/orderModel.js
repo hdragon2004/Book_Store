@@ -32,7 +32,7 @@ const orderSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['cod', 'bank_transfer', 'credit_card', 'paypal', 'momo', 'zalopay'],
+    enum: ['cod', 'bank_transfer', 'momo', 'zalopay'],
     default: 'cod'
   },
   status: {

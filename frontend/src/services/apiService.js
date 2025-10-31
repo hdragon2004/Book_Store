@@ -160,11 +160,15 @@ export const orderAPI = {
     axiosClient.get(`/orders/user/${userId}`, { params }),
 
   // Cancel order
-  cancelOrder: (orderId) => 
+  cancelOrder: (orderId) =>
     axiosClient.patch(`/orders/${orderId}/cancel`),
 
+  // Mock tự động xác nhận thanh toán QR (mô phỏng)
+  mockAutoConfirmPayment: (orderId, paymentMethod) =>
+    axiosClient.post(`/orders/${orderId}/mock-confirm-payment`, { paymentMethod }),
+
   // Update order status
-  updateOrderStatus: (id, status) => 
+  updateOrderStatus: (id, status) =>
     axiosClient.patch(`/orders/admin/${id}/status`, { status }),
 };
 
@@ -485,7 +489,7 @@ export const chatAPI = {
 
   // Get conversation messages (for admin)
   getConversationMessages: (conversationId, page = 1, limit = 50) => 
-    axiosClient.get(`/chat/admin/chats/${conversationId}?page=${page}&limit=${limit}`),
+    axiosClient.get(`/messages/conversation/${conversationId}?page=${page}&limit=${limit}`),
 
   // Get conversation messages (for user)
   getUserConversationMessages: (conversationId, page = 1, limit = 50) => 

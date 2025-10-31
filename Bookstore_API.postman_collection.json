@@ -101,6 +101,28 @@
           "response": []
         },
         {
+          "name": "Register Staff",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Staff User\",\n  \"email\": \"staff@bookstore.com\",\n  \"password\": \"staff123\",\n  \"phone\": \"0900000000\",\n  \"address\": \"Staff Address\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Login User",
           "event": [
             {
@@ -1984,19 +2006,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/chat/admin/chats/{{conversationId}}?page=1&limit=50",
+              "raw": "{{baseUrl}}/api/messages/conversation/{{conversationId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "chat", "admin", "chats", "{{conversationId}}"],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "50"
-                }
-              ]
+              "path": ["api", "messages", "conversation", "{{conversationId}}"]
             }
           },
           "response": []

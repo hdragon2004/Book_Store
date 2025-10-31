@@ -69,11 +69,15 @@ class ChatController {
       const { page = 1, limit = 10 } = req.query
       const skip = (page - 1) * limit
 
-      // Lấy admin role ID trước
+      // Lấy admin và staff role ID trước
       const adminRole = await Role.findOne({ name: 'admin' })
+      const staffRole = await Role.findOne({ name: 'staff' })
       if (!adminRole) {
         throw new AppError('Admin role not found', StatusCodes.NOT_FOUND)
       }
+
+      const adminRoleId = adminRole._id
+      const staffRoleId = staffRole ? staffRole._id : null
 
       // Lấy tất cả messages và group theo conversationId
       const conversations = await Message.aggregate([
@@ -114,9 +118,15 @@ class ChatController {
               $push: {
                 sender: {
                   $cond: [
-                    { $eq: ['$sender.roleId', adminRole._id] },
+                    { $eq: ['$sender.roleId', adminRoleId] },
                     'admin',
-                    'user'
+                    {
+                      $cond: [
+                        { $eq: [{ $ifNull: ['$sender.roleId', null] }, staffRoleId] },
+                        'staff',
+                        'user'
+                      ]
+                    }
                   ]
                 },
                 text: '$content',
@@ -126,25 +136,17 @@ class ChatController {
               }
             },
             lastMessage: { $first: '$$ROOT' },
-            user: {
-              $first: {
-                $cond: [
-                  { $eq: ['$sender.roleId', adminRole._id] },
-                  '$receiver',
-                  '$sender'
-                ]
-              }
-            }
+            // Lưu tất cả user IDs trong conversation để xác định user (không phải admin/staff)
+            senderIds: { $addToSet: '$sender._id' },
+            receiverIds: { $addToSet: '$receiver._id' },
+            senders: { $addToSet: '$sender' },
+            receivers: { $addToSet: '$receiver' }
           }
         },
         {
           $project: {
             conversationId: '$_id',
-            user: {
-              userId: '$user._id',
-              name: '$user.name',
-              email: '$user.email'
-            },
+            lastMessage: 1,
             messages: {
               $slice: ['$messages', 50] // Giới hạn 50 tin nhắn gần nhất
             },
@@ -157,7 +159,57 @@ class ChatController {
                   0
                 ]
               }
+            },
+            // Tìm user thực sự (không phải admin/staff) từ senders hoặc receivers
+            allUsers: {
+              $setUnion: ['$senders', '$receivers']
             }
+          }
+        },
+        {
+          $project: {
+            conversationId: 1,
+            messages: 1,
+            lastMessageTime: 1,
+            unreadCount: 1,
+            // Tìm user đầu tiên không phải admin/staff
+            user: {
+              $arrayElemAt: [
+                {
+                  $filter: {
+                    input: '$allUsers',
+                    as: 'u',
+                    cond: {
+                      $and: [
+                        { $ne: ['$$u.roleId', adminRoleId] },
+                        {
+                          $cond: [
+                            { $ne: [{ $ifNull: [staffRoleId, null] }, null] },
+                            { $ne: ['$$u.roleId', staffRoleId] },
+                            true
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                },
+                0
+              ]
+            }
+          }
+        },
+        {
+          $project: {
+            conversationId: 1,
+            user: {
+              userId: '$user._id',
+              name: '$user.name',
+              email: '$user.email',
+              avatar: '$user.avatar'
+            },
+            messages: 1,
+            lastMessageTime: 1,
+            unreadCount: 1
           }
         },
         {
@@ -190,9 +242,69 @@ class ChatController {
 
       const total = totalConversations[0]?.total || 0
 
+      // Xử lý lại conversations để đảm bảo user được xác định đúng
+      // Nếu user không được tìm thấy từ aggregation, tìm từ conversationId
+      const processedConversations = await Promise.all(
+        conversations.map(async (conv) => {
+          // Nếu user đã có và hợp lệ, giữ nguyên
+          if (conv.user && conv.user.userId && conv.user.name) {
+            return conv
+          }
+
+          // Nếu không, parse conversationId để lấy user IDs
+          // conversationId format: "userId1_userId2" (sorted)
+          const userIds = conv.conversationId.split('_').filter(id => id)
+          
+          // Tìm user không phải admin/staff từ conversationId
+          let foundUser = null
+          for (const userId of userIds) {
+            try {
+              const user = await User.findById(userId).populate('roleId', 'name')
+              if (user) {
+                const roleName = user.roleId?.name || 'user'
+                // Nếu không phải admin/staff, đây là user ta cần
+                if (roleName !== 'admin' && roleName !== 'staff') {
+                  foundUser = {
+                    userId: user._id,
+                    name: user.name,
+                    email: user.email,
+                    avatar: user.avatar
+                  }
+                  break
+                }
+              }
+            } catch (error) {
+              console.error(`Error finding user ${userId}:`, error)
+            }
+          }
+
+          // Nếu vẫn không tìm thấy, lấy user đầu tiên (fallback)
+          if (!foundUser && userIds.length > 0) {
+            try {
+              const user = await User.findById(userIds[0]).populate('roleId', 'name')
+              if (user) {
+                foundUser = {
+                  userId: user._id,
+                  name: user.name,
+                  email: user.email,
+                  avatar: user.avatar
+                }
+              }
+            } catch (error) {
+              console.error(`Error finding fallback user:`, error)
+            }
+          }
+
+          return {
+            ...conv,
+            user: foundUser || conv.user
+          }
+        })
+      )
+
       res.status(StatusCodes.OK).json(
         new ApiResponse(StatusCodes.OK, {
-          conversations,
+          conversations: processedConversations,
           pagination: {
             page: parseInt(page),
             limit: parseInt(limit),
@@ -220,8 +332,8 @@ class ChatController {
         conversationId,
         isDeleted: false
       })
-        .populate('fromId', 'name email')
-        .populate('toId', 'name email')
+        .populate('fromId', 'name email avatar roleId')
+        .populate('toId', 'name email avatar roleId')
         .sort({ createdAt: 1 })
         .skip(skip)
         .limit(parseInt(limit))
@@ -231,16 +343,45 @@ class ChatController {
         isDeleted: false
       })
 
-      // Format messages theo yêu cầu
-      const formattedMessages = messages.map(msg => ({
-        sender: msg.fromId.name === 'Admin User' ? 'admin' : 'user',
-        text: msg.content,
-        timestamp: msg.createdAt,
-        messageId: msg._id,
-        isRead: msg.isRead,
-        messageType: msg.messageType || 'text',
-        imageUrl: msg.imageUrl || null
-      }))
+      // Lấy admin và staff role để so sánh
+      const adminRole = await Role.findOne({ name: 'admin' })
+      const staffRole = await Role.findOne({ name: 'staff' })
+      
+      if (!adminRole) {
+        throw new AppError('Admin role not found', StatusCodes.NOT_FOUND)
+      }
+      
+      // Format messages theo yêu cầu với fromUser và toUser
+      const formattedMessages = messages.map(msg => {
+        // Xác định sender role dựa trên roleId
+        const fromRoleId = msg.fromId.roleId?.toString()
+        const adminRoleId = adminRole._id.toString()
+        const staffRoleId = staffRole ? staffRole._id.toString() : null
+        const isAdmin = fromRoleId === adminRoleId
+        const isStaff = staffRoleId && fromRoleId === staffRoleId
+        
+        return {
+          messageId: msg._id,
+          sender: isAdmin ? 'admin' : isStaff ? 'staff' : 'user',
+          text: msg.content,
+          timestamp: msg.createdAt,
+          isRead: msg.isRead,
+          messageType: msg.messageType || 'text',
+          imageUrl: msg.imageUrl || null,
+          fromUser: msg.fromId ? {
+            userId: msg.fromId._id,
+            name: msg.fromId.name,
+            email: msg.fromId.email,
+            avatar: msg.fromId.avatar
+          } : null,
+          toUser: msg.toId ? {
+            userId: msg.toId._id,
+            name: msg.toId.name,
+            email: msg.toId.email,
+            avatar: msg.toId.avatar
+          } : null
+        }
+      })
 
       res.status(StatusCodes.OK).json(
         new ApiResponse(StatusCodes.OK, {
@@ -267,19 +408,34 @@ class ChatController {
     try {
       const userId = req.user._id
       
-      // Lấy admin user ID
+      // Lấy staff user ID (ưu tiên staff, fallback admin)
+      const staffRole = await Role.findOne({ name: 'staff' })
       const adminRole = await Role.findOne({ name: 'admin' })
-      if (!adminRole) {
-        throw new AppError('Admin role not found', StatusCodes.NOT_FOUND)
+      
+      let supportUser = null
+      let supportRole = null
+      
+      if (staffRole) {
+        supportUser = await User.findOne({ roleId: staffRole._id })
+        if (supportUser) {
+          supportRole = 'staff'
+        }
       }
       
-      const adminUser = await User.findOne({ roleId: adminRole._id })
-      if (!adminUser) {
-        throw new AppError('Admin user not found', StatusCodes.NOT_FOUND)
+      // Fallback to admin nếu không có staff
+      if (!supportUser && adminRole) {
+        supportUser = await User.findOne({ roleId: adminRole._id })
+        if (supportUser) {
+          supportRole = 'admin'
+        }
+      }
+      
+      if (!supportUser) {
+        throw new AppError('Support user not found', StatusCodes.NOT_FOUND)
       }
       
       // Generate conversation ID
-      const sortedIds = [userId.toString(), adminUser._id.toString()].sort()
+      const sortedIds = [userId.toString(), supportUser._id.toString()].sort()
       const conversationId = `${sortedIds[0]}_${sortedIds[1]}`
       
       // Kiểm tra xem conversation đã tồn tại chưa
@@ -290,18 +446,23 @@ class ChatController {
         res.status(StatusCodes.OK).json(
           new ApiResponse(StatusCodes.OK, {
             conversationId,
-            adminUser: {
-              userId: adminUser._id,
-              name: adminUser.name,
-              email: adminUser.email
-            }
+            adminUser: supportRole === 'admin' ? {
+              userId: supportUser._id,
+              name: supportUser.name,
+              email: supportUser.email
+            } : null,
+            staffUser: supportRole === 'staff' ? {
+              userId: supportUser._id,
+              name: supportUser.name,
+              email: supportUser.email
+            } : null
           }, 'Conversation retrieved successfully')
         )
       } else {
         // Tạo conversation mới bằng cách tạo tin nhắn đầu tiên
         const welcomeMessage = await Message.create({
           conversationId,
-          fromId: adminUser._id,
+          fromId: supportUser._id,
           toId: userId,
           content: 'Xin chào! Tôi có thể giúp gì cho bạn?',
           messageType: 'text',
@@ -311,11 +472,16 @@ class ChatController {
         res.status(StatusCodes.CREATED).json(
           new ApiResponse(StatusCodes.CREATED, {
             conversationId,
-            adminUser: {
-              userId: adminUser._id,
-              name: adminUser.name,
-              email: adminUser.email
-            },
+            adminUser: supportRole === 'admin' ? {
+              userId: supportUser._id,
+              name: supportUser.name,
+              email: supportUser.email
+            } : null,
+            staffUser: supportRole === 'staff' ? {
+              userId: supportUser._id,
+              name: supportUser.name,
+              email: supportUser.email
+            } : null,
             welcomeMessage: {
               messageId: welcomeMessage._id,
               content: welcomeMessage.content,

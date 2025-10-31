@@ -2,6 +2,9 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from '../pages/HomePage';
+import AboutPage from '../pages/AboutPage';
+import NewPage from '../pages/NewPage';
+import ContactPage from '../pages/ContactPage';
 import BookPage from '../pages/book/BookPage';
 import BookDetailPage from '../pages/book/BookDetailPage';
 import OrderPage from '../pages/order/OrderPage';
@@ -114,6 +117,9 @@ const AppRoutes = () => {
     <Routes>
       {/* Public Routes with MainLayout */}
       <Route path="/" element={<MainLayout><HomePage /></MainLayout>} />
+      <Route path="/about" element={<MainLayout><AboutPage /></MainLayout>} />
+      <Route path="/news" element={<MainLayout><NewPage /></MainLayout>} />
+      <Route path="/contact" element={<MainLayout><ContactPage /></MainLayout>} />
       <Route path="/books" element={<MainLayout><BookPage /></MainLayout>} />
       <Route path="/books/:id" element={<MainLayout><BookDetailPage /></MainLayout>} />
       <Route path="/order" element={<MainLayout><OrderPage /></MainLayout>} />

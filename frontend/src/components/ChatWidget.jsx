@@ -11,7 +11,7 @@ const ChatWidget = () => {
   const [loading, setLoading] = useState(false);
   const [socket, setSocket] = useState(null);
   const [conversationId, setConversationId] = useState(null);
-  const [adminUser, setAdminUser] = useState(null);
+  const [supportUser, setSupportUser] = useState(null); // Staff hoặc Admin
   const [isTyping, setIsTyping] = useState(false);
   const [typingUsers, setTypingUsers] = useState([]);
   const [error, setError] = useState(null);
@@ -32,11 +32,9 @@ const ChatWidget = () => {
   // Initialize socket connection
   useEffect(() => {
     if (!token) {
-      console.log('❌ No token available for socket connection');
       return;
     }
 
-    console.log('🔌 ChatWidget: Initializing socket connection...');
     const newSocket = io('http://localhost:5000', {
       auth: {
         token: token
@@ -44,12 +42,11 @@ const ChatWidget = () => {
     });
 
     newSocket.on('connect', () => {
-      console.log('🔌 ChatWidget: Connected to chat server');
       setSocket(newSocket);
     });
 
     newSocket.on('disconnect', () => {
-      console.log('🔌 ChatWidget: Disconnected from chat server');
+      // Handle disconnect
     });
 
     newSocket.on('connect_error', (error) => {
@@ -68,13 +65,11 @@ const ChatWidget = () => {
       if (!user) return;
       
       try {
-        console.log('🔍 ChatWidget: Getting conversation for user:', user);
         setLoading(true);
         const response = await chatAPI.getOrCreateConversation();
-        console.log('📨 ChatWidget: Conversation response:', response);
-        const { conversationId, adminUser } = response.data.data;
+        const { conversationId, adminUser, staffUser } = response.data.data;
         setConversationId(conversationId);
-        setAdminUser(adminUser);
+        setSupportUser(staffUser || adminUser); // Ưu tiên staff, fallback admin
         
         // Load messages
         await loadMessages(conversationId);
@@ -94,7 +89,7 @@ const ChatWidget = () => {
   // Join conversation when socket is ready
   useEffect(() => {
     if (socket && conversationId) {
-      socket.emit('join_conversation', { conversationId });
+      socket.emit('join_conversation', conversationId);
     }
   }, [socket, conversationId]);
 
@@ -103,26 +98,37 @@ const ChatWidget = () => {
     if (!socket) return;
 
     const handleNewMessage = (data) => {
-      console.log('📨 ChatWidget: New message received:', data);
-      console.log('📨 ChatWidget: Message sender:', data.message?.sender);
-      console.log('📨 ChatWidget: Message fromUser:', data.message?.fromUser);
-      const isTempMessage = data.message.messageId?.startsWith('temp_');
+      // Check if message belongs to current conversation
+      // So sánh chính xác conversationId
+      if (data.conversationId && conversationId && data.conversationId !== conversationId) {
+        return;
+      }
+      
+      // Nếu không có conversationId hoặc conversationId trùng khớp, tiếp tục xử lý
+      
+      const isTempMessage = data.message?.messageId?.startsWith('temp_');
       if (isTempMessage) {
         return;
       }
+      
       setMessages(prev => {
+        // FIX: Đơn giản hóa - loại bỏ phân biệt role, chỉ dùng userId
+        // Tìm temp message để thay thế
         const tempMessageIndex = prev.findIndex(msg => 
           msg.messageId?.startsWith('temp_') && 
           msg.text === data.message.text &&
-          msg.sender === data.message.sender
+          msg.fromUser?.userId === data.message.fromUser?.userId
         );
         if (tempMessageIndex !== -1) {
           const newMessages = [...prev];
           newMessages[tempMessageIndex] = data.message;
           return newMessages;
         }
+        // Kiểm tra duplicate bằng messageId
         const exists = prev.some(msg => msg.messageId === data.message.messageId);
-        if (exists) return prev;
+        if (exists) {
+          return prev;
+        }
         return [...prev, data.message];
       });
       scrollToBottom();
@@ -141,11 +147,11 @@ const ChatWidget = () => {
     };
 
     const handleUserJoined = (data) => {
-      console.log(`👥 ChatWidget: ${data.userName} joined the conversation`);
+      // Handle user joined
     };
 
     const handleUserLeft = (data) => {
-      console.log(`👋 ChatWidget: ${data.userName} left the conversation`);
+      // Handle user left
     };
 
     socket.on('new_message', handleNewMessage);
@@ -177,10 +183,10 @@ const ChatWidget = () => {
     if (!newMessage.trim() || !socket || !conversationId) return;
 
     try {
+      // FIX: Đơn giản hóa - loại bỏ phân biệt role, chỉ dùng userId
       // Add message to UI immediately (Optimistic UI)
       const tempMessage = {
         messageId: `temp_${Date.now()}`,
-        sender: 'user',
         text: newMessage.trim(),
         timestamp: new Date(),
         isRead: false,
@@ -192,11 +198,11 @@ const ChatWidget = () => {
           email: user.email,
           avatar: user.avatar
         },
-        toUser: adminUser ? {
-          userId: adminUser.userId,
-          name: adminUser.name,
-          email: adminUser.email,
-          avatar: adminUser.avatar
+        toUser: supportUser ? {
+          userId: supportUser.userId,
+          name: supportUser.name,
+          email: supportUser.email,
+          avatar: supportUser.avatar
         } : null
       };
       
@@ -362,20 +368,19 @@ const ChatWidget = () => {
             ) : (
               <div className="space-y-3">
                 {messages.map((message) => {
-                  console.log('🔍 ChatWidget: Rendering message:', message);
-                  // Check if message is from current user
-                  const isFromUser = message.sender === 'user' || 
-                                   message.sender === user._id || 
-                                   (message.fromUser && message.fromUser.userId === user._id);
-                  console.log('🔍 ChatWidget: isFromUser:', isFromUser, 'sender:', message.sender, 'user._id:', user._id, 'fromUser:', message.fromUser);
+                  // Logic hiển thị tin nhắn cho USER:
+                  // - Tin do user gửi (fromId === userId) → hiển thị bên phải
+                  // - Tin từ admin/staff (fromId !== userId) → hiển thị bên trái
+                  const isFromCurrentUser = message.fromUser && message.fromUser.userId?.toString() === user._id?.toString();
+                  
                   return (
                     <div
                       key={message.messageId || message._id || `msg_${Date.now()}`}
-                      className={`flex ${isFromUser ? 'justify-end' : 'justify-start'}`}
+                      className={`flex ${isFromCurrentUser ? 'justify-end' : 'justify-start'}`}
                     >
                       <div className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
-                        isFromUser ? 'text-white' : 'text-gray-900'
-                      }`} style={{ backgroundColor: isFromUser ? '#8B5E34' : 'rgba(243,244,246,0.9)' }}>
+                        isFromCurrentUser ? 'text-white' : 'text-gray-900'
+                      }`} style={{ backgroundColor: isFromCurrentUser ? '#8B5E34' : 'rgba(243,244,246,0.9)' }}>
                         {message.messageType === 'image' ? (
                           <div>
                             {message.imageUrl ? (
@@ -396,8 +401,8 @@ const ChatWidget = () => {
                           <p className="text-sm whitespace-pre-line">{message.text}</p>
                         )}
                         <p className={`text-xs mt-1 ${
-                          isFromUser ? '' : 'text-gray-500'
-                        }`} style={{ color: isFromUser ? 'rgba(255,255,255,0.75)' : undefined }}>
+                          isFromCurrentUser ? '' : 'text-gray-500'
+                        }`} style={{ color: isFromCurrentUser ? 'rgba(255,255,255,0.75)' : undefined }}>
                           {formatTime(message.timestamp)}
                         </p>
                       </div>

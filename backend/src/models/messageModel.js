@@ -1,4 +1,5 @@
 import mongoose from 'mongoose'
+import { getReceiverId, getStaffUserId, getAdminUserId } from '~/utils/chatHelper'
 
 const messageSchema = new mongoose.Schema({
   conversationId: {
@@ -12,12 +13,17 @@ const messageSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  // Người nhận tin nhắn (có thể null cho chat group)
+  // Người nhận tin nhắn (sẽ được tự động xác định bởi middleware)
   toId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: false,
-    default: null
+    required: false, // Tạm thời không required để middleware có thể xử lý
+    validate: {
+      validator: function(v) {
+        return v == null || mongoose.Types.ObjectId.isValid(v)
+      },
+      message: 'toId must be a valid ObjectId'
+    }
   },
   content: {
     type: String,
@@ -34,16 +40,59 @@ const messageSchema = new mongoose.Schema({
     type: String,
     default: null
   },
-  isRead: {
-    type: Boolean,
-    default: false
-  },
   isDeleted: {
     type: Boolean,
     default: false
   },
   }, {
   timestamps: true
+})
+
+// Middleware: Tự động xác định toId nếu chưa có
+messageSchema.pre('save', async function(next) {
+  // Chỉ xử lý nếu toId chưa có hoặc null
+  if (!this.toId) {
+    try {
+      console.log('🔧 Auto-determining toId for message:', this._id)
+      console.log('🔧 ConversationId:', this.conversationId)
+      console.log('🔧 FromId:', this.fromId)
+      
+      // Lấy thông tin người gửi
+      const sender = await mongoose.model('User').findById(this.fromId).populate('roleId', 'name')
+      if (!sender) {
+        console.error('❌ Sender not found:', this.fromId)
+        return next(new Error('Sender not found'))
+      }
+      
+      const senderRole = sender.roleId?.name || 'user'
+      console.log('🔧 Sender details:', {
+        senderId: this.fromId,
+        senderName: sender.name,
+        senderRole: senderRole,
+        conversationId: this.conversationId
+      })
+      
+      // Xác định toId dựa trên conversationId và fromId
+      // ConversationId luôn chứa 2 user IDs, toId sẽ là user ID khác fromId
+      this.toId = await getReceiverId(this.conversationId, this.fromId)
+      console.log('🔧 Determined toId from conversationId:', this.toId)
+      
+      if (!this.toId) {
+        console.error('❌ Could not determine receiver (toId)')
+        return next(new Error('Could not determine receiver (toId)'))
+      }
+      
+      console.log('✅ Auto-determined toId:', this.toId)
+      
+    } catch (error) {
+      console.error('❌ Error auto-determining toId:', error)
+      return next(error)
+    }
+  } else {
+    console.log('✅ toId already set:', this.toId)
+  }
+  
+  next()
 })
 
 // Indexes

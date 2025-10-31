@@ -17,6 +17,15 @@ const ChatsPage = () => {
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const fileInputRef = useRef(null);
+  const selectedConversationRef = useRef(null); // Lưu selectedConversation hiện tại
+  const conversationsLoadedRef = useRef(false); // Track xem đã load conversations chưa
+  const currentConversationIdRef = useRef(null); // Track conversationId hiện tại đang load
+  const isUserScrollingRef = useRef(false); // Track user scroll state
+  const lastMessagesLengthRef = useRef(0); // Track số lượng messages để detect tin nhắn mới
+  // FIX: Sử dụng Set để track messageId (O(1) lookup) - tránh duplicate messages
+  const messageIdsSetRef = useRef(new Set()); // Track messageId đã thêm vào state
+  // FIX: Sử dụng Set để track messageId đang được xử lý (lock mechanism - tránh race condition)
+  const processingMessagesRef = useRef(new Set()); // Track messageId đang được xử lý
 
   // Initialize socket connection
   useEffect(() => {
@@ -29,12 +38,11 @@ const ChatsPage = () => {
     })
 
     newSocket.on('connect', () => {
-      console.log('🔌 Admin connected to chat server')
       setSocket(newSocket)
     })
 
     newSocket.on('disconnect', () => {
-      console.log('🔌 Admin disconnected from chat server')
+      // Handle disconnect
     })
 
     newSocket.on('connect_error', (error) => {
@@ -46,21 +54,22 @@ const ChatsPage = () => {
     }
   }, [token])
 
-  // Load conversations
+  // Load conversations - FIX: Chỉ set loading lần đầu, tránh reload không cần thiết
   useEffect(() => {
     const loadConversations = async () => {
-      try {
+      // Chỉ set loading khi chưa load lần nào
+      if (!conversationsLoadedRef.current) {
         setLoading(true)
+      }
+      
+      try {
         const response = await chatAPI.getAdminConversations()
         const conversations = response.data.data.conversations || []
         setConversations(conversations)
+        conversationsLoadedRef.current = true
         
-        // Join tất cả conversations để nhận tin nhắn real-time
-        if (socket && conversations.length > 0) {
-          conversations.forEach(conversation => {
-            socket.emit('join_conversation', { conversationId: conversation.conversationId })
-          })
-        }
+        // FIX: Không join tất cả conversations khi load list
+        // Chỉ join khi select conversation để tránh duplicate
       } catch (error) {
         console.error('Error loading conversations:', error)
       } finally {
@@ -71,97 +80,270 @@ const ChatsPage = () => {
     if (socket && user) {
       loadConversations()
     }
-  }, [socket, user])
+  }, [socket, user?._id]) // FIX: Chỉ dùng user._id thay vì toàn bộ user object
 
-  // Load messages when conversation is selected
+  // Load messages when conversation is selected - FIX: Tránh reload khi user object thay đổi reference
   useEffect(() => {
-    const loadMessages = async () => {
-      if (!selectedConversation) return
+      const loadMessages = async () => {
+        if (!selectedConversation) {
+          setMessages([])
+          currentConversationIdRef.current = null
+          // FIX: Reset messageIdsSet khi không có conversation được chọn
+          messageIdsSetRef.current.clear()
+          return
+        }
+
+      const convId = selectedConversation.conversationId || selectedConversation._id
+      
+      // Tránh reload nếu đang load cùng conversation
+      if (currentConversationIdRef.current === convId) {
+        return
+      }
+      
+      currentConversationIdRef.current = convId
 
       try {
-        const response = await chatAPI.getConversationMessages(selectedConversation.conversationId, 1, 1000)
-        setMessages(response.data.data.messages || [])
+        const response = await chatAPI.getConversationMessages(convId, 1, 1000)
+        const raw = response?.data?.data?.messages || response?.data?.messages || []
+
+        // Chuẩn hóa dữ liệu message để UI hiển thị ổn định
+        const normalized = raw.map((msg) => {
+          const fromUser = msg.fromUser || (msg.fromId ? {
+            userId: msg.fromId._id || msg.fromId,
+            name: msg.fromId.name,
+            email: msg.fromId.email,
+            avatar: msg.fromId.avatar
+          } : null)
+
+          const toUser = msg.toUser || (msg.toId ? {
+            userId: msg.toId._id || msg.toId,
+            name: msg.toId.name,
+            email: msg.toId.email,
+            avatar: msg.toId.avatar
+          } : null)
+
+          // FIX: Đơn giản hóa - loại bỏ phân biệt role, chỉ dùng userId
+          // FIX: Đảm bảo messageId luôn là string để so sánh chính xác
+          const messageId = String(msg.messageId || msg._id || '')
+          
+          return {
+            messageId,
+            text: msg.text || msg.content || '',
+            timestamp: msg.timestamp || msg.createdAt || new Date(),
+            isRead: msg.isRead ?? false,
+            messageType: msg.messageType || 'text',
+            imageUrl: msg.imageUrl || null,
+            fromUser,
+            toUser
+          }
+        })
+        // Sắp xếp tăng dần theo thời gian để tin cũ ở trên, tin mới ở dưới
+        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+
+        setMessages(normalized)
         
-        // Join conversation room
-        if (socket) {
-          console.log('🔌 Admin joining conversation:', selectedConversation.conversationId)
-          socket.emit('join_conversation', { conversationId: selectedConversation.conversationId })
-        }
+        // FIX: Reset và rebuild messageIdsSet khi load messages mới
+        messageIdsSetRef.current.clear()
+        normalized.forEach(msg => {
+          const msgId = String(msg.messageId || '')
+          if (msgId && !msgId.startsWith('temp_')) {
+            messageIdsSetRef.current.add(msgId)
+          }
+        })
         
-        // Join tất cả conversations để nhận tin nhắn real-time từ bất kỳ conversation nào
-        if (socket && conversations.length > 0) {
-          console.log('🔌 Admin joining all conversations:', conversations.map(c => c.conversationId))
-          conversations.forEach(conversation => {
-            console.log('🔌 Admin joining conversation:', conversation.conversationId)
-            socket.emit('join_conversation', { conversationId: conversation.conversationId })
-          })
+        // FIX: Join conversation room khi chọn conversation
+        // Đảm bảo join đúng format conversationId
+        if (socket && convId) {
+          socket.emit('join_conversation', convId)
         }
       } catch (error) {
         console.error('Error loading messages:', error)
+        currentConversationIdRef.current = null // Reset on error
       }
     }
 
     loadMessages()
-  }, [selectedConversation, socket])
+  }, [selectedConversation?.conversationId || selectedConversation?._id, socket]) // FIX: Chỉ dùng conversationId thay vì toàn bộ object
+  
+  // Update ref với selected conversation hiện tại
+  useEffect(() => {
+    selectedConversationRef.current = selectedConversation
+  }, [selectedConversation])
 
-  // Socket event listeners
+  // FIX #6: Socket event listeners - Đảm bảo chỉ đăng ký 1 lần
+  // VẤN ĐỀ: Socket event listener có thể bị đăng ký nhiều lần nếu component re-render
+  // GIẢI PHÁP: Cleanup trước khi đăng ký mới và đảm bảo dependencies đúng
   useEffect(() => {
     if (!socket) return
 
+    // FIX: Đảm bảo cleanup trước khi đăng ký mới (tránh duplicate listeners)
+    // Socket.io cho phép multiple listeners, nhưng ta muốn chỉ 1 listener
+    socket.off('new_message')
+    socket.off('user_typing_conversation')
+    socket.off('user_joined_conversation')
+    socket.off('user_left_conversation')
+
     const handleNewMessage = (data) => {
-      console.log('📨 Admin received new message:', data)
-      console.log('📨 Current selected conversation:', selectedConversation)
-      console.log('📨 Message conversationId:', data.conversationId)
-      console.log('📨 Selected conversation _id:', selectedConversation?._id)
-      console.log('📨 Selected conversation conversationId:', selectedConversation?.conversationId)
-      console.log('📨 Message sender:', data.message?.sender)
-      console.log('📨 Message fromUser:', data.message?.fromUser)
-      
-      // Kiểm tra xem tin nhắn này có thuộc conversation hiện tại không
-      const isForCurrentConversation = data.conversationId === selectedConversation?._id || 
-                                     data.conversationId === selectedConversation?.conversationId
-      
-      if (!isForCurrentConversation) {
-        console.log('❌ Message not for current conversation:', data.conversationId, 'vs', selectedConversation?._id, 'or', selectedConversation?.conversationId)
+      // Kiểm tra xem có message trong data không
+      if (!data.message) {
+        console.error('❌ No message in data:', data)
         return
       }
       
-      console.log('✅ Message is for current conversation, processing...')
+      // FIX: Normalize messageId ngay từ đầu để check duplicate
+      const messageId = String(data.message.messageId || '')
       
-      // Kiểm tra xem tin nhắn này có phải là tin nhắn temp không
-      const isTempMessage = data.message.messageId?.startsWith('temp_')
+      // FIX: Kiểm tra duplicate NGAY LẦN ĐẦU (trước khi xử lý logic phức tạp)
+      // Đây là defense layer đầu tiên để chặn duplicate do race condition
+      if (messageId && !messageId.startsWith('temp_')) {
+        // Kiểm tra xem messageId này đang được xử lý không (lock mechanism)
+        if (processingMessagesRef.current.has(messageId)) {
+          return // Bỏ qua message này hoàn toàn
+        }
+        
+        // Đánh dấu messageId đang được xử lý
+        processingMessagesRef.current.add(messageId)
+        
+        // Cleanup sau 1 giây (đảm bảo không bị stuck)
+        setTimeout(() => {
+          processingMessagesRef.current.delete(messageId)
+        }, 1000)
+      }
+      
+      // Lấy selectedConversation hiện tại từ ref (luôn là giá trị mới nhất)
+      const current = selectedConversationRef.current
+      const currentConversationId = current?.conversationId || current?._id
+      
+      // Kiểm tra xem tin nhắn này có thuộc conversation hiện tại không
+      const isForCurrentConversation = data.conversationId === currentConversationId
+      
+      if (!isForCurrentConversation && current) {
+        // Cập nhật conversation list nếu có tin nhắn mới từ conversation khác
+        // TODO: Cập nhật conversation list để hiển thị unread count
+        return
+      }
+      
+      // Nếu không có conversation được chọn, không hiển thị message
+      if (!current) {
+        return
+      }
+      
+      // FIX: Đơn giản hóa - loại bỏ phân biệt role, chỉ dùng userId
+      const isFromCurrentUser = data.message?.fromUser?.userId?.toString() === user?._id?.toString()
+      
+      // Kiểm tra xem tin nhắn này có phải là tin nhắn temp không (từ socket - không nên xảy ra)
+      const isTempMessage = data.message?.messageId?.startsWith('temp_')
       if (isTempMessage) {
         return
       }
-      
-      // Kiểm tra xem có tin nhắn temp nào cần thay thế không
+
       setMessages(prev => {
-        const tempMessageIndex = prev.findIndex(msg => 
-          msg.messageId?.startsWith('temp_') && 
-          msg.text === data.message.text &&
-          msg.sender === data.message.sender
-        )
+        // Normalize messageId để so sánh (convert về string)
+        const newMessageId = String(data.message.messageId || '')
+        
+        // BƯỚC 1: Kiểm tra duplicate dựa trên messageId (CHÍNH XÁC NHẤT) - PHẢI LÀM TRƯỚC
+        // FIX: Kiểm tra trong Set trước (O(1)) - nhanh nhất
+        if (newMessageId && !newMessageId.startsWith('temp_')) {
+          if (messageIdsSetRef.current.has(newMessageId)) {
+            processingMessagesRef.current.delete(newMessageId)
+            return prev
+          }
+        }
+        
+        // FIX: Kiểm tra duplicate trong state array (fallback)
+        // QUAN TRỌNG: Normalize cả 2 messageId về string để so sánh chính xác
+        const exists = prev.some(msg => {
+          const msgId = String(msg.messageId || '')
+          // Chỉ kiểm tra real messages (không phải temp)
+          if (msgId.startsWith('temp_')) return false
+          if (msgId === '' || newMessageId === '') return false
+          
+          // So sánh sau khi normalize cả 2 về string
+          return msgId === newMessageId
+        })
+        
+        if (exists) {
+          // FIX: Thêm vào Set để tránh check lại lần sau
+          if (newMessageId && !newMessageId.startsWith('temp_')) {
+            messageIdsSetRef.current.add(newMessageId)
+            processingMessagesRef.current.delete(newMessageId)
+          }
+          return prev
+        }
+        
+        // BƯỚC 2: Thay thế temp message nếu có (cho user gửi message)
+        // FIX: Đơn giản hóa - chỉ check text và fromUser userId
+        const tempMessageIndex = prev.findIndex(msg => {
+          // Chỉ xử lý temp messages
+          if (!String(msg.messageId || '').startsWith('temp_')) return false
+          
+          // Match đơn giản: text và fromUser userId giống nhau
+          const textMatch = String(msg.text || '') === String(data.message.text || '')
+          const isFromSameUser = String(msg.fromUser?.userId || '') === String(data.message.fromUser?.userId || '')
+          
+          return textMatch && isFromSameUser
+        })
         
         if (tempMessageIndex !== -1) {
           const newMessages = [...prev]
           newMessages[tempMessageIndex] = data.message
+          
+          // FIX: Thêm messageId vào Set sau khi thay thế
+          if (newMessageId && !newMessageId.startsWith('temp_')) {
+            messageIdsSetRef.current.add(newMessageId)
+            processingMessagesRef.current.delete(newMessageId)
+          }
+          
           return newMessages
         }
         
-        // Kiểm tra xem tin nhắn này đã tồn tại chưa
-        const exists = prev.some(msg => msg.messageId === data.message.messageId)
-        if (exists) {
+        // BƯỚC 3: Kiểm tra duplicate dựa trên content và timestamp (fallback)
+        // FIX: Đơn giản hóa - chỉ check text, fromUser userId, và timestamp
+        const duplicateIndex = prev.findIndex(msg => {
+          const msgId = String(msg.messageId || '')
+          // Bỏ qua temp messages
+          if (msgId.startsWith('temp_')) return false
+          
+          // Match chính xác: text, fromUser userId, và timestamp rất gần nhau (< 1 giây)
+          const textMatch = String(msg.text || '') === String(data.message.text || '')
+          const isFromSameUser = String(msg.fromUser?.userId || '') === String(data.message.fromUser?.userId || '')
+          
+          // Timestamp phải rất gần nhau (< 1 giây) để chắc chắn là duplicate
+          const timeDiff = Math.abs(
+            new Date(data.message.timestamp).getTime() - new Date(msg.timestamp).getTime()
+          )
+          const isVeryClose = timeDiff < 1000 // 1 giây
+          
+          return textMatch && isFromSameUser && isVeryClose
+        })
+        
+        if (duplicateIndex !== -1) {
+          // FIX: Thêm vào Set để tránh check lại
+          if (newMessageId && !newMessageId.startsWith('temp_')) {
+            messageIdsSetRef.current.add(newMessageId)
+            processingMessagesRef.current.delete(newMessageId)
+          }
           return prev
+        }
+        
+        // BƯỚC 4: Thêm message mới nếu không tìm thấy duplicate
+        // FIX: Thêm messageId vào Set TRƯỚC khi thêm vào state (để tránh race condition)
+        if (newMessageId && !newMessageId.startsWith('temp_')) {
+          messageIdsSetRef.current.add(newMessageId)
+          processingMessagesRef.current.delete(newMessageId)
         }
         
         return [...prev, data.message]
       })
       
-      scrollToBottom()
+      // Scroll to bottom sau khi thêm message
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }, 100)
     }
 
     const handleUserTyping = (data) => {
-      if (data.userId !== user._id) {
+      if (data.userId !== user?._id) {
         setTypingUsers(prev => {
           const filtered = prev.filter(u => u.userId !== data.userId)
           if (data.isTyping) {
@@ -173,11 +355,11 @@ const ChatsPage = () => {
     }
 
     const handleUserJoined = (data) => {
-      console.log(`👥 ${data.userName} joined the conversation`)
+      // Handle user joined
     }
 
     const handleUserLeft = (data) => {
-      console.log(`👋 ${data.userName} left the conversation`)
+      // Handle user left
     }
 
     socket.on('new_message', handleNewMessage)
@@ -186,31 +368,51 @@ const ChatsPage = () => {
     socket.on('user_left_conversation', handleUserLeft)
 
     return () => {
+      // FIX: Cleanup socket event listeners khi component unmount hoặc dependencies thay đổi
       socket.off('new_message', handleNewMessage)
       socket.off('user_typing_conversation', handleUserTyping)
       socket.off('user_joined_conversation', handleUserJoined)
       socket.off('user_left_conversation', handleUserLeft)
     }
-  }, [socket, user])
+  }, [socket, user]) // FIX: Không thêm selectedConversation vào deps để tránh re-subscribe (sử dụng ref)
 
-  // Auto scroll to bottom
+  // Auto scroll to bottom - FIX: Chỉ scroll khi thực sự cần thiết
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    // Chỉ scroll nếu:
+    // 1. Messages tăng (tin nhắn mới được thêm)
+    // 2. User đang ở gần cuối scroll hoặc chưa scroll
+    if (messages.length > lastMessagesLengthRef.current) {
+      // Tin nhắn mới được thêm
+      const messagesContainer = messagesEndRef.current?.parentElement
+      if (messagesContainer) {
+        const isNearBottom = 
+          messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 200
+        
+        if (isNearBottom || messages.length === 1) {
+          // Chỉ scroll nếu user đang ở gần cuối hoặc là tin nhắn đầu tiên
+          setTimeout(() => {
+            scrollToBottom()
+          }, 100)
+        }
+      }
+    }
+    
+    lastMessagesLengthRef.current = messages.length
+  }, [messages.length]) // FIX: Chỉ trigger khi length thay đổi, không phải toàn bộ messages array
 
   const handleSendMessage = async (e) => {
     e.preventDefault()
     if (!newMessage.trim() || !socket || !selectedConversation) return
 
     try {
+      // FIX: Đơn giản hóa - loại bỏ phân biệt role, chỉ dùng userId
       // Thêm tin nhắn vào state ngay lập tức (Optimistic UI)
       const tempMessage = {
         messageId: `temp_${Date.now()}`,
-        sender: 'admin',
         text: newMessage.trim(),
         timestamp: new Date(),
         isRead: false,
@@ -230,12 +432,15 @@ const ChatsPage = () => {
         } : null
       }
       
+      // FIX: Chiến lược B - Thêm temp message vào state (Optimistic UI)
+      // Lưu ý: Khi nhận lại từ socket, logic deduplication sẽ thay thế temp message
       setMessages(prev => [...prev, tempMessage])
       scrollToBottom()
 
       // Send via socket for real-time
+      const convId = selectedConversation.conversationId || selectedConversation._id
       socket.emit('send_message', {
-        conversationId: selectedConversation.conversationId,
+        conversationId: convId,
         content: newMessage.trim(),
         messageType: 'text'
       })
@@ -244,7 +449,8 @@ const ChatsPage = () => {
       
       // Stop typing indicator
       if (socket) {
-        socket.emit('typing_stop', { conversationId: selectedConversation._id })
+        const convId = selectedConversation.conversationId || selectedConversation._id
+        socket.emit('typing_stop', { conversationId: convId })
       }
     } catch (error) {
       console.error('Error sending message:', error)
@@ -279,10 +485,10 @@ const ChatsPage = () => {
       const uploadResponse = await chatAPI.uploadImage(formData)
       const imageUrl = uploadResponse.data.data.imageUrl
 
+      // FIX: Đơn giản hóa - loại bỏ phân biệt role, chỉ dùng userId
       // Thêm tin nhắn ảnh vào state ngay lập tức (Optimistic UI)
       const tempImageMessage = {
         messageId: `temp_${Date.now()}`,
-        sender: 'admin',
         text: 'Đã gửi ảnh',
         timestamp: new Date(),
         isRead: false,
@@ -302,12 +508,14 @@ const ChatsPage = () => {
         } : null
       }
       
+      // FIX: Chiến lược B - Thêm temp image message vào state (Optimistic UI)
       setMessages(prev => [...prev, tempImageMessage])
       scrollToBottom()
 
       // Send image message via socket
+      const convId = selectedConversation.conversationId || selectedConversation._id
       socket.emit('send_message', {
-        conversationId: selectedConversation.conversationId,
+        conversationId: convId,
         content: 'Đã gửi ảnh',
         messageType: 'image',
         imageUrl: imageUrl
@@ -339,13 +547,15 @@ const ChatsPage = () => {
     // Start typing indicator
     if (!isTyping) {
       setIsTyping(true)
-      socket.emit('typing_start', { conversationId: selectedConversation.conversationId })
+      const convId = selectedConversation.conversationId || selectedConversation._id
+      socket.emit('typing_start', { conversationId: convId })
     }
 
     // Stop typing indicator after 2 seconds of inactivity
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false)
-      socket.emit('typing_stop', { conversationId: selectedConversation.conversationId })
+      const convId = selectedConversation.conversationId || selectedConversation._id
+      socket.emit('typing_stop', { conversationId: convId })
     }, 2000)
   }
 
@@ -409,7 +619,7 @@ const ChatsPage = () => {
                     >
                       <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium">
-                        {conversation.user?.name?.charAt(0) || 'U'}
+                        {conversation.user?.name?.charAt(0)?.toUpperCase() || conversation.user?.email?.charAt(0)?.toUpperCase() || 'U'}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">
@@ -437,7 +647,7 @@ const ChatsPage = () => {
                 <div className="p-4 border-b border-gray-200 bg-gray-50">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium">
-                      {selectedConversation.user?.name?.charAt(0) || 'U'}
+                      {selectedConversation.user?.name?.charAt(0)?.toUpperCase() || selectedConversation.user?.email?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-gray-900">
@@ -458,15 +668,30 @@ const ChatsPage = () => {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {messages.map((message) => {
-                        return (
-                          <div
-                            key={message.messageId}
-                            className={`flex ${message.sender === 'admin' ? 'justify-end' : 'justify-start'}`}
-                          >
+                      {messages.map((message, index) => {
+                        // FIX #7: Tạo key unique cho mỗi message để React render đúng
+                        // VẤN ĐỀ: Nếu có duplicate messageId, React có thể render sai hoặc warning
+                        // GIẢI PHÁP: Sử dụng messageId + index để đảm bảo unique
+                        // Lưu ý: Nếu messageId là ObjectId, convert sang string
+                        const messageIdStr = String(message.messageId || `temp_${index}`)
+                        const uniqueKey = `${messageIdStr}_${index}`
+                        
+                        // FIX: Đơn giản hóa - chỉ so sánh userId để xác định tin nhắn của mình
+                        // - Tin do current user gửi (fromUser.userId === current userId) → hiển thị bên phải
+                        // - Tin từ user khác (fromUser.userId !== current userId) → hiển thị bên trái
+                        const isFromCurrentUser = message.fromUser && message.fromUser.userId?.toString() === user._id?.toString();
+                        
+                  // FIX: Render message với key unique
+                  // Tham khảo ChatWidget.jsx line 408: `key={message.messageId || message._id || `msg_${Date.now()}`}`
+                  // Ta sử dụng uniqueKey để đảm bảo unique ngay cả khi có duplicate messageId
+                  return (
+                    <div
+                      key={uniqueKey}
+                      className={`flex ${isFromCurrentUser ? 'justify-end' : 'justify-start'}`}
+                    >
                             <div
                               className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                                message.sender === 'admin'
+                                isFromCurrentUser
                                   ? 'bg-blue-500 text-white'
                                   : 'bg-gray-100 text-gray-900'
                               }`}
@@ -481,9 +706,6 @@ const ChatsPage = () => {
                                     style={{ maxHeight: '200px' }}
                                     onError={(e) => {
                                       console.error('❌ Admin image load error:', e)
-                                    }}
-                                    onLoad={() => {
-                                      // Image loaded successfully
                                     }}
                                   />
                                 ) : (
@@ -501,7 +723,7 @@ const ChatsPage = () => {
                               <p className="text-sm">{message.text}</p>
                             )}
                               <p className={`text-xs mt-1 ${
-                                message.sender === 'admin' ? 'text-blue-100' : 'text-gray-500'
+                                isFromCurrentUser ? 'text-blue-100' : 'text-gray-500'
                               }`}>
                                 {formatTime(message.timestamp)}
                               </p>

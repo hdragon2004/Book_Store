@@ -84,7 +84,7 @@ const AdminLayout = ({ children }) => {
               <span className="text-white font-bold text-sm">B</span>
             </div>
             {!sidebarCollapsed && (
-              <span className="ml-3 text-xl font-bold text-gray-900">BOOKEE ADMIN</span>
+              <span className="ml-3 text-xl font-bold text-gray-900">BOOKSTORE</span>
             )}
           </div>
         </div>

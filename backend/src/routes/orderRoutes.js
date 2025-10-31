@@ -7,7 +7,8 @@ import {
   getOrderById,
   updateOrderStatus,
   cancelOrder,
-  getOrders
+  getOrders,
+  mockAutoConfirmPayment
 } from '~/controllers/orderController'
 import { authenticate, authorize } from '~/middlewares/authMiddleware'
 import { validationMiddleware } from '~/middlewares/validationMiddleware'
@@ -95,6 +96,22 @@ router.patch(
   validationMiddleware,
   cancelOrder
 ) // Hủy đơn hàng
+
+// Mock tự động xác nhận thanh toán QR (mô phỏng)
+router.post(
+  '/:orderId/mock-confirm-payment',
+  [
+    param('orderId')
+      .isMongoId()
+      .withMessage('Order ID must be a valid MongoDB ObjectId'),
+    body('paymentMethod')
+      .optional()
+      .isIn(['momo', 'zalopay', 'bank_transfer'])
+      .withMessage('Payment method must be one of: momo, zalopay, bank_transfer')
+  ],
+  validationMiddleware,
+  mockAutoConfirmPayment
+) // Mock tự động xác nhận thanh toán QR sau 5 giây
 
 // Universal route - User: chỉ orders của mình, Admin: tất cả orders
 router.get(

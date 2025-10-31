@@ -37,6 +37,7 @@ const setupChatSocket = (io) => {
 
     // Join conversation room
     socket.on('join_conversation', (conversationId) => {
+      console.log('🔌 User joining conversation:', conversationId, 'User:', socket.user.name)
       socket.join(conversationId)
       
       // Emit user joined event
@@ -60,48 +61,51 @@ const setupChatSocket = (io) => {
       })
     })
 
-    // Handle new message - simplified version
+    // Handle new message - simplified version with middleware handling toId
     socket.on('send_message', async (data) => {
       try {
         const { conversationId, content, messageType = 'text', imageUrl } = data
 
-        // Tìm admin user để làm toId
-        const adminRole = await Role.findOne({ name: 'admin' })
-        const adminUser = await User.findOne({ roleId: adminRole._id })
-        
-        // Xác định fromId và toId đơn giản hơn
-        const fromId = socket.userId
-        let toId
-        
-        if (socket.user.roleId.name === 'admin') {
-          // Admin gửi cho user - lấy user ID từ conversationId
-          const userIds = conversationId.split('_')
-          toId = userIds.find(id => id !== socket.userId)
-        } else {
-          // User gửi cho admin
-          toId = adminUser._id
-        }
+        console.log('📤 Creating message with data:', {
+          conversationId,
+          fromId: socket.userId,
+          content,
+          messageType,
+          imageUrl
+        })
 
-        // Tạo tin nhắn mới - chỉ lưu 1 lần
+        // Tạo tin nhắn mới - middleware sẽ tự động xác định toId
         const message = await Message.create({
           conversationId,
-          fromId,
-          toId,
+          fromId: socket.userId,
           content,
           messageType,
           imageUrl: imageUrl || null,
           isRead: false,
           isDeleted: false
         })
+        
+        console.log('✅ Message created successfully:', {
+          messageId: message._id,
+          fromId: message.fromId,
+          toId: message.toId,
+          conversationId: message.conversationId
+        })
 
         // Populate để có đầy đủ thông tin
         await message.populate('fromId', 'name email avatar')
         await message.populate('toId', 'name email avatar')
+        
+        console.log('✅ Message populated:', {
+          fromUser: message.fromId?.name,
+          toUser: message.toId?.name
+        })
 
         // Format message cho frontend
+        const senderRole = socket.user.roleId.name
         const formattedMessage = {
           messageId: message._id,
-          sender: socket.user.roleId.name === 'admin' ? 'admin' : 'user',
+          sender: senderRole === 'admin' ? 'admin' : senderRole === 'staff' ? 'staff' : 'user',
           text: message.content,
           timestamp: message.createdAt,
           isRead: message.isRead,
@@ -121,6 +125,14 @@ const setupChatSocket = (io) => {
           } : null
         }
 
+        console.log('📤 Formatted message for frontend:', {
+          messageId: formattedMessage.messageId,
+          sender: formattedMessage.sender,
+          fromUser: formattedMessage.fromUser?.name,
+          toUser: formattedMessage.toUser?.name,
+          content: formattedMessage.text
+        })
+
         // Emit tin nhắn đến tất cả users trong conversation
         console.log('📤 Emitting message to conversation:', conversationId, 'Message type:', messageType, 'ImageUrl:', imageUrl)
         console.log('📤 Formatted message:', formattedMessage)
@@ -132,10 +144,21 @@ const setupChatSocket = (io) => {
         })
 
       } catch (error) {
-        console.error('Error sending message:', error)
+        console.error('❌ Error sending message:', error)
+        
+        // Send specific error message to client
         socket.emit('message_error', {
           error: 'Failed to send message',
-          details: error.message
+          details: error.message,
+          type: 'validation_error'
+        })
+        
+        // Log detailed error for debugging
+        console.error('❌ Message creation failed:', {
+          conversationId: data.conversationId,
+          fromId: socket.userId,
+          error: error.message,
+          stack: error.stack
         })
       }
     })

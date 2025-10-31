@@ -225,6 +225,51 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
   )
 })
 
+
+export const mockAutoConfirmPayment = asyncHandler(async (req, res) => {
+  const { orderId } = req.params
+  const { paymentMethod } = req.body
+
+  if (!orderId) {
+    throw new AppError('Order ID is required', 400)
+  }
+
+  // Kiểm tra order tồn tại
+  const order = await Order.findById(orderId)
+  if (!order) {
+    throw new AppError('Order not found', 404)
+  }
+
+  // Chỉ cho phép với QR payment methods (momo, zalopay, bank_transfer)
+  const qrPaymentMethods = ['momo', 'zalopay', 'bank_transfer']
+  const orderPaymentMethod = paymentMethod || order.paymentMethod
+
+  if (!qrPaymentMethods.includes(orderPaymentMethod)) {
+    throw new AppError('This endpoint only supports QR payment methods (momo, zalopay, bank_transfer)', 400)
+  }
+
+  // Kiểm tra order đang ở trạng thái pending
+  if (order.status !== 'pending' || order.paymentStatus !== 'pending') {
+    return res.status(200).json(
+      new ApiResponse(200, order, 'Order payment already confirmed or order not in pending status')
+    )
+  }
+
+  // Tạo transactionId giả cho mock payment
+  const mockTransactionId = `MOCK-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
+
+  // Xác nhận thanh toán
+  const confirmedOrder = await orderService.confirmPayment(
+    orderId,
+    orderPaymentMethod,
+    mockTransactionId
+  )
+
+  res.status(200).json(
+    new ApiResponse(200, confirmedOrder, 'Payment automatically confirmed (simulated)')
+  )
+})
+
 // Hủy đơn hàng (chỉ cho pending và confirmed)
 export const cancelOrder = asyncHandler(async (req, res) => {
   const { orderId } = req.params

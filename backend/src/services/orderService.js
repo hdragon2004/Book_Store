@@ -434,14 +434,17 @@ class OrderService {
 
     await order.save()
 
+    // Lấy OrderItems từ collection riêng (Order không có field items trực tiếp)
+    const orderItems = await OrderItem.find({ orderId: order._id, isDeleted: false })
+
     // Nếu đơn hàng được xác nhận, cập nhật tồn kho
-    if (status === 'confirmed') {
-      await this.updateBookStock(order.items, 'subtract')
+    if (status === 'confirmed' && orderItems.length > 0) {
+      await this.updateBookStock(orderItems, 'subtract')
     }
 
     // Nếu đơn hàng bị hủy, hoàn trả tồn kho
-    if (status === 'cancelled' && order.status !== 'cancelled') {
-      await this.updateBookStock(order.items, 'add')
+    if (status === 'cancelled' && order.status !== 'cancelled' && orderItems.length > 0) {
+      await this.updateBookStock(orderItems, 'add')
     }
 
     // Gửi email thông báo cập nhật trạng thái đơn hàng
@@ -464,6 +467,12 @@ class OrderService {
       throw new AppError('Order cannot be cancelled', 400)
     }
 
+    // Lưu trạng thái ban đầu trước khi cập nhật
+    const originalStatus = order.status
+
+    // Lấy OrderItems từ collection riêng (Order không có field items trực tiếp)
+    const orderItems = await OrderItem.find({ orderId: order._id, isDeleted: false })
+
     // Cập nhật trạng thái
     order.status = 'cancelled'
     order.notes = order.notes || []
@@ -475,9 +484,9 @@ class OrderService {
 
     await order.save()
 
-    // Hoàn trả tồn kho nếu đơn hàng đã được xác nhận
-    if (order.status === 'confirmed') {
-      await this.updateBookStock(order.items, 'add')
+    // Hoàn trả tồn kho nếu đơn hàng đã được xác nhận trước đó
+    if (originalStatus === 'confirmed' && orderItems.length > 0) {
+      await this.updateBookStock(orderItems, 'add')
     }
 
     return order
@@ -757,16 +766,24 @@ class OrderService {
       throw new AppError('Order not found', 404)
     }
 
+    // Lấy OrderItems từ collection riêng (Order không có field items trực tiếp)
+    const orderItems = await OrderItem.find({ orderId: order._id, isDeleted: false })
+    if (!orderItems || orderItems.length === 0) {
+      throw new AppError('Order items not found', 404)
+    }
+
     // Cập nhật thông tin thanh toán
     order.paymentMethod = paymentMethod
     order.transactionId = transactionId
-    order.paymentStatus = 'paid'
+    order.paymentStatus = 'completed' // Sử dụng 'completed' thay vì 'paid' để khớp với enum
     order.status = 'confirmed'
+    order.paidAt = new Date()
+    order.confirmedAt = new Date()
 
     await order.save()
 
-    // Cập nhật tồn kho
-    await this.updateBookStock(order.items, 'subtract')
+    // Cập nhật tồn kho - truyền OrderItems array thay vì order.items
+    await this.updateBookStock(orderItems, 'subtract')
 
     return order
   }

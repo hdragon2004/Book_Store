@@ -29,7 +29,8 @@ class SocketHandler {
         }
 
         // Verify JWT token
-        const decoded = jwt.verify(token, config.jwtSecret)
+        const jwtSecret = config.jwtSecret || config.JWT_SECRET || process.env.JWT_SECRET
+        const decoded = jwt.verify(token, jwtSecret)
         
         // Lấy thông tin user
         const user = await User.findById(decoded.userId || decoded.id).select('-password').populate('roleId')
@@ -64,8 +65,6 @@ class SocketHandler {
         connectedAt: new Date()
       })
 
-      console.log(`🔌 User connected: ${socket.id} (${socket.user._id})`)
-
       // Join user vào room riêng của họ
       socket.join(`user:${socket.user._id}`)
 
@@ -77,13 +76,11 @@ class SocketHandler {
       // Event: User join room
       socket.on('join_room', (room) => {
         socket.join(room)
-        console.log(`👤 ${socket.id} joined room: ${room}`)
       })
 
       // Event: User leave room
       socket.on('leave_room', (room) => {
         socket.leave(room)
-        console.log(`👤 ${socket.id} left room: ${room}`)
       })
 
       // Event: Send message
@@ -96,17 +93,27 @@ class SocketHandler {
         this.handleChatMessage(socket, data)
       })
 
-      // Event: Join conversation
+      // Event: Join conversation (nhận cả string conversationId hoặc object {conversationId})
       socket.on('join_conversation', (data) => {
-        this.handleJoinConversation(socket, data)
+        // Hỗ trợ cả string và object
+        const conversationId = typeof data === 'string' ? data : data?.conversationId || data
+        if (conversationId) {
+          this.handleJoinConversation(socket, { conversationId })
+        }
       })
 
       // Event: Leave conversation
       socket.on('leave_conversation', (data) => {
-        this.handleLeaveConversation(socket, data)
+        // Hỗ trợ cả string và object
+        const conversationId = typeof data === 'string' ? data : data?.conversationId || data
+        if (conversationId) {
+          this.handleLeaveConversation(socket, { conversationId })
+        }
       })
 
       // Event: Send message to conversation
+      // FIX: Đây là handler DUY NHẤT cho send_message event
+      // Xử lý tất cả messages gửi qua socket với conversationId
       socket.on('send_message', (data) => {
         this.handleSendMessageToConversation(socket, data)
       })
@@ -216,8 +223,6 @@ class SocketHandler {
       userId: socket.user._id,
       timestamp: new Date()
     })
-
-    console.log(`📦 Order status updated: ${orderId} - ${status}`)
   }
 
   /**
@@ -234,8 +239,6 @@ class SocketHandler {
       newStock,
       timestamp: new Date()
     })
-
-    console.log(`📚 Stock updated: ${bookTitle} - ${oldStock} → ${newStock}`)
   }
 
   /**
@@ -253,8 +256,6 @@ class SocketHandler {
       userName: socket.user.name,
       timestamp: new Date()
     })
-
-    console.log(`⭐ New review for book ${bookTitle} by ${socket.user.name}`)
   }
 
   /**
@@ -285,8 +286,6 @@ class SocketHandler {
    * Handle disconnect
    */
   handleDisconnect(socket) {
-    console.log(`🔌 ${socket.id} disconnected`)
-    
     // Xóa user khỏi connected users
     this.connectedUsers.delete(socket.user._id.toString())
   }
@@ -319,8 +318,6 @@ class SocketHandler {
       data: notificationData,
       timestamp: new Date()
     })
-
-    console.log(`🔔 Notification sent to user ${userId}: ${title}`)
   }
 
   /**
@@ -421,8 +418,6 @@ class SocketHandler {
         status: 'sent',
         createdAt: message.createdAt
       })
-
-      console.log(`💬 Chat message sent from ${socket.id} to user ${toId}`)
     } catch (error) {
       console.error('❌ Chat message error:', error)
       socket.emit('chat_error', { message: 'Failed to send message' })
@@ -443,8 +438,6 @@ class SocketHandler {
     // Join user's personal chat room
     socket.join(`user:${socket.user._id}`)
     
-    console.log(`💬 ${socket.id} joined chat with user ${userId}`)
-    
     // Emit confirmation
     socket.emit('chat_joined', { userId })
   }
@@ -454,9 +447,6 @@ class SocketHandler {
    */
   handleLeaveChat(socket, data) {
     const { userId } = data
-    
-    console.log(`💬 ${socket.id} left chat with user ${userId}`)
-    
     socket.emit('chat_left', { userId })
   }
 
@@ -484,8 +474,6 @@ class SocketHandler {
         readBy: socket.user._id,
         readAt: message.readAt
       })
-      
-      console.log(`💬 Message ${messageId} marked as read by ${socket.id}`)
     } catch (error) {
       console.error('❌ Mark message read error:', error)
       socket.emit('chat_error', { message: 'Failed to mark message as read' })
@@ -540,10 +528,12 @@ class SocketHandler {
       return
     }
 
-    socket.join(`conversation:${conversationId}`)
+    // FIX: Chỉ join 1 room để tránh duplicate messages
+    // Đơn giản hóa: chỉ dùng conversationId làm room name
+    socket.join(conversationId)
     
     // Emit user joined event
-    socket.to(`conversation:${conversationId}`).emit('user_joined_conversation', {
+    socket.to(conversationId).emit('user_joined_conversation', {
       userId: socket.user._id,
       userName: socket.user.name,
       conversationId,
@@ -557,11 +547,10 @@ class SocketHandler {
   handleLeaveConversation(socket, data) {
     const { conversationId } = data
     
-    socket.leave(`conversation:${conversationId}`)
-    console.log(`👋 ${socket.id} left conversation: ${conversationId}`)
+    socket.leave(conversationId)
     
     // Emit user left event
-    socket.to(`conversation:${conversationId}`).emit('user_left_conversation', {
+    socket.to(conversationId).emit('user_left_conversation', {
       userId: socket.user._id,
       userName: socket.user.name,
       conversationId,
@@ -583,22 +572,23 @@ class SocketHandler {
 
       // Import Message model và User model
       const Message = (await import('~/models/messageModel')).default
-      const User = (await import('~/models/userModel')).default
+      const { getReceiverId } = await import('~/utils/chatHelper')
       
       const userRole = socket.user.roleId?.name || 'user'
 
-      // Xác định toId dựa trên role của người gửi
+      // Xác định toId dựa trên conversationId và fromId
+      // ConversationId format: "userId1_userId2" (sorted)
+      // toId sẽ là user ID khác fromId trong conversationId
       let targetToId = toId
       
       if (!targetToId) {
-        if (userRole === 'user') {
-          // Nếu user gửi tin nhắn, toId sẽ là admin
-          const adminUser = await User.findOne({ 'roleId.name': 'admin' })
-          targetToId = adminUser ? adminUser._id : null
-        } else if (userRole === 'admin') {
-          // Nếu admin gửi tin nhắn, toId sẽ là user (lấy từ conversationId)
-          const userId = conversationId.split('_')[1] // conv_userId_user -> userId
-          targetToId = userId
+        // Sử dụng helper để xác định receiver
+        targetToId = await getReceiverId(conversationId, socket.user._id.toString())
+        
+        if (!targetToId) {
+          console.error(`❌ Could not determine toId for conversation: ${conversationId}, fromId: ${socket.user._id}`)
+          socket.emit('conversation_error', { message: 'Could not determine receiver' })
+          return
         }
       }
       
@@ -612,15 +602,15 @@ class SocketHandler {
         imageUrl: imageUrl || null
       })
 
-      await message.populate('fromId', 'name email avatar roleId')
+      await message.populate('fromId', 'name email avatar')
       if (targetToId) {
-        await message.populate('toId', 'name email avatar roleId')
+        await message.populate('toId', 'name email avatar')
       }
 
-      // Format message cho frontend
+      // FIX: Đơn giản hóa - loại bỏ phân biệt role, chỉ dùng userId
+      // Format message cho frontend - chỉ cần userId và conversationId
       const formattedMessage = {
         messageId: message._id,
-        sender: message.fromId.name === 'Admin User' ? 'admin' : 'user',
         text: message.content,
         timestamp: message.createdAt,
         isRead: message.isRead,
@@ -640,8 +630,10 @@ class SocketHandler {
         } : null
       }
 
-      // Emit tin nhắn đến tất cả users trong conversation
-      this.io.to(`conversation:${conversationId}`).emit('new_message', {
+      // FIX: Chỉ emit đến 1 room để tránh duplicate messages
+      // Đơn giản hóa: chỉ dùng conversationId làm room name
+      // FIX: Emit đến tất cả users trong conversation (bao gồm cả người gửi để sync)
+      this.io.to(conversationId).emit('new_message', {
         message: formattedMessage,
         conversationId
       })
@@ -655,11 +647,12 @@ class SocketHandler {
    * Handle typing start
    */
   handleTypingStart(socket, data) {
-    const { conversationId } = data
+    const conversationId = typeof data === 'object' ? data?.conversationId : data
     
     if (!conversationId) return
 
-    socket.to(`conversation:${conversationId}`).emit('user_typing_conversation', {
+    // FIX: Chỉ emit đến 1 room
+    socket.to(conversationId).emit('user_typing_conversation', {
       userId: socket.user._id,
       userName: socket.user.name,
       conversationId,
@@ -672,11 +665,12 @@ class SocketHandler {
    * Handle typing stop
    */
   handleTypingStop(socket, data) {
-    const { conversationId } = data
+    const conversationId = typeof data === 'object' ? data?.conversationId : data
     
     if (!conversationId) return
 
-    socket.to(`conversation:${conversationId}`).emit('user_typing_conversation', {
+    // FIX: Chỉ emit đến 1 room
+    socket.to(conversationId).emit('user_typing_conversation', {
       userId: socket.user._id,
       userName: socket.user.name,
       conversationId,

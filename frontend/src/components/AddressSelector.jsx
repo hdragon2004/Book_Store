@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from 'react'
 import { addressService } from '../services/addressService'
+import { fetchProvinces, fetchDistricts, fetchWards } from '../utils/vietnamAddress'
 
 const AddressSelector = ({ selectedAddressId, onAddressSelect, onAddNew }) => {
   const [addresses, setAddresses] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
+  
+  // Address dropdown data
+  const [provinces, setProvinces] = useState([])
+  const [districts, setDistricts] = useState([])
+  const [wards, setWards] = useState([])
+  const [loadingProvinces, setLoadingProvinces] = useState(false)
+  const [loadingDistricts, setLoadingDistricts] = useState(false)
+  const [loadingWards, setLoadingWards] = useState(false)
+  
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -12,12 +22,77 @@ const AddressSelector = ({ selectedAddressId, onAddressSelect, onAddNew }) => {
     city: '',
     district: '',
     ward: '',
+    provinceCode: '',
+    districtCode: '',
+    wardCode: '',
     isDefault: false
   })
 
   useEffect(() => {
     fetchAddresses()
+    loadProvinces()
   }, [])
+
+  // Load provinces on component mount
+  const loadProvinces = async () => {
+    try {
+      setLoadingProvinces(true)
+      const data = await fetchProvinces()
+      setProvinces(data)
+    } catch (error) {
+      console.error('Error loading provinces:', error)
+    } finally {
+      setLoadingProvinces(false)
+    }
+  }
+
+  // Load districts when province is selected
+  const loadDistricts = async (provinceCode) => {
+    if (!provinceCode) {
+      setDistricts([])
+      setWards([])
+      return
+    }
+    try {
+      setLoadingDistricts(true)
+      const data = await fetchDistricts(provinceCode)
+      setDistricts(data)
+      setFormData(prev => ({
+        ...prev,
+        district: '',
+        ward: '',
+        districtCode: '',
+        wardCode: ''
+      }))
+      setWards([])
+    } catch (error) {
+      console.error('Error loading districts:', error)
+    } finally {
+      setLoadingDistricts(false)
+    }
+  }
+
+  // Load wards when district is selected
+  const loadWards = async (districtCode) => {
+    if (!districtCode) {
+      setWards([])
+      return
+    }
+    try {
+      setLoadingWards(true)
+      const data = await fetchWards(districtCode)
+      setWards(data)
+      setFormData(prev => ({
+        ...prev,
+        ward: '',
+        wardCode: ''
+      }))
+    } catch (error) {
+      console.error('Error loading wards:', error)
+    } finally {
+      setLoadingWards(false)
+    }
+  }
 
   const fetchAddresses = async () => {
     try {
@@ -38,6 +113,32 @@ const AddressSelector = ({ selectedAddressId, onAddressSelect, onAddNew }) => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }))
+
+    // Handle cascade dropdown changes
+    if (name === 'provinceCode') {
+      const selectedProvince = provinces.find(p => p.code === value)
+      setFormData(prev => ({
+        ...prev,
+        provinceCode: value,
+        city: selectedProvince?.name || ''
+      }))
+      loadDistricts(value)
+    } else if (name === 'districtCode') {
+      const selectedDistrict = districts.find(d => d.code === value)
+      setFormData(prev => ({
+        ...prev,
+        districtCode: value,
+        district: selectedDistrict?.name || ''
+      }))
+      loadWards(value)
+    } else if (name === 'wardCode') {
+      const selectedWard = wards.find(w => w.code === value)
+      setFormData(prev => ({
+        ...prev,
+        wardCode: value,
+        ward: selectedWard?.name || ''
+      }))
+    }
   }
 
   const handleAddAddress = async (e) => {
@@ -55,8 +156,13 @@ const AddressSelector = ({ selectedAddressId, onAddressSelect, onAddNew }) => {
         city: '',
         district: '',
         ward: '',
+        provinceCode: '',
+        districtCode: '',
+        wardCode: '',
         isDefault: false
       })
+      setDistricts([])
+      setWards([])
       
       // Refresh addresses list
       await fetchAddresses()
@@ -79,8 +185,13 @@ const AddressSelector = ({ selectedAddressId, onAddressSelect, onAddNew }) => {
       city: '',
       district: '',
       ward: '',
+      provinceCode: '',
+      districtCode: '',
+      wardCode: '',
       isDefault: false
     })
+    setDistricts([])
+    setWards([])
   }
 
   if (loading) {
@@ -169,45 +280,78 @@ const AddressSelector = ({ selectedAddressId, onAddressSelect, onAddNew }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Tỉnh/Thành phố *
                 </label>
-                <input
-                  type="text"
-                  name="city"
-                  value={formData.city}
+                <select
+                  name="provinceCode"
+                  value={formData.provinceCode}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  placeholder="Nhập tỉnh/thành phố"
-                />
+                  disabled={loadingProvinces}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
+                  <option value="">-- Chọn Tỉnh/Thành phố --</option>
+                  {provinces.map((province) => (
+                    <option key={province.code} value={province.code}>
+                      {province.name}
+                    </option>
+                  ))}
+                </select>
+                {loadingProvinces && (
+                  <p className="text-xs text-gray-500 mt-1">Đang tải...</p>
+                )}
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Quận/Huyện *
                 </label>
-                <input
-                  type="text"
-                  name="district"
-                  value={formData.district}
+                <select
+                  name="districtCode"
+                  value={formData.districtCode}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  placeholder="Nhập quận/huyện"
-                />
+                  disabled={!formData.provinceCode || loadingDistricts}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
+                  <option value="">-- Chọn Quận/Huyện --</option>
+                  {districts.map((district) => (
+                    <option key={district.code} value={district.code}>
+                      {district.name}
+                    </option>
+                  ))}
+                </select>
+                {loadingDistricts && (
+                  <p className="text-xs text-gray-500 mt-1">Đang tải...</p>
+                )}
+                {!formData.provinceCode && (
+                  <p className="text-xs text-gray-500 mt-1">Vui lòng chọn Tỉnh/Thành phố trước</p>
+                )}
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Phường/Xã *
                 </label>
-                <input
-                  type="text"
-                  name="ward"
-                  value={formData.ward}
+                <select
+                  name="wardCode"
+                  value={formData.wardCode}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  placeholder="Nhập phường/xã"
-                />
+                  disabled={!formData.districtCode || loadingWards}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
+                  <option value="">-- Chọn Phường/Xã --</option>
+                  {wards.map((ward) => (
+                    <option key={ward.code} value={ward.code}>
+                      {ward.name}
+                    </option>
+                  ))}
+                </select>
+                {loadingWards && (
+                  <p className="text-xs text-gray-500 mt-1">Đang tải...</p>
+                )}
+                {!formData.districtCode && (
+                  <p className="text-xs text-gray-500 mt-1">Vui lòng chọn Quận/Huyện trước</p>
+                )}
               </div>
             </div>
 

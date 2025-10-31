@@ -86,7 +86,8 @@ const ChatPage = () => {
   // Join conversation when socket is ready
   useEffect(() => {
     if (socket && conversationId) {
-      socket.emit('join_conversation', { conversationId })
+      console.log('🔌 ChatPage: Joining conversation:', conversationId)
+      socket.emit('join_conversation', conversationId)
     }
   }, [socket, conversationId])
 
@@ -296,10 +297,22 @@ const ChatPage = () => {
           ) : (
             <div className="space-y-4">
               {messages.map((message) => {
-                const isFromUser = message.sender === 'user'
+                // Logic hiển thị tin nhắn cho USER:
+                // - Tin do user gửi (fromId === userId) → hiển thị bên phải
+                // - Tin từ admin/staff (fromId !== userId) → hiển thị bên trái
+                const isFromCurrentUser = message.fromUser && message.fromUser.userId?.toString() === user._id?.toString();
+                
+                console.log('🔍 ChatPage: Message positioning:', {
+                  messageId: message.messageId,
+                  fromUser: message.fromUser?.userId,
+                  currentUser: user._id,
+                  isFromCurrentUser,
+                  sender: message.sender
+                });
+                
                 return (
-                  <div key={message.messageId || message._id || `msg_${Date.now()}`} className={`flex ${isFromUser ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${isFromUser ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-900'}`}>
+                  <div key={message.messageId || message._id || `msg_${Date.now()}`} className={`flex ${isFromCurrentUser ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${isFromCurrentUser ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-900'}`}>
                       {message.messageType === 'image' ? (
                         <div>
                           {message.imageUrl ? (
@@ -314,7 +327,7 @@ const ChatPage = () => {
                       ) : (
                         <p className="text-sm whitespace-pre-line">{message.text}</p>
                       )}
-                      <p className={`text-xs mt-1 ${isFromUser ? 'text-amber-100' : 'text-gray-500'}`}>{formatTime(message.timestamp)}</p>
+                      <p className={`text-xs mt-1 ${isFromCurrentUser ? 'text-amber-100' : 'text-gray-500'}`}>{formatTime(message.timestamp)}</p>
                     </div>
                   </div>
                 )

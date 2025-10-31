@@ -1,20 +1,75 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
+import { orderAPI } from '../services/apiService';
 
 const QRPaymentModal = ({ isOpen, onClose, orderData, paymentMethod, onPaymentSuccess, onPaymentExpired }) => {
   const [timeLeft, setTimeLeft] = useState(600); // 10 phút = 600 giây
   const [isExpired, setIsExpired] = useState(false);
   const [qrCodeDataURL, setQrCodeDataURL] = useState('');
+  const [isAutoConfirming, setIsAutoConfirming] = useState(false);
+  const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false);
+  const [countdown, setCountdown] = useState(5);
+  const autoConfirmTimerRef = useRef(null);
+  const countdownTimerRef = useRef(null);
+  
+  // Danh sách các phương thức thanh toán QR (không bao gồm COD)
+  const QR_PAYMENT_METHODS = ['momo', 'zalopay', 'bank_transfer'];
+  const isQRPayment = QR_PAYMENT_METHODS.includes(paymentMethod);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      // Cleanup khi modal đóng
+      if (autoConfirmTimerRef.current) {
+        clearTimeout(autoConfirmTimerRef.current);
+        autoConfirmTimerRef.current = null;
+      }
+      return;
+    }
 
     // Reset timer khi modal mở
     setTimeLeft(600);
     setIsExpired(false);
+    setIsAutoConfirming(false);
+    setIsPaymentConfirmed(false);
 
     // Tạo QR code
     generateQRCode();
+
+    // fix: tự động xác nhận thanh toán QR sau 5 giây (mô phỏng)
+    // Chỉ áp dụng cho QR payment methods (momo, zalopay, bank_transfer)
+    if (isQRPayment && orderData?._id) {
+      setIsAutoConfirming(true);
+      setCountdown(5);
+      
+      // Đếm ngược từ 5 giây
+      countdownTimerRef.current = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(countdownTimerRef.current);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+      // Tự động xác nhận thanh toán sau 5 giây
+      autoConfirmTimerRef.current = setTimeout(async () => {
+        try {
+          await orderAPI.mockAutoConfirmPayment(orderData._id, paymentMethod);
+          setIsPaymentConfirmed(true);
+          setIsAutoConfirming(false);
+          
+          // Tự động gọi callback thành công sau 1 giây để hiển thị thông báo
+          setTimeout(() => {
+            onPaymentSuccess?.();
+          }, 1000);
+        } catch (error) {
+          console.error('Error auto-confirming payment:', error);
+          setIsAutoConfirming(false);
+          // Nếu lỗi, vẫn cho phép user click nút "Đã thanh toán" thủ công
+        }
+      }, 5000); // 5 giây
+    }
 
     const timer = setInterval(() => {
       setTimeLeft(prev => {
@@ -27,8 +82,18 @@ const QRPaymentModal = ({ isOpen, onClose, orderData, paymentMethod, onPaymentSu
       });
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [isOpen, onPaymentExpired, orderData, paymentMethod]);
+    return () => {
+      clearInterval(timer);
+      if (autoConfirmTimerRef.current) {
+        clearTimeout(autoConfirmTimerRef.current);
+        autoConfirmTimerRef.current = null;
+      }
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+        countdownTimerRef.current = null;
+      }
+    };
+  }, [isOpen, onPaymentExpired, orderData, paymentMethod, isQRPayment]);
 
   const generateQRCode = async () => {
     try {
@@ -75,47 +140,18 @@ const QRPaymentModal = ({ isOpen, onClose, orderData, paymentMethod, onPaymentSu
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getPaymentInfo = () => {
+  const getPaymentTitle = () => {
     switch (paymentMethod) {
       case 'momo':
-        return {
-          title: 'Thanh toán qua MoMo',
-          instructions: [
-            '1. Mở ứng dụng MoMo',
-            '2. Chọn "Quét mã QR"',
-            '3. Quét mã QR bên dưới',
-            '4. Xác nhận thanh toán'
-          ]
-        };
+        return 'Thanh toán qua MoMo';
       case 'zalopay':
-        return {
-          title: 'Thanh toán qua ZaloPay',
-          instructions: [
-            '1. Mở ứng dụng ZaloPay',
-            '2. Chọn "Quét mã"',
-            '3. Quét mã QR bên dưới',
-            '4. Xác nhận thanh toán'
-          ]
-        };
+        return 'Thanh toán qua ZaloPay';
       case 'bank_transfer':
-        return {
-          title: 'Chuyển khoản ngân hàng',
-          instructions: [
-            '1. Mở ứng dụng ngân hàng',
-            '2. Chọn "Chuyển khoản QR"',
-            '3. Quét mã QR bên dưới',
-            '4. Nhập số tiền và xác nhận'
-          ]
-        };
+        return 'Chuyển khoản ngân hàng';
       default:
-        return {
-          title: 'Thanh toán',
-          instructions: ['Vui lòng quét mã QR để thanh toán']
-        };
+        return 'Thanh toán';
     }
   };
-
-  const paymentInfo = getPaymentInfo();
 
   if (!isOpen) return null;
 
@@ -124,10 +160,10 @@ const QRPaymentModal = ({ isOpen, onClose, orderData, paymentMethod, onPaymentSu
       <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-gray-900">{paymentInfo.title}</h3>
+          <h3 className="text-xl font-semibold text-gray-900">{getPaymentTitle()}</h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -159,8 +195,8 @@ const QRPaymentModal = ({ isOpen, onClose, orderData, paymentMethod, onPaymentSu
           </div>
         </div>
 
-        {/* QR Code */}
-        {!isExpired ? (
+        {/* QR Code - Chỉ hiển thị khi chưa expired và chưa confirm */}
+        {!isExpired && !isPaymentConfirmed && (
           <div className="text-center mb-4">
             <div className="inline-block p-4 bg-white border-2 border-gray-200 rounded-lg">
               {qrCodeDataURL ? (
@@ -176,61 +212,40 @@ const QRPaymentModal = ({ isOpen, onClose, orderData, paymentMethod, onPaymentSu
               )}
             </div>
           </div>
-        ) : (
-          <div className="text-center mb-4">
-            <div className="inline-block p-8 bg-gray-100 border-2 border-gray-300 rounded-lg">
-              <svg className="w-24 h-24 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p className="text-gray-500 mt-2">QR Code đã hết hạn</p>
-            </div>
+        )}
+
+        {/* Payment Status - Chỉ hiển thị 2 trạng thái này cho QR payment */}
+        {isQRPayment && (
+          <div className="mb-4">
+            {isAutoConfirming && !isPaymentConfirmed && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                <p className="text-sm text-blue-700 flex items-center justify-center">
+                  <span className="inline-block animate-spin mr-2">⏳</span>
+                  Đang xử lý thanh toán tự động... (còn {countdown} giây)
+                </p>
+              </div>
+            )}
+            {isPaymentConfirmed && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                <p className="text-sm text-green-700 font-semibold flex items-center justify-center">
+                  <span className="inline-block mr-2">✅</span>
+                  Thanh toán thành công! Đơn hàng đã được xác nhận.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Instructions */}
-        <div className="mb-6">
-          <h4 className="font-medium text-gray-900 mb-2">Hướng dẫn thanh toán:</h4>
-          <ul className="text-sm text-gray-600 space-y-1">
-            {paymentInfo.instructions.map((instruction, index) => (
-              <li key={index}>{instruction}</li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex space-x-3">
-          {!isExpired ? (
-            <>
-              <button
-                onClick={() => {
-                  // Simulate payment success
-                  onPaymentSuccess?.();
-                }}
-                className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Đã thanh toán
-              </button>
-              <button
-                onClick={onClose}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
-              >
-                Hủy
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={onClose}
-              className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
-            >
-              Đóng
-            </button>
-          )}
-        </div>
-
-        {/* Note */}
-        <div className="mt-4 text-xs text-gray-500 text-center">
-          <p>Vui lòng thanh toán trong thời gian quy định để đơn hàng được xử lý.</p>
-        </div>
+        {/* Action Button - Chỉ hiển thị nút Hủy khi cần */}
+        {!isPaymentConfirmed && (
+          <button
+            onClick={onClose}
+            className="w-full bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isAutoConfirming}
+          >
+            Hủy
+          </button>
+        )}
       </div>
     </div>
   );

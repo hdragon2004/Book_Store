@@ -283,115 +283,133 @@ const HomePage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* News Card 1 */}
-            <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-              <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center relative">
-                <div className="absolute inset-0 bg-black bg-opacity-20"></div>
-                <div className="text-white text-center relative z-10">
-                  <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                  <span className="text-sm font-medium">Tính năng mới</span>
+            <article className="group cursor-pointer">
+              <div className="relative overflow-hidden rounded-2xl mb-4">
+                <img
+                  src="https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&h=600&fit=crop"
+                  alt="Tính năng mới"
+                  className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-110"
+                />
+                <div className="absolute top-4 right-4">
+                  <span className="bg-white/90 backdrop-blur-sm text-blue-600 text-xs font-semibold px-4 py-2 rounded-full">
+                    Tính năng mới
+                  </span>
                 </div>
               </div>
-              <div className="p-6">
+              <div>
                 <p className="text-sm text-gray-500 mb-2">Tháng 10, 2025</p>
-                <h4 className="text-lg font-semibold text-gray-800 mb-2">Bổ sung tính năng nâng cao chung</h4>
-                <p className="text-gray-600 text-sm">Cập nhật những tính năng mới nhất để nâng cao trải nghiệm người dùng</p>
+                <h4 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-orange-600 transition-colors">Bổ sung tính năng nâng cao chung</h4>
+                <p className="text-gray-600 leading-relaxed">Cập nhật những tính năng mới nhất để nâng cao trải nghiệm người dùng</p>
               </div>
-            </div>
+            </article>
 
             {/* News Card 2 */}
-            <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-              <div className="aspect-video bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center relative">
-                <div className="absolute inset-0 bg-black bg-opacity-20"></div>
-                <div className="text-white text-center relative z-10">
-                  <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="text-sm font-medium">Hợp tác</span>
+            <article className="group cursor-pointer">
+              <div className="relative overflow-hidden rounded-2xl mb-4">
+                <img
+                  src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&h=600&fit=crop"
+                  alt="Hợp tác"
+                  className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-110"
+                />
+                <div className="absolute top-4 right-4">
+                  <span className="bg-white/90 backdrop-blur-sm text-green-600 text-xs font-semibold px-4 py-2 rounded-full">
+                    Hợp tác
+                  </span>
                 </div>
               </div>
-              <div className="p-6">
+              <div>
                 <p className="text-sm text-gray-500 mb-2">Tháng 10, 2025</p>
-                <h4 className="text-lg font-semibold text-gray-800 mb-2">Thông báo bản quyền với công ty sách First News</h4>
-                <p className="text-gray-600 text-sm">Hợp tác chiến lược với First News để mang đến những cuốn sách chất lượng</p>
+                <h4 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-orange-600 transition-colors">Thông báo bản quyền với công ty sách First News</h4>
+                <p className="text-gray-600 leading-relaxed">Hợp tác chiến lược với First News để mang đến những cuốn sách chất lượng</p>
               </div>
-            </div>
+            </article>
 
             {/* News Card 3 */}
-            <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-              <div className="aspect-video bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center relative">
-                <div className="absolute inset-0 bg-black bg-opacity-20"></div>
-                <div className="text-white text-center relative z-10">
-                  <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m0 0V1a1 1 0 011-1h2a1 1 0 011 1v18a1 1 0 01-1 1H4a1 1 0 01-1-1V1a1 1 0 011-1h2a1 1 0 011 1v3m0 0h8" />
-                  </svg>
-                  <span className="text-sm font-medium">Truyện tranh</span>
+            <article className="group cursor-pointer">
+              <div className="relative overflow-hidden rounded-2xl mb-4">
+                <img
+                  src="https://images.unsplash.com/photo-1532012197267-da84d127e765?w=800&h=600&fit=crop"
+                  alt="Truyện tranh"
+                  className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-110"
+                />
+                <div className="absolute top-4 right-4">
+                  <span className="bg-white/90 backdrop-blur-sm text-orange-600 text-xs font-semibold px-4 py-2 rounded-full">
+                    Truyện tranh
+                  </span>
                 </div>
               </div>
-              <div className="p-6">
+              <div>
                 <p className="text-sm text-gray-500 mb-2">Tháng 10, 2025</p>
-                <h4 className="text-lg font-semibold text-gray-800 mb-2">Ngôn - Một nhóm trong làng truyện tranh Việt</h4>
-                <p className="text-gray-600 text-sm">Khám phá thế giới truyện tranh Việt Nam với những tác phẩm độc đáo</p>
+                <h4 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-orange-600 transition-colors">Ngôn - Một nhóm trong làng truyện tranh Việt</h4>
+                <p className="text-gray-600 leading-relaxed">Khám phá thế giới truyện tranh Việt Nam với những tác phẩm độc đáo</p>
               </div>
-            </div>
+            </article>
 
             {/* News Card 4 */}
-            <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-              <div className="aspect-video bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center relative">
-                <div className="absolute inset-0 bg-black bg-opacity-20"></div>
-                <div className="text-white text-center relative z-10">
-                  <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
-                  <span className="text-sm font-medium">Tuổi trẻ</span>
+            <article className="group cursor-pointer">
+              <div className="relative overflow-hidden rounded-2xl mb-4">
+                <img
+                  src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&h=600&fit=crop"
+                  alt="Tuổi trẻ"
+                  className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-110"
+                />
+                <div className="absolute top-4 right-4">
+                  <span className="bg-white/90 backdrop-blur-sm text-purple-600 text-xs font-semibold px-4 py-2 rounded-full">
+                    Tuổi trẻ
+                  </span>
                 </div>
               </div>
-              <div className="p-6">
+              <div>
                 <p className="text-sm text-gray-500 mb-2">Tháng 10, 2025</p>
-                <h4 className="text-lg font-semibold text-gray-800 mb-2">Tuổi Trẻ Hoang Dại</h4>
-                <p className="text-gray-600 text-sm">Cuốn sách về tuổi trẻ và những trải nghiệm đáng nhớ</p>
+                <h4 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-orange-600 transition-colors">Tuổi Trẻ Hoang Dại</h4>
+                <p className="text-gray-600 leading-relaxed">Cuốn sách về tuổi trẻ và những trải nghiệm đáng nhớ</p>
               </div>
-            </div>
+            </article>
 
             {/* News Card 5 */}
-            <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-              <div className="aspect-video bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center relative">
-                <div className="absolute inset-0 bg-black bg-opacity-20"></div>
-                <div className="text-white text-center relative z-10">
-                  <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
-                  <span className="text-sm font-medium">Sức khỏe</span>
+            <article className="group cursor-pointer">
+              <div className="relative overflow-hidden rounded-2xl mb-4">
+                <img
+                  src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800&h=600&fit=crop"
+                  alt="Sức khỏe"
+                  className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-110"
+                />
+                <div className="absolute top-4 right-4">
+                  <span className="bg-white/90 backdrop-blur-sm text-pink-600 text-xs font-semibold px-4 py-2 rounded-full">
+                    Sức khỏe
+                  </span>
                 </div>
               </div>
-              <div className="p-6">
+              <div>
                 <p className="text-sm text-gray-500 mb-2">Tháng 10, 2025</p>
-                <h4 className="text-lg font-semibold text-gray-800 mb-2">Thật Tỉnh Không Sao</h4>
-                <p className="text-gray-600 text-sm">Tác phẩm về sức khỏe tinh thần và cách vượt qua khó khăn</p>
+                <h4 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-orange-600 transition-colors">Thật Tỉnh Không Sao</h4>
+                <p className="text-gray-600 leading-relaxed">Tác phẩm về sức khỏe tinh thần và cách vượt qua khó khăn</p>
               </div>
-            </div>
+            </article>
 
             {/* News Card 6 */}
-            <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-              <div className="aspect-video bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center relative">
-                <div className="absolute inset-0 bg-black bg-opacity-20"></div>
-                <div className="text-white text-center relative z-10">
-                  <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                  </svg>
-                  <span className="text-sm font-medium">Khoa học</span>
+            <article className="group cursor-pointer">
+              <div className="relative overflow-hidden rounded-2xl mb-4">
+                <img
+                  src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&h=600&fit=crop&auto=format"
+                  alt="Khoa học"
+                  className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-110"
+                />
+                <div className="absolute top-4 right-4">
+                  <span className="bg-white/90 backdrop-blur-sm text-cyan-600 text-xs font-semibold px-4 py-2 rounded-full">
+                    Khoa học
+                  </span>
                 </div>
               </div>
-              <div className="p-6">
+              <div>
                 <p className="text-sm text-gray-500 mb-2">Tháng 10, 2025</p>
-                <h4 className="text-lg font-semibold text-gray-800 mb-2">Aftermath - Cuốn tiểu thuyết khoa học viễn tưởng hiếm hoi</h4>
-                <p className="text-gray-600 text-sm">Tác phẩm khoa học viễn tưởng đặc sắc của làng văn học Việt Nam</p>
+                <h4 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-orange-600 transition-colors">Aftermath - Cuốn tiểu thuyết khoa học viễn tưởng hiếm hoi</h4>
+                <p className="text-gray-600 leading-relaxed">Tác phẩm khoa học viễn tưởng đặc sắc của làng văn học Việt Nam</p>
               </div>
-                </div>
-              </div>
-            </div>
+            </article>
           </div>
+        </div>
+      </div>
     </div>
   );
 };
